@@ -71,8 +71,10 @@ while 1:
         print getattr(ts, "__init__")(baseurl)
 
     if choice == "s":
-        username = raw_input("username: ")
-        password = raw_input("password (plaintext): ")
+        if not username:
+            username = raw_input("username: ")
+        if not password:
+            password = raw_input("password (plaintext): ")
         auth_type = "password"
         pp.pprint(ts.authenticate(username, password, auth_type))
 
