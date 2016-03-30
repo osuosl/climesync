@@ -217,10 +217,32 @@ while 1:
         pp.pprint(ts.get_projects(query))
 
     if choice == "ca":
-        print "not implemented"
+        activity = dict()
+        name = raw_input("name:" )
+        slug = raw_input("slug: ")
+        if name and slug:
+            activity["name"] = name
+            activity["slug"] = slug
+            pp.pprint(ts.create_activity(activity))
+        else:
+            print "Provide both name and slug"
 
     if choice == "ua":
         print "not implemented"
+        slug_to_update = raw_input("slug of activity to update: ")
+        print "All following fields are optional"
+        activity = dict()
+        name = raw_input("name: ")
+        slug = raw_input("slug: ")
+        if name:
+            activity["name"] = name
+        if slug:
+            activity["slug"] = slug
+        if slug_to_update:
+            pp.pprint(ts.update_activity(activity=activity,
+                                         slug=slug_to_update))
+        else:
+            print "Provide a slug of activity to update"
 
     if choice == "ga":
         query = dict()
