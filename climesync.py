@@ -2,7 +2,37 @@
 
 import pymesync
 import sys
-ts = pymesync.TimeSync("")
+import argparse
+import json
+import pprint
+
+pp = pprint.PrettyPrinter(indent=4)
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-c", "--connect", help="connect to a timesync baseurl")
+parser.add_argument("-u", "--username", help="specify your username")
+parser.add_argument("-p", "--password", help="specify your password")
+
+args = parser.parse_args()
+
+baseurl = ""
+username = ""
+password = ""
+
+if args.connect:
+    baseurl = args.connect
+
+ts = pymesync.TimeSync(baseurl)
+
+if args.username:
+    username = args.username
+
+if args.password:
+    password = args.password
+    
+if baseurl and username and password:
+    pp.pprint(ts.authenticate(username, password, "password"))
+
 
 menu = (
     "===============================================================\n"
@@ -43,8 +73,8 @@ while 1:
     if choice == "s":
         username = raw_input("username: ")
         password = raw_input("password (plaintext): ")
-        auth_type = raw_input("auth type: ")
-        print ts.authenticate(username, password, auth_type)
+        auth_type = "password"
+        pp.pprint(ts.authenticate(username, password, auth_type))
 
     if choice == "ct":
         timeobj = {}
@@ -66,7 +96,7 @@ while 1:
             timeobj["notes"] = notes
         if issue_uri:
             timeobj["issue_uri"] = issue_uri
-        print ts.create_time(timeobj)
+        pp.pprint(ts.create_time(timeobj))
 
     if choice == "ut":
         timeobj = {}
@@ -93,7 +123,7 @@ while 1:
             timeobj["issue_uri"] = issue_uri
         if notes:
             timeobj["notes"] = notes
-        print ts.update_time(uuid=uuid, time=timeobj)
+        pp.pprint(ts.update_time(uuid=uuid, time=timeobj))
 
     if choice == "gt":
         query = dict()
@@ -129,8 +159,8 @@ while 1:
             query["include_deleted"] = False
         if uuid:
             query["uuid"] = uuid
-        print query
-        print ts.get_times(query)
+        print
+        pp.pprint(ts.get_times(query))
 
     if choice == "cp":
         project = dict()
@@ -169,24 +199,9 @@ while 1:
     if choice == "gp":
         query = dict()
         print "All fields are optional"
-        user = raw_input("user: ")
-        project = raw_input("project: ")
-        activity = raw_input("activity: ")
-        start = raw_input("start (yyyy-mm-dd): ")
-        end = raw_input("end (yyyy-mm-dd): ")
         include_revisions = raw_input("include revisions (y or n): ")
         include_deleted = raw_input("include deleted (y or no): ")
         slug = raw_input("slug: ")
-        if user:
-            query["user"] = user
-        if project:
-            query["project"] = project
-        if activity:
-            query["activity"] = activity
-        if start:
-            query["start"] = start
-        if end:
-            query["end"] = end
         if include_revisions == "y":
             query["include_revisions"] = True
         if include_revisions == "n":
@@ -197,7 +212,7 @@ while 1:
             query["include_deleted"] = False
         if slug:
             query["slug"] = slug
-        print ts.get_projects(query)
+        pp.pprint(ts.get_projects(query))
 
     if choice == "ca":
         print "not implemented"
@@ -208,24 +223,9 @@ while 1:
     if choice == "ga":
         query = dict()
         print "All fields are optional"
-        user = raw_input("user: ")
-        project = raw_input("project: ")
-        activity = raw_input("activity: ")
-        start = raw_input("start (yyyy-mm-dd): ")
-        end = raw_input("end (yyyy-mm-dd): ")
         include_revisions = raw_input("include revisions (y or n): ")
         include_deleted = raw_input("include deleted (y or no): ")
         slug = raw_input("slug: ")
-        if user:
-            query["user"] = user
-        if project:
-            query["project"] = project
-        if activity:
-            query["activity"] = activity
-        if start:
-            query["start"] = start
-        if end:
-            query["end"] = end
         if include_revisions == "y":
             query["include_revisions"] = True
         if include_revisions == "n":
@@ -236,7 +236,7 @@ while 1:
             query["include_deleted"] = False
         if slug:
             query["slug"] = slug
-        print ts.get_activities(query)
+        pp.pprint(ts.get_activities(query))
 
     if choice == "cu":
         print "not implemented"
@@ -246,33 +246,7 @@ while 1:
 
     if choice == "gu":
         query = dict()
-        print "All fields are optional"
-        user = raw_input("user: ")
-        project = raw_input("project: ")
-        activity = raw_input("activity: ")
-        start = raw_input("start (yyyy-mm-dd): ")
-        end = raw_input("end (yyyy-mm-dd): ")
-        include_revisions = raw_input("include revisions (y or n): ")
-        include_deleted = raw_input("include deleted (y or no): ")
-        username = raw_input("username: ")
-        if user:
-            query["user"] = user
-        if project:
-            query["project"] = project
-        if activity:
-            query["activity"] = activity
-        if start:
-            query["start"] = start
-        if end:
-            query["end"] = end
-        if include_revisions == "y":
-            query["include_revisions"] = True
-        if include_revisions == "n":
-            query["include_revisions"] = False
-        if include_deleted == "y":
-            query["include_deleted"] = True
-        if include_deleted == "n":
-            query["include_deleted"] = False
+        username = raw_input("username (optional): ")
         if username:
             query["username"] = username
-        print ts.get_projects(query)
+        pp.pprint(ts.get_users(username=username))
