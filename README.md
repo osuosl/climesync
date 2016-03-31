@@ -18,5 +18,38 @@ climesync accepts args like so:
 (venv) $ ./climesync.py --connect <timesync baseurl> --user <username> --password <password>
 ```
 
+or with short options:
+
+```
+(venv) $ ./climesync.py -c <timesync baseurl> -u <username> -p <password>
+```
+
 If all three args are provided, climesync will connect to timesync and
 authenticate your username and password for you.
+    
+
+Once climesync is running, you can complete the following tasks:
+
+```
+c - connect
+s - sign in
+
+ct - submit time
+ut - update time
+gt - get times
+
+cp - create project
+up - update project
+gp - get projects
+
+ca - create activity
+ua - update activity
+ga - get activities
+
+cu - create user
+uu - update user
+gu - get users
+
+m - print this menu
+q - exit
+```
