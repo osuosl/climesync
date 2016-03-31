@@ -178,7 +178,6 @@ while 1:
         ts.create_project(project)
 
     if choice == "up":
-        print "not implemented"
         project = dict()
         slug = raw_input("project slug: ")
         print "All following fields are optional"
@@ -228,7 +227,6 @@ while 1:
             print "Provide both name and slug"
 
     if choice == "ua":
-        print "not implemented"
         slug_to_update = raw_input("slug of activity to update: ")
         print "All following fields are optional"
         activity = dict()
@@ -263,10 +261,93 @@ while 1:
         pp.pprint(ts.get_activities(query))
 
     if choice == "cu":
-        print "not implemented"
+        user = dict()
+
+        username = raw_input("username: ")
+        if username:
+            user["username"] = username
+        else:
+            print "provide a username"
+            continue
+
+        password = raw_input("password: ")
+        if password:
+            user["password"] = password
+        else:
+            print "provide a password"
+            continue
+
+        print "The following fields are optional"
+        user["display_name"] = raw_input("display name: ")
+        user["email"] = raw_input("email: ")
+        user["site_admin"] = raw_input("is user site admin? (y or n): ")
+        if user["site_admin"] == "y":
+            user["site_admin"] = True
+        else:
+            user["site_admin"] = False
+        user["site_manager"] = raw_input("is user site manager? (y or n): ")
+        if user["site_manager"] == "y":
+            user["site_manager"] = True
+        else:
+            user["site_manager"] = False
+        user["site_spectator"] = raw_input("is user site spectator? (y or n): ")
+        if user["site_spectator"] == "y":
+            user["site_spectator"] = True
+        else:
+            user["site_spectator"] = False
+        user["meta"] = raw_input("meta information: ")
+        user["active"] = raw_input("is the user active? (y or n): ")
+        if user["active"] == "y":
+            user["active"] = True
+        else:
+            user["active"] = False
+        
+        userobj = dict()
+        for key in user:
+            if user[key]:
+                userobj[key] = user[key]
+        pp.pprint(ts.create_user(userobj))
 
     if choice == "uu":
-        print "not implemented"
+        username_to_update = raw_input("username to update: ")
+        if not username_to_update:
+            print "you must enter a username to update"
+            continue
+
+        print "The following fields are optional, leave blank for unchanged"
+        user = dict()
+
+        user["username"] = raw_input("new username: ")
+        user["password"] = raw_input("password: ")
+        user["display_name"] = raw_input("display name: ")
+        user["email"] = raw_input("email: ")
+        user["site_admin"] = raw_input("is user site admin? (y or n): ")
+        if user["site_admin"] == "y":
+            user["site_admin"] = True
+        else:
+            user["site_admin"] = False
+        user["site_manager"] = raw_input("is user site manager? (y or n): ")
+        if user["site_manager"] == "y":
+            user["site_manager"] = True
+        else:
+            user["site_manager"] = False
+        user["site_spectator"] = raw_input("is user site spectator? (y or n): ")
+        if user["site_spectator"] == "y":
+            user["site_spectator"] = True
+        else:
+            user["site_spectator"] = False
+        user["meta"] = raw_input("meta information: ")
+        user["active"] = raw_input("is the user active? (y or n): ")
+        if user["active"] == "y":
+            user["active"] = True
+        else:
+            user["active"] = False
+        
+        userobj = dict()
+        for key in user:
+            if user[key]:
+                userobj[key] = user[key]
+        pp.pprint(ts.update_user(user=userobj, username=username_to_update))
 
     if choice == "gu":
         query = dict()
