@@ -15,24 +15,26 @@ parser.add_argument("-p", "--password", help="specify your password")
 
 args = parser.parse_args()
 
-baseurl = ""
-username = ""
-password = ""
+arg_baseurl = ""
+arg_username = ""
+arg_password = ""
 
 if args.connect:
-    baseurl = args.connect
+    arg_baseurl = args.connect
 
-ts = pymesync.TimeSync(baseurl)
+ts = pymesync.TimeSync(baseurl=arg_baseurl)
 
 if args.username:
-    username = args.username
+    arg_username = args.username
 
 if args.password:
-    password = args.password
+    arg_password = args.password
     
-if baseurl and username and password:
-    pp.pprint(ts.authenticate(username, password, "password"))
+if arg_baseurl and arg_username and arg_password:
+    pp.pprint(ts.authenticate(username=arg_username, password=arg_password, auth_type="password"))
 
+    # Allow further login attempts
+    arg_username = arg_password = ""
 
 menu = (
     "===============================================================\n"
@@ -71,12 +73,11 @@ while 1:
         print getattr(ts, "__init__")(baseurl)
 
     if choice == "s":
-        if not username:
-            username = raw_input("username: ")
-        if not password:
-            password = raw_input("password (plaintext): ")
-        auth_type = "password"
-        pp.pprint(ts.authenticate(username, password, auth_type))
+        username = arg_username if arg_username else raw_input("username: ")
+
+        password = arg_password if arg_password else raw_input("password: ")
+
+        pp.pprint(ts.authenticate(username, password, "password"))
 
     if choice == "ct":
         timeobj = {}
