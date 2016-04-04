@@ -1,6 +1,10 @@
 # climesync
 CLI for the TimeSync API
 
+This is not an official TimeSync client, and is not officially supported by the
+OSL. This CLI is used internally by the OSL for time-tracking purposes during
+development of other tools.
+
 Install and Run
 ---------------
 
