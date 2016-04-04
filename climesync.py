@@ -15,26 +15,24 @@ parser.add_argument("-p", "--password", help="specify your password")
 
 args = parser.parse_args()
 
-arg_baseurl = ""
-arg_username = ""
-arg_password = ""
+baseurl = ""
+username = ""
+password = ""
 
 if args.connect:
-    arg_baseurl = args.connect
+    baseurl = args.connect
 
-ts = pymesync.TimeSync(baseurl=arg_baseurl)
+ts = pymesync.TimeSync(baseurl=baseurl)
 
 if args.username:
-    arg_username = args.username
+    username = args.username
 
 if args.password:
-    arg_password = args.password
+    password = args.password
     
-if arg_baseurl and arg_username and arg_password:
-    pp.pprint(ts.authenticate(username=arg_username, password=arg_password, auth_type="password"))
-
-    # Allow further login attempts
-    arg_username = arg_password = ""
+# If all args are provided, attempt to sign in with them
+if baseurl and username and password:
+    pp.pprint(ts.authenticate(username=username, password=password, auth_type="password"))
 
 menu = (
     "===============================================================\n"
@@ -42,7 +40,8 @@ menu = (
     "===============================================================\n"
     "\nWhat do you want to do?\n"
     "c - connect\n"
-    "s - sign in\n\n"
+    "s - sign in\n"
+    "so - sign out/reset credentials\n\n"
     "ct - submit time\n"
     "ut - update time\n"
     "gt - get times\n\n"
@@ -70,14 +69,27 @@ while 1:
 
     if choice == "c":
         baseurl = raw_input("baseurl: ")
-        print getattr(ts, "__init__")(baseurl)
+        ts = pymesync.TimeSync(baseurl=baseurl)
 
     if choice == "s":
-        username = arg_username if arg_username else raw_input("username: ")
+        # If username or password not provided on command line, ask for them
+        if username:
+            print "username: %s" % username
+        else:
+            username = raw_input("username: ")
 
-        password = arg_password if arg_password else raw_input("password: ")
+        if password:
+            print "password: %s" % password
+        else:
+            password = raw_input("password: ")
 
+        # Attempt to authenticate then print the server's response
         pp.pprint(ts.authenticate(username, password, "password"))
+
+    if choice == "so":
+        # Sign out and reset username and password to allow further login attempts
+        username = password = ""
+        ts = pymesync.TimeSync(baseurl=baseurl)
 
     if choice == "ct":
         timeobj = {}
