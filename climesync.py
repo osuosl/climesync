@@ -171,11 +171,15 @@ while 1:
         uri = raw_input("uri (optional): ")
         print "this cli does not yet support project creation with users"
         default_activity = raw_input("default activity (optional): ")
+        if name:
+            project["name"] = name
+        if slugs:
+            project["slugs"] = slugs
         if uri:
             project["uri"] = uri
         if default_activity:
             project["default_activity"] = default_activity
-        ts.create_project(project)
+        pp.pprint(ts.create_project(project))
 
     if choice == "up":
         project = dict()
