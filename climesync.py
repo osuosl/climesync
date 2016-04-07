@@ -43,16 +43,20 @@ menu = (
     "s - sign in\n\n"
     "ct - submit time\n"
     "ut - update time\n"
-    "gt - get times\n\n"
+    "gt - get times\n"
+    "dt - delete time\n\n"
     "cp - create project\n"
     "up - update project\n"
-    "gp - get projects\n\n"
+    "gp - get projects\n"
+    "dp - delete project\n\n"
     "ca - create activity\n"
     "ua - update activity\n"
-    "ga - get activities\n\n"
+    "ga - get activities\n"
+    "da - delete activity\n\n"
     "cu - create user\n"
     "uu - update user\n"
-    "gu - get users\n\n"
+    "gu - get users\n"
+    "du - delete user\n\n"
     "m - print this menu\n"
     "q - exit\n")
 print menu
@@ -164,6 +168,14 @@ while 1:
         print
         pp.pprint(ts.get_times(query))
 
+    if choice == "dt":
+        uuid = raw_input("uuid: ")
+        really = raw_input("(y/N) Do you really want to delete time %s? " % uuid)
+
+        #If the uuid isn't blank and the user really wants to delete it
+        if uuid and really.upper() == "Y":
+            pp.pprint(ts.delete_time(uuid=uuid))
+
     if choice == "cp":
         project = dict()
         name = raw_input("name: ")
@@ -215,6 +227,14 @@ while 1:
             query["slug"] = slug
         pp.pprint(ts.get_projects(query))
 
+    if choice == "dp":
+        slug = raw_input("slug: ")
+        really = raw_input("(y/N) Do you really want to delete project %s? " % slug)
+
+        #If the uuid isn't blank and the user really wants to delete it
+        if slug and really.upper() == "Y":
+            pp.pprint(ts.delete_project(slug=slug))
+
     if choice == "ca":
         activity = dict()
         name = raw_input("name:" )
@@ -259,6 +279,14 @@ while 1:
         if slug:
             query["slug"] = slug
         pp.pprint(ts.get_activities(query))
+
+    if choice == "da":
+        slug = raw_input("slug: ")
+        really = raw_input("(y/N) Do you really want to delete activity %s? " % slug)
+
+        #If the uuid isn't blank and the user really wants to delete it
+        if slug and really.upper() == "Y":
+            pp.pprint(ts.delete_activity(slug=slug))
 
     if choice == "cu":
         user = dict()
@@ -355,3 +383,11 @@ while 1:
         if username:
             query["username"] = username
         pp.pprint(ts.get_users(username=username))
+
+    if choice == "du":
+        username = raw_input("username: ")
+        really = raw_input("(y/N) Do you really want to delete user %s? " % username)
+
+        #If the uuid isn't blank and the user really wants to delete it
+        if username and really.upper() == "Y":
+            pp.pprint(ts.delete_user(username=username))
