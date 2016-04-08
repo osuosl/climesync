@@ -22,7 +22,7 @@ password = ""
 if args.connect:
     baseurl = args.connect
 
-ts = pymesync.TimeSync(baseurl)
+ts = pymesync.TimeSync(baseurl=baseurl)
 
 if args.username:
     username = args.username
@@ -30,9 +30,9 @@ if args.username:
 if args.password:
     password = args.password
     
+# If all args are provided, attempt to sign in with them
 if baseurl and username and password:
-    pp.pprint(ts.authenticate(username, password, "password"))
-
+    pp.pprint(ts.authenticate(username=username, password=password, auth_type="password"))
 
 menu = (
     "===============================================================\n"
@@ -40,7 +40,8 @@ menu = (
     "===============================================================\n"
     "\nWhat do you want to do?\n"
     "c - connect\n"
-    "s - sign in\n\n"
+    "s - sign in\n"
+    "so - sign out/reset credentials\n\n"
     "ct - submit time\n"
     "ut - update time\n"
     "gt - get times\n\n"
@@ -68,15 +69,27 @@ while 1:
 
     if choice == "c":
         baseurl = raw_input("baseurl: ")
-        print getattr(ts, "__init__")(baseurl)
+        ts = pymesync.TimeSync(baseurl=baseurl)
 
     if choice == "s":
-        if not username:
+        # If username or password not provided on command line, ask for them
+        if username:
+            print "username: %s" % username
+        else:
             username = raw_input("username: ")
-        if not password:
-            password = raw_input("password (plaintext): ")
-        auth_type = "password"
-        pp.pprint(ts.authenticate(username, password, auth_type))
+
+        if password:
+            print "password: %s" % password
+        else:
+            password = raw_input("password: ")
+
+        # Attempt to authenticate then print the server's response
+        pp.pprint(ts.authenticate(username, password, "password"))
+
+    if choice == "so":
+        # Sign out and reset username and password to allow further login attempts
+        username = password = ""
+        ts = pymesync.TimeSync(baseurl=baseurl)
 
     if choice == "ct":
         timeobj = {}

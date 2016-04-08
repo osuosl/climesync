@@ -37,6 +37,7 @@ Once climesync is running, you can complete the following tasks:
 ```
 c - connect
 s - sign in
+so - sign out/reset credentials
 
 ct - submit time
 ut - update time
