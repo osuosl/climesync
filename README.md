@@ -42,18 +42,22 @@ so - sign out/reset credentials
 ct - submit time
 ut - update time
 gt - get times
+dt - delete time
 
 cp - create project
 up - update project
 gp - get projects
+dp - delete project
 
 ca - create activity
 ua - update activity
 ga - get activities
+da - delete activity
 
 cu - create user
 uu - update user
 gu - get users
+du - delete user
 
 m - print this menu
 q - exit
