@@ -4,42 +4,14 @@ import pymesync
 import sys
 import argparse
 import json
-import pprint
 
-pp = pprint.PrettyPrinter(indent=4)
-
-parser = argparse.ArgumentParser()
-parser.add_argument("-c", "--connect", help="connect to a timesync baseurl")
-parser.add_argument("-u", "--username", help="specify your username")
-parser.add_argument("-p", "--password", help="specify your password")
-
-args = parser.parse_args()
-
-baseurl = ""
-username = ""
-password = ""
-
-if args.connect:
-    baseurl = args.connect
-
-ts = pymesync.TimeSync(baseurl=baseurl)
-
-if args.username:
-    username = args.username
-
-if args.password:
-    password = args.password
-    
-# If all args are provided, attempt to sign in with them
-if baseurl and username and password:
-    pp.pprint(ts.authenticate(username=username, password=password, auth_type="password"))
-
-menu = (
+menu_options = (
     "===============================================================\n"
     " pymesync CLI to interact with TimeSync\n"
     "===============================================================\n"
     "\nWhat do you want to do?\n"
     "c - connect\n"
+    "dc - disconnect\n"
     "s - sign in\n"
     "so - sign out/reset credentials\n\n"
     "ct - submit time\n"
@@ -58,353 +30,605 @@ menu = (
     "uu - update user\n"
     "gu - get users\n"
     "du - delete user\n\n"
-    "m - print this menu\n"
     "q - exit\n")
-print menu
 
-while 1:
+arg_username = ""
+arg_password = ""
+timesync_url = ""
+ts = None # pymesync.TimeSync object
+
+def print_json(response):
+    """Prints a list of dictionaries (such as those returned by pymesync) nicely"""
+
+    print ""
+
+    if isinstance(response, list):
+        for json_dict in response:
+            for key in json_dict:
+                print "%s: %s" % (key, json_dict[key])
+
+            print ""
+
+    elif isinstance(response, dict):
+        for key in response:
+            print "%s: %s" % (key, response[key])
+
+    else:
+        print "I don't know how to print that!"
+        print response
+
+    print ""
+
+def get_field(prompt, optional=False, field_type=""):
+    """Prompts the user for input and returns it in an optionally specified format
+    
+    prompt - The prompt to display to the user
+    optional - Whether or not the field is optional (defaults to False)
+    field_type - The type of input. If left empty, it returns the input as a string
+    
+    Valid field_types:
+    ? - Yes/No input
+    # - Integer input
+    ! - Multiple inputs delimited by commas, stripped of whitespace, and returned as a list
+    """
+
+    # If necessary, add extra prompts that inform the user
+    optional_prompt = ""
+    type_prompt = ""
+
+    if optional:
+        optional_prompt = "(Optional) "
+
+    if field_type == "?":
+        type_prompt = "(y/N) "
+
+    if field_type == "#":
+        type_prompt = "(Integer) "
+
+    if field_type == "!":
+        type_prompt = "(Comma delimited) "
+
+    # Format the original prompt with prepended additions
+    formatted_prompt = "%s%s%s: " % (optional_prompt, type_prompt, prompt)
+    response = ""
+
+    while True:
+        response = raw_input(formatted_prompt)
+
+        if not response and optional:
+            return ""
+
+        elif response:
+            if field_type == "?" and response.upper() in ["Y", "N"]:
+                return True if response.upper() == "Y" else False
+            
+            elif field_type == "#" and response.isdigit():
+                return int(response)
+
+            elif field_type == "!":
+                return [r.strip() for r in response.split(",")]
+
+            elif field_type == "":
+                return response
+
+            # If the provided field_type doesn't make sense, return an empty string
+            else:
+                return ""
+
+        print "Please submit a valid input"
+
+def get_fields(fields):
+    """Prompts the user for multiple input fields and returns the responses in a dictionary
+
+    fields - A list of tuples that are ordered (field_name, prompt)
+
+    field_name can contain special characters that signify specific types of input
+    ? - Yes/No field
+    # - Integer field
+    ! - List field
+
+    In addition to those, field_name can contain a * to signify an optional field
+    """
+    responses = dict()
+
+    for field, prompt in fields:
+        optional = False
+        optional_prompt = ""
+        field_type = ""
+        type_prompt = ""
+
+        # Deduce field type
+        if "?" in field:
+            field_type = "?" # Yes/No question
+            field = field.replace("?", "")
+
+        elif "#" in field:
+            field_type = "#" # Integer
+            field = field.replace("#", "")
+
+        elif "!" in field:
+            field_type = "!" # Comma-delimited list
+            field = field.replace("!", "")
+
+        if "*" in field:
+            optional = True
+            field = field.replace("*", "")
+
+        response = get_field(prompt, optional, field_type)
+
+        # Only add response if it isn't empty
+        if response != "":
+            responses[field] = response
+
+    return responses
+
+def connect():
+    """Creates a new pymesync.TimeSync instance with a new URL"""
+
+    global timesync_url, ts
+
+    # Set the global variable so we can reconnect later
+    timesync_url = raw_input("URL of TimeSync server: ")
+
+    # Create a new instance and attempt to connect to the provided url
+    ts = pymesync.TimeSync(baseurl=timesync_url)
+
+    # No response from server upon connection
+    return list() 
+
+def disconnect():
+    """Disconnects from the TimeSync server"""
+
+    global ts
+
+    ts = None
+
+    # No response from server
+    return list()
+
+def sign_in():
+    """Attempts to sign in with credentials provided on the command line or by the user"""
+
+    global arg_username, arg_password, ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    # If username or password not provided on command line, ask for them
+    username = arg_username if arg_username else raw_input("Username: ")
+    password = arg_password if arg_password else raw_input("Password: ")
+
+    # Attempt to authenticate and return the server's response
+    return ts.authenticate(username, password, "password")
+
+def sign_out():
+    """Signs out from TimeSync and resets the command line credentials so the user can input them again"""
+
+    global arg_username, arg_password, timesync_url, ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+    
+    # Reset the credentials provided on the command line
+    arg_username = arg_password = ""
+
+    # Create a new instance connected to the same server as the last
+    ts = pymesync.TimeSync(baseurl=timesync_url)
+
+    # No response from server
+    return list() 
+
+def create_time():
+    """Creates a new time and submits it to the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    # The data to send to the server containing the new time information
+    post_data = get_fields([("#duration", "Duration in seconds"),        \
+                            ("project", "Project slug"),                 \
+                            ("!activities", "Activity slugs"),           \
+                            ("date_worked", "Date worked (yyyy-mm-dd)"), \
+                            ("*issue_uri", "Issue URI"),                 \
+                            ("*notes", "Notes")])
+
+    # Use the currently authenticated user
+    post_data["user"] = ts.user
+
+    # Attempt to create a time and return the response
+    return ts.create_time(time=post_data)
+
+def update_time():
+    """Sends revised time information to the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    uuid = get_field("UUID of time to update")
+
+    # The data to send to the server containing revised time information
+    post_data = get_fields([("*#duration", "Duration in seconds"), \
+                            ("*project", "Project slug"), \
+                            ("*user", "New user"), \
+                            ("*!activities", "Activity slugs"), \
+                            ("*date_worked", "Date worked (yyyy-mm-dd)"), \
+                            ("*issue_url", "Issue URI"), \
+                            ("*notes", "Notes")])
+    
+    # Attempt to update a time and return the reponse
+    return ts.update_time(uuid=uuid, time=post_data)
+
+def get_times():
+    """Queries the TimeSync server for submitted times with optional filters"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    # Optional filtering parameters to send to the server
+    print "Filtering times..."
+    post_data = get_fields([("*!user", "Submitted by users"), \
+                            ("*!project", "Belonging to projects"), \
+                            ("*!activity", "Belonging to activities"), \
+                            ("*start", "Beginning on date"), \
+                            ("*end", "Ending on date"), \
+                            ("*?include_revisions", "Include revised times?"), \
+                            ("*?include_deleted", "Include deleted times?"), \
+                            ("*uuid", "By UUID")])
+
+    # Attempt to query the server for times with filtering parameters and return the response
+    return ts.get_times(query_parameters=post_data)
+
+def delete_time():
+    """Deletes a time from the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    uuid = get_field("Time UUID")
+    really = get_field("Do you really want to delete time %s? " % uuid, field_type="?")
+
+    # If the user really wants to delete it
+    if really:
+        return ts.delete_time(uuid=uuid)
+
+    # If no, return an empty list
+    else:
+        return list() 
+
+def create_project():
+    """Creates a new project on the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    # The data to send to the server containing new project information
+    post_data = get_fields([("name", "Project name"), \
+                            ("!slugs", "Project slugs"), \
+                            ("*uri", "Project URI"), \
+                            ("*default_activity", "Default activity")])
+
+    # Attempt to create a new project and return the response
+    return ts.create_project(project=post_data)
+
+def update_project():
+    """Sends revised project information to the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    slug = get_field("Slug of project to update")
+
+    # The data to send to the server containing revised project information
+    post_data = get_fields([("*name", "Updated project name"), \
+                            ("*!slugs", "Updated project slugs"), \
+                            ("*uri", "Updated project URI"), \
+                            ("*default_activity", "Updated default activity")])
+
+    # Attempt to update the project information and return the response
+    return ts.update_project(project=post_data, slug=slug)
+
+def get_projects():
+    """Queries the TimeSync server for projects with optional filters"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    # Optional filtering parameters
+    print "Filtering projects..."
+    post_data = get_fields([("*?include_revisions", "Include project revisions?"), \
+                            ("*?include_deleted", "Include deleted projects?"), \
+                            ("*!slugs", "By project slug")])
+
+    # Attempt to query the server with filtering parameters and return the response
+    return ts.get_projects(query_parameters=post_data)
+
+def delete_project():
+    """Deletes a project from the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    slug = get_field("Project slug")
+    really = get_field("Do you really want to delete project %s? " % slug, field_type="?")
+    
+    # If the user really wants to delete it
+    if really:
+        return ts.delete_project(slug=slug)
+
+    # If no, return an empty list
+    else:
+        return list() 
+
+def create_activity():
+    """Creates a new activity on the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    # The data to send to the server containing new activity information
+    post_data = get_fields([("name", "Activity name"), \
+                            ("slug", "Activity slug")])
+
+    # Attempt to create a new activity and return the response
+    return ts.create_activity(activity=post_data)
+
+def update_activity():
+    """Sends revised activity information to the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    slug_to_update = get_field("Slug of activity to update")
+
+    # The data to send to the server containing revised activity information
+    post_data = get_fields([("*name", "Updated activity name"), \
+                            ("*slug", "Updated activity slug")])
+
+    # Attempt to update the activity information and return the repsonse
+    return ts.update_activity(activity=post_data, slug=slug_to_update)
+
+def get_activities():
+    """Queries the TimeSync server for activities with optional filters"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    # Optional filtering parameters
+    print "Filtering activities..."
+    post_data = get_fields([("*?include_revisions", "Include activity revisions?"), \
+                            ("*?include_deleted", "Include deleted activities?"), \
+                            ("*slug", "By activity slug")])
+
+    # Attempt to query the server with filtering parameters and return the response
+    return ts.get_activities(query_parameters=post_data)
+
+def delete_activity():
+    """Deletes an activity from the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    slug = get_field("Activity slug")
+    really = get_field("Do you really want to delete activity %s?" % slug, field_type="?")
+
+    # If the user really wants to delete it
+    if really:
+        return ts.delete_activity(slug=slug)
+
+    # If no, return an empty list
+    else:
+        return list()
+
+def create_user():
+    """Creates a new user on the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    # The data to send to the server containing new user information
+    post_data = get_fields([("username", "New user username"), \
+                            ("password", "New user password"), \
+                            ("*display_name", "New user display name"), \
+                            ("*email", "New user email"), \
+                            ("*?site_admin", "Is the new user a site admin?"), \
+                            ("*?site_manager", "Is the new user a site manager?"), \
+                            ("*?site_spectator", "Is the new user a site spectator?"), \
+                            ("*meta", "Extra metainformation"), \
+                            ("*?active", "Is the new user active?")])
+
+    # Attempt to create a new user and return the response
+    return ts.create_user(user=post_data)
+
+def update_user():
+    """Sends revised user information to the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    username_to_update = get_field("Username of user to update")
+
+    # The data to send to the server containing revised user information
+    post_data = get_fields([("*username", "Updated username"), \
+                            ("*password", "Updated password"), \
+                            ("*display_name", "Updated display name"), \
+                            ("*email", "Updated email"), \
+                            ("*?site_admin", "Is the user a site admin?"), \
+                            ("*?site_manager", "Is the user a site manager?"), \
+                            ("*?site_spectator", "Is the user a site spectator?"), \
+                            ("*meta", "New metainformation"), \
+                            ("*?active", "Is the user active?")])
+
+    # Attempt to update the user and return the response
+    return ts.update_user(user=post_data, username=username_to_update)
+
+def get_users():
+    """Queries the TimeSync server for users with optional filters"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    # Optional filtering parameters
+    print "Filtering users..."
+    username = get_field("By username", optional=True)
+
+    # Attempt to query the server with filtering parameters and return the response
+    return ts.get_users(username=username)
+
+def delete_user():
+    """Deletes a user from the TimeSync server"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    username = get_field("Username")
+    really = get_field("Do you really want to delete user %s?" % username, field_type="?")
+
+    # If the user really wants to delete it
+    if really:
+        return ts.delete_user(username=username)
+
+    # If no, return an empty list
+    else:
+        return list() # If no, return an empty list
+
+def menu():
+    """Provides the user with menu options and executes the commands they input"""
+
+    print menu_options
+
     choice = raw_input(">> ")
-
-    if choice == "q":
-        sys.exit()
-
-    if choice == "m":
-        print menu
+    response = list() # A list of python dictionaries
 
     if choice == "c":
-        baseurl = raw_input("baseurl: ")
-        ts = pymesync.TimeSync(baseurl=baseurl)
+        response = connect()
 
-    if choice == "s":
-        # If username or password not provided on command line, ask for them
-        if username:
-            print "username: %s" % username
-        else:
-            username = raw_input("username: ")
+    elif choice == "dc":
+        response = disconnect()
 
-        if password:
-            print "password: %s" % password
-        else:
-            password = raw_input("password: ")
+    elif choice == "s":
+        response = sign_in()
 
-        # Attempt to authenticate then print the server's response
-        pp.pprint(ts.authenticate(username, password, "password"))
+    elif choice == "so":
+        response = sign_out()
 
-    if choice == "so":
-        # Sign out and reset username and password to allow further login attempts
-        username = password = ""
-        ts = pymesync.TimeSync(baseurl=baseurl)
+    elif choice == "ct":
+        response = create_time()
 
-    if choice == "ct":
-        timeobj = {}
-        duration = int(raw_input("duration (seconds): "))
-        project = raw_input("project slug: ")
-        activities = raw_input("activity slugs (comma delimited): ")
-        date_worked = raw_input("date worked (yyyy-mm-dd): ")
-        issue_uri = raw_input("issue uri (optional): ")
-        notes = raw_input("notes (optional): ")
-        timeobj = {
-            "duration": duration,
-            "project": project,
-            "user": ts.user,
-            "activities": activities.split(","),
-            "date_worked": date_worked,
-            "issue_uri": issue_uri,
-        }
-        if notes:
-            timeobj["notes"] = notes
-        if issue_uri:
-            timeobj["issue_uri"] = issue_uri
-        pp.pprint(ts.create_time(timeobj))
+    elif choice == "ut":
+        response = update_time()
 
-    if choice == "ut":
-        timeobj = {}
-        uuid = raw_input("uuid: ")
-        print "All following fields are optional"
-        duration = int(raw_input("duration (seconds): "))
-        project = raw_input("project slug: ")
-        user = raw_input("new user: ")
-        activities = raw_input("activity slugs (comma delimited): ")
-        date_worked = raw_input("date worked (yyyy-mm-dd): ")
-        issue_uri = raw_input("issue uri: ")
-        notes = raw_input("notes: ")
-        if duration:
-            timeobj["duration"] = duration
-        if project:
-            timeobj["project"] = project
-        if user:
-            timeobj["user"] = user
-        if activities:
-            timeobj["activities"] = activities
-        if date_worked:
-            timeobj["date_worked"] = date_worked
-        if issue_uri:
-            timeobj["issue_uri"] = issue_uri
-        if notes:
-            timeobj["notes"] = notes
-        pp.pprint(ts.update_time(uuid=uuid, time=timeobj))
+    elif choice == "gt":
+        response = get_times()
 
-    if choice == "gt":
-        query = dict()
-        print "All fields are optional"
-        user = raw_input("user: ")
-        project = raw_input("project: ")
-        activity = raw_input("activity: ")
-        start = raw_input("start (yyyy-mm-dd): ")
-        end = raw_input("end (yyyy-mm-dd): ")
-        include_revisions = raw_input("include revisions (y or n): ")
-        include_deleted = raw_input("include deleted (y or no): ")
-        uuid = raw_input("uuid: ")
-        if user:
-            user = user.split(",")
-            query["user"] = [u.strip(" ") for u in user]
-        if project:
-            project = project.split(",")
-            query["project"] = [p.strip(" ") for p in project]
-        if activity:
-            activity = activity.split(",")
-            query["activity"] = [a.strip(" ") for a in activity]
-        if start:
-            query["start"] = start
-        if end:
-            query["end"] = end
-        if include_revisions == "y":
-            query["include_revisions"] = True
-        if include_revisions == "n":
-            query["include_revisions"] = False
-        if include_deleted == "y":
-            query["include_deleted"] = True
-        if include_deleted == "n":
-            query["include_deleted"] = False
-        if uuid:
-            query["uuid"] = uuid
-        print
-        pp.pprint(ts.get_times(query))
+    elif choice == "dt":
+        response = delete_time()
 
-    if choice == "dt":
-        uuid = raw_input("uuid: ")
-        really = raw_input("(y/N) Do you really want to delete time %s? " % uuid)
+    elif choice == "cp":
+        response = create_project()
 
-        #If the uuid isn't blank and the user really wants to delete it
-        if uuid and really.upper() == "Y":
-            pp.pprint(ts.delete_time(uuid=uuid))
+    elif choice == "up":
+        response = update_project()
 
-    if choice == "cp":
-        project = dict()
-        name = raw_input("name: ")
-        slugs = raw_input("slugs (comma delimited): ").split(",")
-        uri = raw_input("uri (optional): ")
-        print "this cli does not yet support project creation with users"
-        default_activity = raw_input("default activity (optional): ")
-        if name:
-            project["name"] = name
-        if slugs:
-            project["slugs"] = slugs
-        if uri:
-            project["uri"] = uri
-        if default_activity:
-            project["default_activity"] = default_activity
-        pp.pprint(ts.create_project(project))
+    elif choice == "gp":
+        response = get_projects()
 
-    if choice == "up":
-        project = dict()
-        slug = raw_input("project slug: ")
-        print "All following fields are optional"
-        name = raw_input("name: ")
-        slugs = raw_input("slugs (comma delimited): ")
-        uri = raw_input("uri: ")
-        default_activity = raw_input("default activity: ")
-        print "this cli does not yet support project updates with users"
-        project["slug"] = slug
-        if name:
-            project["name"] = name
-        if slugs:
-            project["slugs"] = slugs.split(",")
-        if uri:
-            project["uri"] = uri
-        if default_activity:
-            project["default_activity"] = default_activity
-        ts.update_project(project)
+    elif choice == "dp":
+        response = delete_project()
 
-    if choice == "gp":
-        query = dict()
-        print "All fields are optional"
-        include_revisions = raw_input("include revisions (y or n): ")
-        include_deleted = raw_input("include deleted (y or no): ")
-        slug = raw_input("slug: ")
-        if include_revisions == "y":
-            query["include_revisions"] = True
-        if include_revisions == "n":
-            query["include_revisions"] = False
-        if include_deleted == "y":
-            query["include_deleted"] = True
-        if include_deleted == "n":
-            query["include_deleted"] = False
-        if slug:
-            query["slug"] = slug
-        pp.pprint(ts.get_projects(query))
+    elif choice == "ca":
+        response = create_activity()
 
-    if choice == "dp":
-        slug = raw_input("slug: ")
-        really = raw_input("(y/N) Do you really want to delete project %s? " % slug)
+    elif choice == "ua":
+        response = update_activity()
 
-        #If the uuid isn't blank and the user really wants to delete it
-        if slug and really.upper() == "Y":
-            pp.pprint(ts.delete_project(slug=slug))
+    elif choice == "ga":
+        response = get_activities()
 
-    if choice == "ca":
-        activity = dict()
-        name = raw_input("name:" )
-        slug = raw_input("slug: ")
-        if name and slug:
-            activity["name"] = name
-            activity["slug"] = slug
-            pp.pprint(ts.create_activity(activity))
-        else:
-            print "Provide both name and slug"
+    elif choice == "da":
+        response = delete_activity()
 
-    if choice == "ua":
-        slug_to_update = raw_input("slug of activity to update: ")
-        print "All following fields are optional"
-        activity = dict()
-        name = raw_input("name: ")
-        slug = raw_input("slug: ")
-        if name:
-            activity["name"] = name
-        if slug:
-            activity["slug"] = slug
-        if slug_to_update:
-            pp.pprint(ts.update_activity(activity=activity,
-                                         slug=slug_to_update))
-        else:
-            print "Provide a slug of activity to update"
+    elif choice == "cu":
+        response = create_user()
 
-    if choice == "ga":
-        query = dict()
-        print "All fields are optional"
-        include_revisions = raw_input("include revisions (y or n): ")
-        include_deleted = raw_input("include deleted (y or no): ")
-        slug = raw_input("slug: ")
-        if include_revisions == "y":
-            query["include_revisions"] = True
-        if include_revisions == "n":
-            query["include_revisions"] = False
-        if include_deleted == "y":
-            query["include_deleted"] = True
-        if include_deleted == "n":
-            query["include_deleted"] = False
-        if slug:
-            query["slug"] = slug
-        pp.pprint(ts.get_activities(query))
+    elif choice == "uu":
+        response = update_user()
 
-    if choice == "da":
-        slug = raw_input("slug: ")
-        really = raw_input("(y/N) Do you really want to delete activity %s? " % slug)
+    elif choice == "gu":
+        response = get_users()
 
-        #If the uuid isn't blank and the user really wants to delete it
-        if slug and really.upper() == "Y":
-            pp.pprint(ts.delete_activity(slug=slug))
+    elif choice == "du":
+        response = delete_user()
 
-    if choice == "cu":
-        user = dict()
+    elif choice == "q":
+        sys.exit(0)
 
-        username = raw_input("username: ")
-        if username:
-            user["username"] = username
-        else:
-            print "provide a username"
-            continue
+    else:
+        print "Invalid response"
 
-        password = raw_input("password: ")
-        if password:
-            user["password"] = password
-        else:
-            print "provide a password"
-            continue
+    # Print server response
+    print_json(response)
 
-        print "The following fields are optional"
-        user["display_name"] = raw_input("display name: ")
-        user["email"] = raw_input("email: ")
-        user["site_admin"] = raw_input("is user site admin? (y or n): ")
-        if user["site_admin"] == "y":
-            user["site_admin"] = True
-        else:
-            user["site_admin"] = False
-        user["site_manager"] = raw_input("is user site manager? (y or n): ")
-        if user["site_manager"] == "y":
-            user["site_manager"] = True
-        else:
-            user["site_manager"] = False
-        user["site_spectator"] = raw_input("is user site spectator? (y or n): ")
-        if user["site_spectator"] == "y":
-            user["site_spectator"] = True
-        else:
-            user["site_spectator"] = False
-        user["meta"] = raw_input("meta information: ")
-        user["active"] = raw_input("is the user active? (y or n): ")
-        if user["active"] == "y":
-            user["active"] = True
-        else:
-            user["active"] = False
-        
-        userobj = dict()
-        for key in user:
-            if user[key]:
-                userobj[key] = user[key]
-        pp.pprint(ts.create_user(userobj))
+def main():
+    global arg_username, arg_password, timesync_url, ts
 
-    if choice == "uu":
-        username_to_update = raw_input("username to update: ")
-        if not username_to_update:
-            print "you must enter a username to update"
-            continue
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--connect", help="connect to a timesync baseurl")
+    parser.add_argument("-u", "--username", help="specify your username")
+    parser.add_argument("-p", "--password", help="specify your password")
 
-        print "The following fields are optional, leave blank for unchanged"
-        user = dict()
+    # Command line arguments
+    args = parser.parse_args()
 
-        user["username"] = raw_input("new username: ")
-        user["password"] = raw_input("password: ")
-        user["display_name"] = raw_input("display name: ")
-        user["email"] = raw_input("email: ")
-        user["site_admin"] = raw_input("is user site admin? (y or n): ")
-        if user["site_admin"] == "y":
-            user["site_admin"] = True
-        else:
-            user["site_admin"] = False
-        user["site_manager"] = raw_input("is user site manager? (y or n): ")
-        if user["site_manager"] == "y":
-            user["site_manager"] = True
-        else:
-            user["site_manager"] = False
-        user["site_spectator"] = raw_input("is user site spectator? (y or n): ")
-        if user["site_spectator"] == "y":
-            user["site_spectator"] = True
-        else:
-            user["site_spectator"] = False
-        user["meta"] = raw_input("meta information: ")
-        user["active"] = raw_input("is the user active? (y or n): ")
-        if user["active"] == "y":
-            user["active"] = True
-        else:
-            user["active"] = False
-        
-        userobj = dict()
-        for key in user:
-            if user[key]:
-                userobj[key] = user[key]
-        pp.pprint(ts.update_user(user=userobj, username=username_to_update))
+    if args.connect:
+        timesync_url = args.connect
 
-    if choice == "gu":
-        query = dict()
-        username = raw_input("username (optional): ")
-        if username:
-            query["username"] = username
-        pp.pprint(ts.get_users(username=username))
+        # Attempt to connect with the provided URL
+        ts = pymesync.TimeSync(baseurl=timesync_url)
 
-    if choice == "du":
-        username = raw_input("username: ")
-        really = raw_input("(y/N) Do you really want to delete user %s? " % username)
+    if args.username:
+        arg_username = args.username
 
-        #If the uuid isn't blank and the user really wants to delete it
-        if username and really.upper() == "Y":
-            pp.pprint(ts.delete_user(username=username))
+    if args.password:
+        arg_password = args.password
+    
+    # If all args are provided, attempt to sign in
+    if timesync_url and arg_username and arg_password:
+        print_json(sign_in())
+
+    while True:
+        menu()
+
+if __name__ == "__main__":
+    main()
