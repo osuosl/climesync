@@ -6,6 +6,24 @@ import argparse
 import json
 import pprint
 
+def get_user_permissions(users):
+    permissions = dict()
+
+    for user in users:
+        user_permissions = dict()
+
+        member = raw_input("Is %s a project member? " % user)
+        spectator = raw_input("Is %s a project spectator? " % user)
+        manager = raw_input("Is %s a project manager? " % user)
+
+        user_permissions["member"] = True if member.upper() == "Y" else False
+        user_permissions["spectator"] = True if spectator.upper() == "Y" else False
+        user_permissions["manager"] = True if manager.upper() == "Y" else False
+
+        permissions[user] = user_permissions
+
+    return permissions
+
 pp = pprint.PrettyPrinter(indent=4)
 
 parser = argparse.ArgumentParser()
@@ -194,7 +212,7 @@ while 1:
         name = raw_input("name: ")
         slugs = raw_input("slugs (comma delimited): ").split(",")
         uri = raw_input("uri (optional): ")
-        print "this cli does not yet support project creation with users"
+        users = raw_input("users (optional) (comma delimited): ")
         default_activity = raw_input("default activity (optional): ")
         if name:
             project["name"] = name
@@ -202,6 +220,8 @@ while 1:
             project["slugs"] = slugs
         if uri:
             project["uri"] = uri
+        if users:
+            project["users"] = get_user_permissions(users.split(","))
         if default_activity:
             project["default_activity"] = default_activity
         pp.pprint(ts.create_project(project))
@@ -213,9 +233,8 @@ while 1:
         name = raw_input("name: ")
         slugs = raw_input("slugs (comma delimited): ")
         uri = raw_input("uri: ")
+        users = raw_input("users (optional) (comma delimited): ")
         default_activity = raw_input("default activity: ")
-        print "this cli does not yet support project updates with users"
-        project["slug"] = slug
         if name:
             project["name"] = name
         if slugs:
@@ -224,7 +243,9 @@ while 1:
             project["uri"] = uri
         if default_activity:
             project["default_activity"] = default_activity
-        ts.update_project(project)
+        if users:
+            project["users"] = get_user_permissions(users.split(","))
+        pp.pprint(ts.update_project(project, slug))
 
     if choice == "gp":
         query = dict()
