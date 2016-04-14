@@ -45,6 +45,7 @@ menu = (
     "ct - submit time\n"
     "ut - update time\n"
     "gt - get times\n"
+    "st - sum times\n"
     "dt - delete time\n\n"
     "cp - create project\n"
     "up - update project\n"
@@ -180,6 +181,44 @@ while 1:
             query["uuid"] = uuid
         print
         pp.pprint(ts.get_times(query))
+
+    if choice == "st":
+        project = raw_input("Project slug? ")
+        
+        if not project:
+            print "You must provide a project slug!"
+            continue
+
+        start_date = raw_input("(Optional) Start date (yyyy-mm-dd): ")
+        end_date = raw_input("(Optional) End date (yyyy-mm-dd): ")
+
+        query = dict()
+
+        if project:
+            query["project"] = [p.strip() for p in project.split()]
+        if start_date:
+            query["start"] = [start_date]
+        if end_date:
+            query["end"] = [end_date]
+
+        result = ts.get_times(query)
+
+        if len(result) != 0 and \
+          (not isinstance(result, list) or "pymesync error" in result[0]):
+            pp.pprint(result)
+
+        else:
+            time_sum = 0
+            for user_time in result:
+                time_sum += user_time["duration"]
+
+            hours = time_sum // 3600
+            time_sum -= hours * 3600
+            minutes = time_sum // 60
+            time_sum -= minutes * 60
+            seconds = time_sum
+
+            print "The total time worked on project %s is %d hours %d minutes %d seconds" % (project, hours, minutes, seconds)
 
     if choice == "dt":
         uuid = raw_input("uuid: ")
