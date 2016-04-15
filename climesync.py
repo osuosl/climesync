@@ -288,31 +288,31 @@ def get_times():
 def sum_times():
     """Sums all the times associated with a specific project and between optional start and end dates"""
 
-    query = get_fields([("!project", "Projects"), \
+    query = get_fields([("!project", "Project slugs"), \
                         ("*start", "Start date (yyyy-mm-dd)"), \
                         ("*end", "End date (yyyy-mm-dd)")])
 
     result = ts.get_times(query)
 
-    # If something went wrong
-    if "error" in result or (len(result > 0) and "pymesync error" in result[0]):
-        print_json(result)
+    try:
+        for project in query["project"]:
+            time_sum = 0
 
-    # Sum the times and show the sum to the user
-    else:
-        time_sum = 0
-        for user_time in result:
-            time_sum += user_time["duration"]
+            for user_time in result:
+                if project in user_time["project"]:
+                    time_sum += user_time["duration"]
 
-        hours = time_sum // 3600
-        time_sum -= hours * 3600
-        minutes = time_sum // 60
-        time_sum -= minutes * 60
-        seconds = time_sum
+            print ""
+            print "Project: %s" % project
+            print "Hours: %d" % (time_sum // 3600)
+            print "Minutes: %d" % ((time_sum % 3600) // 60)
+            print "Seconds: %d" % (time_sum % 60)
 
-        print "The total time worked on project %s is %d hours %d minutes %d seconds" % (project, hours, minutes, seconds)
+        return list()
 
-    return list() # Return an empty list
+    except Exception as e:
+        print e
+        return result
 
 def delete_time():
     """Deletes a time from the TimeSync server"""
@@ -581,6 +581,9 @@ def menu():
 
     elif choice == "gt":
         response = get_times()
+
+    elif choice == "st":
+        response = sum_times()
 
     elif choice == "dt":
         response = delete_time()
