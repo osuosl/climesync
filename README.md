@@ -36,6 +36,7 @@ Once climesync is running, you can complete the following tasks:
 
 ```
 c - connect
+dc - disconnect
 s - sign in
 so - sign out/reset credentials
 
@@ -60,6 +61,5 @@ uu - update user
 gu - get users
 du - delete user
 
-m - print this menu
 q - exit
 ```
