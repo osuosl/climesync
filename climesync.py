@@ -42,16 +42,18 @@ def print_json(response):
 
     print ""
 
+    # List of dictionaries
     if isinstance(response, list):
         for json_dict in response:
-            for key in json_dict:
-                print "%s: %s" % (key, json_dict[key])
+            for key, value in json_dict.iteritems():
+                print "{}: {}".format(key, value)
 
             print ""
 
+    # Plain dictionary
     elif isinstance(response, dict):
-        for key in response:
-            print "%s: %s" % (key, response[key])
+        for key, value in response.iteritems():
+            print "{}: {}".format(key, value)
 
     else:
         print "I don't know how to print that!"
@@ -89,7 +91,7 @@ def get_field(prompt, optional=False, field_type=""):
         type_prompt = "(Comma delimited) "
 
     # Format the original prompt with prepended additions
-    formatted_prompt = "%s%s%s: " % (optional_prompt, type_prompt, prompt)
+    formatted_prompt = "{}{}{}: ".format(optional_prompt, type_prompt, prompt)
     response = ""
 
     while True:
@@ -293,7 +295,7 @@ def delete_time():
         return {"error": "Not connected to TimeSync server"}
 
     uuid = get_field("Time UUID")
-    really = get_field("Do you really want to delete time %s? " % uuid, field_type="?")
+    really = get_field("Do you really want to delete time {}?".format(uuid), field_type="?")
 
     # If the user really wants to delete it
     if really:
@@ -365,7 +367,7 @@ def delete_project():
         return {"error": "Not connected to TimeSync server"}
 
     slug = get_field("Project slug")
-    really = get_field("Do you really want to delete project %s? " % slug, field_type="?")
+    really = get_field("Do you really want to delete project {}?".format(slug), field_type="?")
     
     # If the user really wants to delete it
     if really:
@@ -433,7 +435,7 @@ def delete_activity():
         return {"error": "Not connected to TimeSync server"}
 
     slug = get_field("Activity slug")
-    really = get_field("Do you really want to delete activity %s?" % slug, field_type="?")
+    really = get_field("Do you really want to delete activity {}?".format(slug), field_type="?")
 
     # If the user really wants to delete it
     if really:
@@ -513,7 +515,7 @@ def delete_user():
         return {"error": "Not connected to TimeSync server"}
 
     username = get_field("Username")
-    really = get_field("Do you really want to delete user %s?" % username, field_type="?")
+    really = get_field("Do you really want to delete user {}?".format(username), field_type="?")
 
     # If the user really wants to delete it
     if really:
