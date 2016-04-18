@@ -17,6 +17,7 @@ menu_options = (
     "ct - submit time\n"
     "ut - update time\n"
     "gt - get times\n"
+    "st - sum times\n"
     "dt - delete time\n\n"
     "cp - create project\n"
     "up - update project\n"
@@ -286,6 +287,35 @@ def get_times():
     # Attempt to query the server for times with filtering parameters and return the response
     return ts.get_times(query_parameters=post_data)
 
+def sum_times():
+    """Sums all the times associated with a specific project and between optional start and end dates"""
+
+    query = get_fields([("!project", "Project slugs"), \
+                        ("*start", "Start date (yyyy-mm-dd)"), \
+                        ("*end", "End date (yyyy-mm-dd)")])
+
+    result = ts.get_times(query)
+
+    try:
+        for project in query["project"]:
+            time_sum = 0
+
+            for user_time in result:
+                if project in user_time["project"]:
+                    time_sum += user_time["duration"]
+
+            print ""
+            print "Project: %s" % project
+            print "Hours: %d" % (time_sum // 3600)
+            print "Minutes: %d" % ((time_sum % 3600) // 60)
+            print "Seconds: %d" % (time_sum % 60)
+
+        return list()
+
+    except Exception as e:
+        print e
+        return result
+
 def delete_time():
     """Deletes a time from the TimeSync server"""
 
@@ -534,7 +564,7 @@ def menu():
     response = list() # A list of python dictionaries
 
     if choice == "c":
-        response = connect()
+       response = connect()
 
     elif choice == "dc":
         response = disconnect()
@@ -553,6 +583,9 @@ def menu():
 
     elif choice == "gt":
         response = get_times()
+
+    elif choice == "st":
+        response = sum_times()
 
     elif choice == "dt":
         response = delete_time()
