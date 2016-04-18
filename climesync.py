@@ -102,11 +102,13 @@ def get_field(prompt, optional=False, field_type=""):
             return ""
 
         elif response:
-            if field_type == "?" and response.upper() in ["Y", "N"]:
-                return True if response.upper() == "Y" else False
+            if field_type == "?":
+                if response.upper() in ["Y", "YES", "N", "NO"]:
+                    return True if response.upper() in ["Y", "YES"] else False
             
-            elif field_type == "#" and response.isdigit():
-                return int(response)
+            elif field_type == "#":
+                if response.isdigit():
+                    return int(response)
 
             elif field_type == "!":
                 return [r.strip() for r in response.split(",")]
@@ -164,6 +166,26 @@ def get_fields(fields):
             responses[field] = response
 
     return responses
+
+def get_user_permissions(users):
+    """Asks for permissions for a list of users and returns them in a sane format for pymesync"""
+
+    permissions = dict()
+
+    for user in users:
+        user_permissions = dict()
+
+        member = get_field("Is %s a project member?" % user, field_type="?")
+        spectator = get_field("Is %s a project spectator?" % user, field_type="?")
+        manager = get_field("Is %s a project manager?" % user, field_type="?")
+
+        user_permissions["member"] = member
+        user_permissions["spectator"] = spectator
+        user_permissions["manager"] = manager
+
+        permissions[user] = user_permissions
+
+    return permissions
 
 def connect():
     """Creates a new pymesync.TimeSync instance with a new URL"""
@@ -347,7 +369,13 @@ def create_project():
     post_data = get_fields([("name", "Project name"), \
                             ("!slugs", "Project slugs"), \
                             ("*uri", "Project URI"), \
+                            ("*!users", "Users"), \
                             ("*default_activity", "Default activity")])
+
+    # If users have been added to the project, ask for user permissions
+    if "users" in post_data:
+        users = post_data["users"]
+        post_data["users"] = get_user_permissions(users)
 
     # Attempt to create a new project and return the response
     return ts.create_project(project=post_data)
@@ -366,7 +394,13 @@ def update_project():
     post_data = get_fields([("*name", "Updated project name"), \
                             ("*!slugs", "Updated project slugs"), \
                             ("*uri", "Updated project URI"), \
+                            ("*!users", "Updated users"), \
                             ("*default_activity", "Updated default activity")])
+
+    # If user permissions are going to be updated, ask for them
+    if "users" in post_data:
+        users = post_data["users"]
+        post_data["users"] = get_user_permissions(users)
 
     # Attempt to update the project information and return the response
     return ts.update_project(project=post_data, slug=slug)
