@@ -1,2 +1,4 @@
 pymesync
+Sphinx
+sphinx_rtd_theme
 flake8
