@@ -207,7 +207,6 @@ def connect():
     return list()
 
 
-
 def connect_test():
     """Creates a new Pymesync instace with test mode enabled"""
 
