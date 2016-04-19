@@ -176,6 +176,17 @@ def connect():
     # No response from server upon connection
     return list() 
 
+
+def connect_test():
+    """Creates a new Pymesync instace with test mode enabled"""
+
+    global ts
+
+    ts = pymesync.TimeSync(baseurl="", test=True)
+
+    return list()
+
+
 def disconnect():
     """Disconnects from the TimeSync server"""
 
