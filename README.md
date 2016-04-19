@@ -43,6 +43,7 @@ so - sign out/reset credentials
 ct - submit time
 ut - update time
 gt - get times
+st - sum times
 dt - delete time
 
 cp - create project
