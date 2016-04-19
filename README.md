@@ -66,3 +66,9 @@ du - delete user
 
 q - exit
 ```
+
+To run tests, do
+
+```
+(venv) $ nosetests
+```
