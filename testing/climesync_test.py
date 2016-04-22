@@ -1,17 +1,16 @@
 import unittest
 import climesync
 
+
 class ClimesyncTest(unittest.TestCase):
 
     def setUp(self):
-        climesync.connect_test()
+        climesync.connect(test=True)
 
     def tearDown(self):
         climesync.disconnect()
 
     def test_connect(self):
-        climesync.connect_test()
-
         self.assertIsNotNone(climesync.ts)
         self.assertTrue(climesync.ts.test)
 
@@ -27,6 +26,6 @@ class ClimesyncTest(unittest.TestCase):
         response = climesync.sign_in()
         self.assertIn("error", response)
 
-        climesync.connect_test()
+        climesync.connect(test=True)
         response = climesync.sign_in()
         self.assertEqual(response["token"], "TESTTOKEN")
