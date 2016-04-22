@@ -1,4 +1,7 @@
 # climesync
+
+[![Build Status](https://travis-ci.org/osuosl/climesync.svg?branch=master)](https://travis-ci.org/osuosl/climesync)
+
 CLI for the TimeSync API
 
 This is not an official TimeSync client, and is not officially supported by the
@@ -62,4 +65,10 @@ gu - get users
 du - delete user
 
 q - exit
+```
+
+To run tests, do
+
+```
+(venv) $ nosetests
 ```
