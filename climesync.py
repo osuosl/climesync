@@ -192,16 +192,16 @@ def get_user_permissions(users):
     return permissions
 
 
-def connect():
+def connect(test=False):
     """Creates a new pymesync.TimeSync instance with a new URL"""
 
     global timesync_url, ts
 
     # Set the global variable so we can reconnect later
-    timesync_url = raw_input("URL of TimeSync server: ")
+    timesync_url = raw_input("URL of TimeSync server: ") if not test else "tst"
 
     # Create a new instance and attempt to connect to the provided url
-    ts = pymesync.TimeSync(baseurl=timesync_url)
+    ts = pymesync.TimeSync(baseurl=timesync_url, test=test)
 
     # No response from server upon connection
     return list()
