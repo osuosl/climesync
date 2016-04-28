@@ -72,3 +72,19 @@ To run tests, do
 ```
 (venv) $ nosetests
 ```
+
+Documentation
+-------------
+
+To build Climesync documentation, run the following commands:
+
+```
+(venv) $ cd docs
+(venv) $ make html
+```
+
+To view the documentation after it has been built, run this command:
+
+```
+(venv) $ (insert your favorite browser here) build/html/index.html
+```
