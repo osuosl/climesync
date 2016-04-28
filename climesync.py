@@ -5,6 +5,7 @@ import sys
 import argparse
 
 menu_options = (
+    "\n"
     "===============================================================\n"
     " pymesync CLI to interact with TimeSync\n"
     "===============================================================\n"
@@ -30,6 +31,7 @@ menu_options = (
     "uu - update user\n"
     "gu - get users\n"
     "du - delete user\n\n"
+    "h - print this menu\n"
     "q - exit\n")
 
 arg_username = ""
@@ -56,11 +58,11 @@ def print_json(response):
         for key, value in response.iteritems():
             print "{}: {}".format(key, value)
 
+        print ""
+
     else:
         print "I don't know how to print that!"
         print response
-
-    print ""
 
 
 def get_field(prompt, optional=False, field_type=""):
@@ -192,16 +194,16 @@ def get_user_permissions(users):
     return permissions
 
 
-def connect():
+def connect(test=False):
     """Creates a new pymesync.TimeSync instance with a new URL"""
 
     global timesync_url, ts
 
     # Set the global variable so we can reconnect later
-    timesync_url = raw_input("URL of TimeSync server: ")
+    timesync_url = raw_input("URL of TimeSync server: ") if not test else "tst"
 
     # Create a new instance and attempt to connect to the provided url
-    ts = pymesync.TimeSync(baseurl=timesync_url)
+    ts = pymesync.TimeSync(baseurl=timesync_url, test=test)
 
     # No response from server upon connection
     return list()
@@ -620,11 +622,9 @@ def delete_user():
 
 
 def menu():
-    """Provides the user with menu options and executes commands"""
+    """Provides the user with options and executes commands"""
 
-    print menu_options
-
-    choice = raw_input(">> ")
+    choice = raw_input("(h for help) $ ")
     response = list()  # A list of python dictionaries
 
     if choice == "c":
@@ -690,14 +690,15 @@ def menu():
     elif choice == "du":
         response = delete_user()
 
+    elif choice == "h":
+        print menu_options
+
     elif choice == "q":
         sys.exit(0)
 
-    else:
-        print "Invalid response"
-
     # Print server response
-    print_json(response)
+    if response:
+        print_json(response)
 
 
 def main():
