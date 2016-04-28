@@ -1,6 +1,6 @@
 .. _usage:
 
-climesync - TimeSync Front End on the Command Line
+Climesync - TimeSync Front End on the Command Line
 ==================================================
 
 .. contents::
@@ -10,13 +10,13 @@ Climesync is a command line interface to the `Pymesync`_ frontend for the
 
 Climesync currently supports the following versions of the TimeSync API:
 
-* v1
+* v0
 
 .. _Pymesync: http://pymesync.readthedocs.org/
 .. _OSU Open Source Lab's: http://www.osuosl.org/
 .. _TimeSync API: http://timesync.readthedocs.org/en/latest/
 
-Install climesync
+Install Climesync
 -----------------
 
 To install Climesync, clone the `Github repo`_ and run the following command 
@@ -29,7 +29,7 @@ in a `virtualenv`_
 .. _Github repo: https://www.github.com/osuosl/climesync/
 .. _virtualenv: http://docs.python-guide.org/en/latest/dev/virtualenvs/
 
-Running climesync
+Running Climesync
 -----------------
 
 Once the virtualenv has been created and all of the required Python packages
@@ -44,6 +44,9 @@ Climesync also accepts several optional command line arguments
 -c <URL>, --connect <URL>             Connect to a TimeSync server on startup
 -u <username>, --user <username>      Attempt to authenticate on startup with the given username
 -p <password>, --password <password>  Attempt to authenticate on startup with the given password
+
+Climesync Options
+-----------------
 
 Through an interactive shell, users have the following options:
 
