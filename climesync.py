@@ -357,8 +357,9 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict()):
     else:
         password = raw_input("Password: ")
 
-    add_kv_pair("USERNAME", username)
-    add_kv_pair("PASSWORD", password)
+    if not ts.test:
+        add_kv_pair("USERNAME", username)
+        add_kv_pair("PASSWORD", password)
 
     # Attempt to authenticate and return the server's response
     return ts.authenticate(username, password, "password")

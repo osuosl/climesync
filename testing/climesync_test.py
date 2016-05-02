@@ -6,9 +6,9 @@ import climesync
 class ClimesyncTest(unittest.TestCase):
 
     def setUp(self):
-        self.config = { "TIMESYNC_URL": "test",
-                        "USERNAME":     "test",
-                        "PASSWORD":     "test" }
+        self.config = {"TIMESYNC_URL": "test",
+                       "USERNAME":     "test",
+                       "PASSWORD":     "test"}
 
         climesync.connect(config_dict=self.config, test=True)
 
