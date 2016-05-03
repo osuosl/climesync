@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
 import pymesync
+import os
 import sys
+import stat
+import re
 import argparse
 
 menu_options = (
@@ -34,10 +37,84 @@ menu_options = (
     "h - print this menu\n"
     "q - exit\n")
 
-arg_username = ""
-arg_password = ""
-timesync_url = ""
 ts = None  # pymesync.TimeSync object
+
+
+def validate_config(path="~/.climesyncrc"):
+    """Ensure that the configuration file is formatted correctly"""
+
+    realpath = os.path.expanduser(path)
+
+    # Check that the file exists. Using a non-file object is non permitted.
+    if not os.path.isfile(realpath):
+        return False
+
+    # A pound sign followed by any number of characters
+    comment = re.compile("#.*")
+
+    # Key name, equals sign, value
+    # Keys and values can consist of any character except an equals sign
+    config = re.compile("[^=]+ = [^=]+")
+
+    with open(realpath, "r") as f:
+        for index, line in enumerate(f):
+            # If a line isn't either a comment or a valid key/value pair
+            if not comment.match(line) and not config.match(line):
+                print "Error in config file on line {}".format(index)
+                print line
+
+                return False
+
+    return True
+
+
+def read_config(path="~/.climesyncrc"):
+    """Read the configuration file and return its contents"""
+
+    realpath = os.path.expanduser(path)
+
+    config_dict = dict()
+
+    # Make sure that the config file is free of errors
+    if not validate_config(realpath):
+        return config_dict  # Empty dictionary
+
+    with open(realpath, "r") as f:
+        for line in f:
+            # Ignore comments (lines beginning with '#')
+            if line.strip()[0] == "#":
+                continue
+
+            # Unpack line into a key/value pair
+            (key, value) = (s.strip() for s in line.split("="))
+            config_dict[key] = value
+
+    return config_dict
+
+
+def write_config(key, value, path="~/.climesyncrc"):
+    """Write a value to the configuration file"""
+
+    realpath = os.path.expanduser(path)
+
+    config_dict = read_config(realpath)
+
+    # Truncate existing file or create it if it doesn't exist
+    with open(realpath, "w") as f:
+        f.write("# Climesync configuration file\n")
+
+        for k, v in config_dict.iteritems():
+            # Write everything but the newly supplied key/value pair
+            if k != key:
+                f.write("{} = {}\n".format(k, v))
+
+        # Write the new key/value pair
+        f.write("{} = {}\n".format(key, value))
+
+    # Set permissions if writing to a new file
+    if not config_dict:
+        # Owner has read/write permission
+        os.chmod(realpath, stat.S_IRUSR | stat.S_IWUSR)
 
 
 def print_json(response):
@@ -170,6 +247,22 @@ def get_fields(fields):
     return responses
 
 
+def add_kv_pair(key, value, path="~/.climesyncrc"):
+    """Ask the user if they want to add a key/value pair to the config file"""
+
+    config_dict = read_config(path)
+
+    # If that key/value pair is already in the config, skip asking
+    if key in config_dict and config_dict[key] == value:
+        return
+
+    print "{} = {}".format(key, value)
+    response = get_field("Add to the config file?", field_type="?")
+
+    if response:
+        write_config(key, value, path)
+
+
 def get_user_permissions(users):
     """Asks for permissions for multiple users and returns them in a dict"""
 
@@ -194,16 +287,30 @@ def get_user_permissions(users):
     return permissions
 
 
-def connect(test=False):
+def connect(arg_url="", config_dict=dict(), test=False):
     """Creates a new pymesync.TimeSync instance with a new URL"""
 
-    global timesync_url, ts
+    global ts
 
-    # Set the global variable so we can reconnect later
-    timesync_url = raw_input("URL of TimeSync server: ") if not test else "tst"
+    url = ""
+
+    # Set the global variable so we can reconnect later.
+    # If the URL is in the config, use that value at program startup
+    # If the URL is provided in command line arguments, use that value
+    if arg_url:
+        url = arg_url
+
+    elif "TIMESYNC_URL" in config_dict:
+        url = config_dict["TIMESYNC_URL"]
+
+    else:
+        url = raw_input("URL of TimeSync server: ") if not test else "tst"
+
+    if not test:
+        add_kv_pair("TIMESYNC_URL", url)
 
     # Create a new instance and attempt to connect to the provided url
-    ts = pymesync.TimeSync(baseurl=timesync_url, test=test)
+    ts = pymesync.TimeSync(baseurl=url, test=test)
 
     # No response from server upon connection
     return list()
@@ -220,17 +327,39 @@ def disconnect():
     return list()
 
 
-def sign_in():
+def sign_in(arg_user="", arg_pass="", config_dict=dict()):
     """Attempts to sign in with user-supplied or command line credentials"""
 
-    global arg_username, arg_password, ts
+    global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    # If username or password not provided on command line, ask for them
-    username = arg_username if arg_username else raw_input("Username: ")
-    password = arg_password if arg_password else raw_input("Password: ")
+    username = ""
+    password = ""
+
+    # If username or password in config, use them at program startup.
+    if arg_user:
+        username = arg_user
+
+    elif "USERNAME" in config_dict:
+        username = config_dict["USERNAME"]
+
+    else:
+        username = raw_input("Username: ")
+
+    if arg_pass:
+        password = arg_pass
+
+    elif "PASSWORD" in config_dict:
+        password = config_dict["PASSWORD"]
+
+    else:
+        password = raw_input("Password: ")
+
+    if not ts.test:
+        add_kv_pair("USERNAME", username)
+        add_kv_pair("PASSWORD", password)
 
     # Attempt to authenticate and return the server's response
     return ts.authenticate(username, password, "password")
@@ -239,16 +368,16 @@ def sign_in():
 def sign_out():
     """Signs out from TimeSync and resets command line credentials"""
 
-    global arg_username, arg_password, timesync_url, ts
+    global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    # Reset the credentials provided on the command line
-    arg_username = arg_password = ""
+    url = ts.baseurl
+    test = ts.test
 
     # Create a new instance connected to the same server as the last
-    ts = pymesync.TimeSync(baseurl=timesync_url)
+    ts = pymesync.TimeSync(baseurl=url, test=test)
 
     # No response from server
     return list()
@@ -702,8 +831,6 @@ def menu():
 
 
 def main():
-    global arg_username, arg_password, timesync_url, ts
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--connect", help="connect to a timesync server")
     parser.add_argument("-u", "--username", help="specify your username")
@@ -711,22 +838,18 @@ def main():
 
     # Command line arguments
     args = parser.parse_args()
+    url = args.connect
+    user = args.username
+    password = args.password
 
-    if args.connect:
-        timesync_url = args.connect
+    # Config file
+    config = read_config()
 
-        # Attempt to connect with the provided URL
-        ts = pymesync.TimeSync(baseurl=timesync_url)
+    # Attempt to connect with arguments and/or config
+    connect(arg_url=url, config_dict=config)
 
-    if args.username:
-        arg_username = args.username
-
-    if args.password:
-        arg_password = args.password
-
-    # If all args are provided, attempt to sign in
-    if timesync_url and arg_username and arg_password:
-        print_json(sign_in())
+    response = sign_in(arg_user=user, arg_pass=password, config_dict=config)
+    print_json(response)
 
     while True:
         menu()

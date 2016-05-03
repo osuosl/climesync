@@ -45,6 +45,12 @@ Climesync also accepts several optional command line arguments
 -u <username>, --user <username>      Attempt to authenticate on startup with the given username
 -p <password>, --password <password>  Attempt to authenticate on startup with the given password
 
+Since server information and user credentials can be specified in multiple
+places (See `Climesync Configuration`_ below), these values are prioritized
+in the following order:
+
+**User input inside program > Command line arguments > Configuration file values**
+
 Climesync Options
 -----------------
 
@@ -116,3 +122,21 @@ Admin-only options:
 
     **du**
         Delete a user
+
+Climesync Configuration
+-----------------------
+
+On the first run of the program, the configuration file .climesyncrc is
+created in the user's home directory. This configuration file stores server
+information and user credentials. Editing this file manually should not be
+necessary because Climesync updates these values as necessary
+
+The following configuration values are stored in .climesyncrc:
+
+============ =======================================================
+    Key                            Description
+============ =======================================================
+TIMESYNC_URL The URL of the TimeSync server to connect to on startup
+USERNAME     The username of the user to authenticate as on startup
+PASSWORD     The password of the user to authenticate as on startup
+============ =======================================================
