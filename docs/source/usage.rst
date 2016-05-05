@@ -129,14 +129,20 @@ Climesync Configuration
 On the first run of the program, the configuration file .climesyncrc is
 created in the user's home directory. This configuration file stores server
 information and user credentials. Editing this file manually should not be
-necessary because Climesync updates these values as necessary
+necessary because Climesync updates these values as necessary.
 
-The following configuration values are stored in .climesyncrc:
+If you did feel so inclined as to manually edit this file, information on
+the structure of this file can be obtained `here`_.
+
+The following configuration values are stored under the "climesync" header
+in .climesyncrc:
 
 ============ =======================================================
     Key                            Description
 ============ =======================================================
-TIMESYNC_URL The URL of the TimeSync server to connect to on startup
-USERNAME     The username of the user to authenticate as on startup
-PASSWORD     The password of the user to authenticate as on startup
+timesync_url The URL of the TimeSync server to connect to on startup
+username     The username of the user to authenticate as on startup
+password     The password of the user to authenticate as on startup
 ============ =======================================================
+
+.. _here: https://docs.python.org/2/library/configparser.html
