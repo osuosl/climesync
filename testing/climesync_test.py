@@ -1,14 +1,13 @@
 import unittest
-import os
 import climesync
 
 
 class ClimesyncTest(unittest.TestCase):
 
     def setUp(self):
-        self.config = {"TIMESYNC_URL": "test",
-                       "USERNAME":     "test",
-                       "PASSWORD":     "test"}
+        self.config = {"timesync_url": "test",
+                       "username":     "test",
+                       "password":     "test"}
 
         climesync.connect(config_dict=self.config, test=True)
 
@@ -31,8 +30,3 @@ class ClimesyncTest(unittest.TestCase):
         climesync.connect(config_dict=self.config, test=True)
         response = climesync.sign_in(config_dict=self.config)
         self.assertEqual(response["token"], "TESTTOKEN")
-
-    def test_validate_config(self):
-        config_valid = climesync.validate_config(os.devnull)
-
-        self.assertEqual(config_valid, False)

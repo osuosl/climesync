@@ -4,7 +4,7 @@ import pymesync
 import os
 import sys
 import stat
-import re
+import ConfigParser
 import argparse
 
 menu_options = (
@@ -40,32 +40,14 @@ menu_options = (
 ts = None  # pymesync.TimeSync object
 
 
-def validate_config(path="~/.climesyncrc"):
-    """Ensure that the configuration file is formatted correctly"""
+def create_config(path="~/.climesyncrc"):
+    """Create the configuration file if it doesn't exist"""
 
     realpath = os.path.expanduser(path)
 
-    # Check that the file exists. Using a non-file object is non permitted.
-    if not os.path.isfile(realpath):
-        return False
-
-    # A pound sign followed by any number of characters
-    comment = re.compile("#.*")
-
-    # Key name, equals sign, value
-    # Keys and values can consist of any character except an equals sign
-    config = re.compile("[^=]+ = [^=]+")
-
-    with open(realpath, "r") as f:
-        for index, line in enumerate(f):
-            # If a line isn't either a comment or a valid key/value pair
-            if not comment.match(line) and not config.match(line):
-                print "Error in config file on line {}".format(index)
-                print line
-
-                return False
-
-    return True
+    # Create the file if it doesn't exist then set its mode to 600 (Owner RW)
+    fd = os.open(realpath, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
+    os.close(fd)
 
 
 def read_config(path="~/.climesyncrc"):
@@ -73,23 +55,20 @@ def read_config(path="~/.climesyncrc"):
 
     realpath = os.path.expanduser(path)
 
-    config_dict = dict()
+    config = ConfigParser.RawConfigParser()
 
-    # Make sure that the config file is free of errors
-    if not validate_config(realpath):
-        return config_dict  # Empty dictionary
+    # If the file already exists, try to read it
+    if os.path.isfile(realpath):
+        # Try to read the config file at the given path. If the file isn't
+        # formatted correctly, inform the user
+        try:
+            config.read(realpath)
+        except ConfigParser.ParsingError as e:
+            print e
+            print "ERROR: Invalid configuration file!"
+            return None
 
-    with open(realpath, "r") as f:
-        for line in f:
-            # Ignore comments (lines beginning with '#')
-            if line.strip()[0] == "#":
-                continue
-
-            # Unpack line into a key/value pair
-            (key, value) = (s.strip() for s in line.split("="))
-            config_dict[key] = value
-
-    return config_dict
+    return config
 
 
 def write_config(key, value, path="~/.climesyncrc"):
@@ -97,24 +76,31 @@ def write_config(key, value, path="~/.climesyncrc"):
 
     realpath = os.path.expanduser(path)
 
-    config_dict = read_config(realpath)
+    config = read_config(path)
 
-    # Truncate existing file or create it if it doesn't exist
+    # If the configuration file doesn't exist (read_config returned an
+    # empty config), create it
+    if "climesync" not in config.sections():
+        create_config(path)
+
+    # If read_config errored and returned None instead of a ConfigParser
+    if not config:
+        return
+
+    # Attempt to set the option value in the config
+    # If the "climesync" section doesn't exist (NoSectionError), create it
+    try:
+        config.set("climesync", key, value)
+    except ConfigParser.NoSectionError:
+        config.add_section("climesync")
+        config.set("climesync", key, value)
+
+    # Truncate existing file before writing to it
     with open(realpath, "w") as f:
         f.write("# Climesync configuration file\n")
 
-        for k, v in config_dict.iteritems():
-            # Write everything but the newly supplied key/value pair
-            if k != key:
-                f.write("{} = {}\n".format(k, v))
-
-        # Write the new key/value pair
-        f.write("{} = {}\n".format(key, value))
-
-    # Set permissions if writing to a new file
-    if not config_dict:
-        # Owner has read/write permission
-        os.chmod(realpath, stat.S_IRUSR | stat.S_IWUSR)
+        # Write the config values
+        config.write(f)
 
 
 def print_json(response):
@@ -122,21 +108,17 @@ def print_json(response):
 
     print ""
 
-    # List of dictionaries
-    if isinstance(response, list):
+    if isinstance(response, list):  # List of dictionaries
         for json_dict in response:
             for key, value in json_dict.iteritems():
                 print "{}: {}".format(key, value)
 
             print ""
-
-    # Plain dictionary
-    elif isinstance(response, dict):
+    elif isinstance(response, dict):  # Plain dictionary
         for key, value in response.iteritems():
             print "{}: {}".format(key, value)
 
         print ""
-
     else:
         print "I don't know how to print that!"
         print response
@@ -180,24 +162,19 @@ def get_field(prompt, optional=False, field_type=""):
 
         if not response and optional:
             return ""
-
         elif response:
             if field_type == "?":
                 if response.upper() in ["Y", "YES", "N", "NO"]:
                     return True if response.upper() in ["Y", "YES"] else False
-
             elif field_type == "#":
                 if response.isdigit():
                     return int(response)
-
             elif field_type == "!":
                 return [r.strip() for r in response.split(",")]
-
             elif field_type == "":
                 return response
-
-            # If the provided field_type isn't valid, return an empty string
             else:
+                # If the provided field_type isn't valid, return empty string
                 return ""
 
         print "Please submit a valid input"
@@ -225,11 +202,9 @@ def get_fields(fields):
         if "?" in field:
             field_type = "?"  # Yes/No question
             field = field.replace("?", "")
-
         elif "#" in field:
             field_type = "#"  # Integer
             field = field.replace("#", "")
-
         elif "!" in field:
             field_type = "!"  # Comma-delimited list
             field = field.replace("!", "")
@@ -250,10 +225,11 @@ def get_fields(fields):
 def add_kv_pair(key, value, path="~/.climesyncrc"):
     """Ask the user if they want to add a key/value pair to the config file"""
 
-    config_dict = read_config(path)
+    config = read_config(path)
 
     # If that key/value pair is already in the config, skip asking
-    if key in config_dict and config_dict[key] == value:
+    if config.has_option("climesync", key) \
+       and config.get("climesync", key) == value:
         return
 
     print "{} = {}".format(key, value)
@@ -299,15 +275,13 @@ def connect(arg_url="", config_dict=dict(), test=False):
     # If the URL is provided in command line arguments, use that value
     if arg_url:
         url = arg_url
-
-    elif "TIMESYNC_URL" in config_dict:
-        url = config_dict["TIMESYNC_URL"]
-
+    elif "timesync_url" in config_dict:
+        url = config_dict["timesync_url"]
     else:
         url = raw_input("URL of TimeSync server: ") if not test else "tst"
 
     if not test:
-        add_kv_pair("TIMESYNC_URL", url)
+        add_kv_pair("timesync_url", url)
 
     # Create a new instance and attempt to connect to the provided url
     ts = pymesync.TimeSync(baseurl=url, test=test)
@@ -341,25 +315,21 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict()):
     # If username or password in config, use them at program startup.
     if arg_user:
         username = arg_user
-
-    elif "USERNAME" in config_dict:
-        username = config_dict["USERNAME"]
-
+    elif "username" in config_dict:
+        username = config_dict["username"]
     else:
         username = raw_input("Username: ")
 
     if arg_pass:
         password = arg_pass
-
-    elif "PASSWORD" in config_dict:
-        password = config_dict["PASSWORD"]
-
+    elif "password" in config_dict:
+        password = config_dict["password"]
     else:
         password = raw_input("Password: ")
 
     if not ts.test:
-        add_kv_pair("USERNAME", username)
-        add_kv_pair("PASSWORD", password)
+        add_kv_pair("username", username)
+        add_kv_pair("password", password)
 
     # Attempt to authenticate and return the server's response
     return ts.authenticate(username, password, "password")
@@ -476,7 +446,6 @@ def sum_times():
             print "Seconds: %d" % (time_sum % 60)
 
         return list()
-
     except Exception as e:
         print e
         return result
@@ -494,12 +463,9 @@ def delete_time():
     really = get_field("Do you really want to delete {}?".format(uuid),
                        field_type="?")
 
-    # If the user really wants to delete it
-    if really:
+    if really:  # If the user really wants to delete it
         return ts.delete_time(uuid=uuid)
-
-    # If no, return an empty list
-    else:
+    else:  # If no, return an empty list
         return list()
 
 
@@ -583,12 +549,9 @@ def delete_project():
     really = get_field("Do you really want to delete {}?".format(slug),
                        field_type="?")
 
-    # If the user really wants to delete it
-    if really:
+    if really:  # If the user really wants to delete it
         return ts.delete_project(slug=slug)
-
-    # If no, return an empty list
-    else:
+    else:  # If no, return an empty list
         return list()
 
 
@@ -656,12 +619,10 @@ def delete_activity():
     really = get_field("Do you really want to delete {}?".format(slug),
                        field_type="?")
 
-    # If the user really wants to delete it
-    if really:
+    if really:  # If the user really wants to delete it
         return ts.delete_activity(slug=slug)
 
-    # If no, return an empty list
-    else:
+    else:  # If no, return an empty list
         return list()
 
 
@@ -741,12 +702,9 @@ def delete_user():
     really = get_field("Do you really want to delete {}?".format(username),
                        field_type="?")
 
-    # If the user really wants to delete it
-    if really:
+    if really:  # If the user really wants to delete it
         return ts.delete_user(username=username)
-
-    # If no, return an empty list
-    else:
+    else:  # If no, return an empty list
         return list()
 
 
@@ -758,70 +716,48 @@ def menu():
 
     if choice == "c":
         response = connect()
-
     elif choice == "dc":
         response = disconnect()
-
     elif choice == "s":
         response = sign_in()
-
     elif choice == "so":
         response = sign_out()
-
     elif choice == "ct":
         response = create_time()
-
     elif choice == "ut":
         response = update_time()
-
     elif choice == "gt":
         response = get_times()
-
     elif choice == "st":
         response = sum_times()
-
     elif choice == "dt":
         response = delete_time()
-
     elif choice == "cp":
         response = create_project()
-
     elif choice == "up":
         response = update_project()
-
     elif choice == "gp":
         response = get_projects()
-
     elif choice == "dp":
         response = delete_project()
-
     elif choice == "ca":
         response = create_activity()
-
     elif choice == "ua":
         response = update_activity()
-
     elif choice == "ga":
         response = get_activities()
-
     elif choice == "da":
         response = delete_activity()
-
     elif choice == "cu":
         response = create_user()
-
     elif choice == "uu":
         response = update_user()
-
     elif choice == "gu":
         response = get_users()
-
     elif choice == "du":
         response = delete_user()
-
     elif choice == "h":
         print menu_options
-
     elif choice == "q":
         sys.exit(0)
 
@@ -843,12 +779,19 @@ def main():
     password = args.password
 
     # Config file
-    config = read_config()
+    config_dict = {}
+
+    try:
+        config_dict = dict(read_config().items("climesync"))
+    except:
+        config_dict = {}
 
     # Attempt to connect with arguments and/or config
-    connect(arg_url=url, config_dict=config)
+    connect(arg_url=url, config_dict=config_dict)
 
-    response = sign_in(arg_user=user, arg_pass=password, config_dict=config)
+    response = sign_in(arg_user=user, arg_pass=password,
+                       config_dict=config_dict)
+
     print_json(response)
 
     while True:
