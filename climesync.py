@@ -236,7 +236,8 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
         return
 
     print "> {} = {}".format(key, value)
-    response = get_field("Add to the config file?", optional=True, field_type="?")
+    response = get_field("Add to the config file?",
+                         optional=True, field_type="?")
 
     if response:
         write_config(key, value, path)
