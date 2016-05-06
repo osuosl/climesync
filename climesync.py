@@ -145,7 +145,10 @@ def get_field(prompt, optional=False, field_type=""):
         optional_prompt = "(Optional) "
 
     if field_type == "?":
-        type_prompt = "(y/N) "
+        if optional:
+            type_prompt = "(y/N) "
+        else:
+            type_prompt = "(y/n) "
 
     if field_type == "#":
         type_prompt = "(Integer) "
@@ -232,11 +235,12 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
        and config.get("climesync", key) == value:
         return
 
-    print "{} = {}".format(key, value)
-    response = get_field("Add to the config file?", field_type="?")
+    print "> {} = {}".format(key, value)
+    response = get_field("Add to the config file?", optional=True, field_type="?")
 
     if response:
         write_config(key, value, path)
+        print "New value added!"
 
 
 def get_user_permissions(users):
@@ -777,9 +781,6 @@ def main():
     url = args.connect
     user = args.username
     password = args.password
-
-    # Config file
-    config_dict = {}
 
     try:
         config_dict = dict(read_config().items("climesync"))
