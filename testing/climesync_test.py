@@ -5,7 +5,11 @@ import climesync
 class ClimesyncTest(unittest.TestCase):
 
     def setUp(self):
-        climesync.connect(test=True)
+        self.config = {"timesync_url": "test",
+                       "username":     "test",
+                       "password":     "test"}
+
+        climesync.connect(config_dict=self.config, test=True)
 
     def tearDown(self):
         climesync.disconnect()
@@ -19,13 +23,10 @@ class ClimesyncTest(unittest.TestCase):
         self.assertIsNone(climesync.ts)
 
     def test_sign_in(self):
-        climesync.arg_username = "test-user"
-        climesync.arg_password = "test-pass"
-
         climesync.disconnect()
-        response = climesync.sign_in()
+        response = climesync.sign_in(config_dict=self.config)
         self.assertIn("error", response)
 
-        climesync.connect(test=True)
-        response = climesync.sign_in()
+        climesync.connect(config_dict=self.config, test=True)
+        response = climesync.sign_in(config_dict=self.config)
         self.assertEqual(response["token"], "TESTTOKEN")

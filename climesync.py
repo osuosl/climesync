@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
 import pymesync
+import os
 import sys
+import stat
+import ConfigParser
 import argparse
 
 menu_options = (
@@ -34,10 +37,70 @@ menu_options = (
     "h - print this menu\n"
     "q - exit\n")
 
-arg_username = ""
-arg_password = ""
-timesync_url = ""
 ts = None  # pymesync.TimeSync object
+
+
+def create_config(path="~/.climesyncrc"):
+    """Create the configuration file if it doesn't exist"""
+
+    realpath = os.path.expanduser(path)
+
+    # Create the file if it doesn't exist then set its mode to 600 (Owner RW)
+    fd = os.open(realpath, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
+    os.close(fd)
+
+
+def read_config(path="~/.climesyncrc"):
+    """Read the configuration file and return its contents"""
+
+    realpath = os.path.expanduser(path)
+
+    config = ConfigParser.RawConfigParser()
+
+    # If the file already exists, try to read it
+    if os.path.isfile(realpath):
+        # Try to read the config file at the given path. If the file isn't
+        # formatted correctly, inform the user
+        try:
+            config.read(realpath)
+        except ConfigParser.ParsingError as e:
+            print e
+            print "ERROR: Invalid configuration file!"
+            return None
+
+    return config
+
+
+def write_config(key, value, path="~/.climesyncrc"):
+    """Write a value to the configuration file"""
+
+    realpath = os.path.expanduser(path)
+
+    config = read_config(path)
+
+    # If the configuration file doesn't exist (read_config returned an
+    # empty config), create it
+    if "climesync" not in config.sections():
+        create_config(path)
+
+    # If read_config errored and returned None instead of a ConfigParser
+    if not config:
+        return
+
+    # Attempt to set the option value in the config
+    # If the "climesync" section doesn't exist (NoSectionError), create it
+    try:
+        config.set("climesync", key, value)
+    except ConfigParser.NoSectionError:
+        config.add_section("climesync")
+        config.set("climesync", key, value)
+
+    # Truncate existing file before writing to it
+    with open(realpath, "w") as f:
+        f.write("# Climesync configuration file\n")
+
+        # Write the config values
+        config.write(f)
 
 
 def print_json(response):
@@ -45,21 +108,17 @@ def print_json(response):
 
     print ""
 
-    # List of dictionaries
-    if isinstance(response, list):
+    if isinstance(response, list):  # List of dictionaries
         for json_dict in response:
             for key, value in json_dict.iteritems():
                 print "{}: {}".format(key, value)
 
             print ""
-
-    # Plain dictionary
-    elif isinstance(response, dict):
+    elif isinstance(response, dict):  # Plain dictionary
         for key, value in response.iteritems():
             print "{}: {}".format(key, value)
 
         print ""
-
     else:
         print "I don't know how to print that!"
         print response
@@ -86,7 +145,10 @@ def get_field(prompt, optional=False, field_type=""):
         optional_prompt = "(Optional) "
 
     if field_type == "?":
-        type_prompt = "(y/N) "
+        if optional:
+            type_prompt = "(y/N) "
+        else:
+            type_prompt = "(y/n) "
 
     if field_type == "#":
         type_prompt = "(Integer) "
@@ -103,24 +165,19 @@ def get_field(prompt, optional=False, field_type=""):
 
         if not response and optional:
             return ""
-
         elif response:
             if field_type == "?":
                 if response.upper() in ["Y", "YES", "N", "NO"]:
                     return True if response.upper() in ["Y", "YES"] else False
-
             elif field_type == "#":
                 if response.isdigit():
                     return int(response)
-
             elif field_type == "!":
                 return [r.strip() for r in response.split(",")]
-
             elif field_type == "":
                 return response
-
-            # If the provided field_type isn't valid, return an empty string
             else:
+                # If the provided field_type isn't valid, return empty string
                 return ""
 
         print "Please submit a valid input"
@@ -148,11 +205,9 @@ def get_fields(fields):
         if "?" in field:
             field_type = "?"  # Yes/No question
             field = field.replace("?", "")
-
         elif "#" in field:
             field_type = "#"  # Integer
             field = field.replace("#", "")
-
         elif "!" in field:
             field_type = "!"  # Comma-delimited list
             field = field.replace("!", "")
@@ -168,6 +223,25 @@ def get_fields(fields):
             responses[field] = response
 
     return responses
+
+
+def add_kv_pair(key, value, path="~/.climesyncrc"):
+    """Ask the user if they want to add a key/value pair to the config file"""
+
+    config = read_config(path)
+
+    # If that key/value pair is already in the config, skip asking
+    if config.has_option("climesync", key) \
+       and config.get("climesync", key) == value:
+        return
+
+    print "> {} = {}".format(key, value)
+    response = get_field("Add to the config file?",
+                         optional=True, field_type="?")
+
+    if response:
+        write_config(key, value, path)
+        print "New value added!"
 
 
 def get_user_permissions(users):
@@ -194,16 +268,28 @@ def get_user_permissions(users):
     return permissions
 
 
-def connect(test=False):
+def connect(arg_url="", config_dict=dict(), test=False):
     """Creates a new pymesync.TimeSync instance with a new URL"""
 
-    global timesync_url, ts
+    global ts
 
-    # Set the global variable so we can reconnect later
-    timesync_url = raw_input("URL of TimeSync server: ") if not test else "tst"
+    url = ""
+
+    # Set the global variable so we can reconnect later.
+    # If the URL is in the config, use that value at program startup
+    # If the URL is provided in command line arguments, use that value
+    if arg_url:
+        url = arg_url
+    elif "timesync_url" in config_dict:
+        url = config_dict["timesync_url"]
+    else:
+        url = raw_input("URL of TimeSync server: ") if not test else "tst"
+
+    if not test:
+        add_kv_pair("timesync_url", url)
 
     # Create a new instance and attempt to connect to the provided url
-    ts = pymesync.TimeSync(baseurl=timesync_url, test=test)
+    ts = pymesync.TimeSync(baseurl=url, test=test)
 
     # No response from server upon connection
     return list()
@@ -220,17 +306,35 @@ def disconnect():
     return list()
 
 
-def sign_in():
+def sign_in(arg_user="", arg_pass="", config_dict=dict()):
     """Attempts to sign in with user-supplied or command line credentials"""
 
-    global arg_username, arg_password, ts
+    global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    # If username or password not provided on command line, ask for them
-    username = arg_username if arg_username else raw_input("Username: ")
-    password = arg_password if arg_password else raw_input("Password: ")
+    username = ""
+    password = ""
+
+    # If username or password in config, use them at program startup.
+    if arg_user:
+        username = arg_user
+    elif "username" in config_dict:
+        username = config_dict["username"]
+    else:
+        username = raw_input("Username: ")
+
+    if arg_pass:
+        password = arg_pass
+    elif "password" in config_dict:
+        password = config_dict["password"]
+    else:
+        password = raw_input("Password: ")
+
+    if not ts.test:
+        add_kv_pair("username", username)
+        add_kv_pair("password", password)
 
     # Attempt to authenticate and return the server's response
     return ts.authenticate(username, password, "password")
@@ -239,16 +343,16 @@ def sign_in():
 def sign_out():
     """Signs out from TimeSync and resets command line credentials"""
 
-    global arg_username, arg_password, timesync_url, ts
+    global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    # Reset the credentials provided on the command line
-    arg_username = arg_password = ""
+    url = ts.baseurl
+    test = ts.test
 
     # Create a new instance connected to the same server as the last
-    ts = pymesync.TimeSync(baseurl=timesync_url)
+    ts = pymesync.TimeSync(baseurl=url, test=test)
 
     # No response from server
     return list()
@@ -347,7 +451,6 @@ def sum_times():
             print "Seconds: %d" % (time_sum % 60)
 
         return list()
-
     except Exception as e:
         print e
         return result
@@ -365,12 +468,9 @@ def delete_time():
     really = get_field("Do you really want to delete {}?".format(uuid),
                        field_type="?")
 
-    # If the user really wants to delete it
-    if really:
+    if really:  # If the user really wants to delete it
         return ts.delete_time(uuid=uuid)
-
-    # If no, return an empty list
-    else:
+    else:  # If no, return an empty list
         return list()
 
 
@@ -454,12 +554,9 @@ def delete_project():
     really = get_field("Do you really want to delete {}?".format(slug),
                        field_type="?")
 
-    # If the user really wants to delete it
-    if really:
+    if really:  # If the user really wants to delete it
         return ts.delete_project(slug=slug)
-
-    # If no, return an empty list
-    else:
+    else:  # If no, return an empty list
         return list()
 
 
@@ -527,12 +624,10 @@ def delete_activity():
     really = get_field("Do you really want to delete {}?".format(slug),
                        field_type="?")
 
-    # If the user really wants to delete it
-    if really:
+    if really:  # If the user really wants to delete it
         return ts.delete_activity(slug=slug)
 
-    # If no, return an empty list
-    else:
+    else:  # If no, return an empty list
         return list()
 
 
@@ -612,12 +707,9 @@ def delete_user():
     really = get_field("Do you really want to delete {}?".format(username),
                        field_type="?")
 
-    # If the user really wants to delete it
-    if really:
+    if really:  # If the user really wants to delete it
         return ts.delete_user(username=username)
-
-    # If no, return an empty list
-    else:
+    else:  # If no, return an empty list
         return list()
 
 
@@ -629,70 +721,48 @@ def menu():
 
     if choice == "c":
         response = connect()
-
     elif choice == "dc":
         response = disconnect()
-
     elif choice == "s":
         response = sign_in()
-
     elif choice == "so":
         response = sign_out()
-
     elif choice == "ct":
         response = create_time()
-
     elif choice == "ut":
         response = update_time()
-
     elif choice == "gt":
         response = get_times()
-
     elif choice == "st":
         response = sum_times()
-
     elif choice == "dt":
         response = delete_time()
-
     elif choice == "cp":
         response = create_project()
-
     elif choice == "up":
         response = update_project()
-
     elif choice == "gp":
         response = get_projects()
-
     elif choice == "dp":
         response = delete_project()
-
     elif choice == "ca":
         response = create_activity()
-
     elif choice == "ua":
         response = update_activity()
-
     elif choice == "ga":
         response = get_activities()
-
     elif choice == "da":
         response = delete_activity()
-
     elif choice == "cu":
         response = create_user()
-
     elif choice == "uu":
         response = update_user()
-
     elif choice == "gu":
         response = get_users()
-
     elif choice == "du":
         response = delete_user()
-
     elif choice == "h":
         print menu_options
-
     elif choice == "q":
         sys.exit(0)
 
@@ -702,8 +772,6 @@ def menu():
 
 
 def main():
-    global arg_username, arg_password, timesync_url, ts
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--connect", help="connect to a timesync server")
     parser.add_argument("-u", "--username", help="specify your username")
@@ -711,22 +779,22 @@ def main():
 
     # Command line arguments
     args = parser.parse_args()
+    url = args.connect
+    user = args.username
+    password = args.password
 
-    if args.connect:
-        timesync_url = args.connect
+    try:
+        config_dict = dict(read_config().items("climesync"))
+    except:
+        config_dict = {}
 
-        # Attempt to connect with the provided URL
-        ts = pymesync.TimeSync(baseurl=timesync_url)
+    # Attempt to connect with arguments and/or config
+    connect(arg_url=url, config_dict=config_dict)
 
-    if args.username:
-        arg_username = args.username
+    response = sign_in(arg_user=user, arg_pass=password,
+                       config_dict=config_dict)
 
-    if args.password:
-        arg_password = args.password
-
-    # If all args are provided, attempt to sign in
-    if timesync_url and arg_username and arg_password:
-        print_json(sign_in())
+    print_json(response)
 
     while True:
         menu()
