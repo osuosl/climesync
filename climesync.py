@@ -128,7 +128,7 @@ def print_json(response):
 
 def is_time(time_str):
     """Checks if the supplied string is formatted as a time value for Pymesync
-    
+
     A string is formatted correctly if it matches the pattern
 
         <value>h<value>m
