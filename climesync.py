@@ -4,6 +4,7 @@ import pymesync
 import os
 import sys
 import stat
+import codecs
 import ConfigParser
 import argparse
 
@@ -62,7 +63,7 @@ def read_config(path="~/.climesyncrc"):
         # Try to read the config file at the given path. If the file isn't
         # formatted correctly, inform the user
         try:
-            config.read(realpath)
+            config.readfp(codecs.open(realpath, "r", "utf8"))
         except ConfigParser.ParsingError as e:
             print e
             print "ERROR: Invalid configuration file!"
@@ -96,7 +97,7 @@ def write_config(key, value, path="~/.climesyncrc"):
         config.set("climesync", key, value)
 
     # Truncate existing file before writing to it
-    with open(realpath, "w") as f:
+    with codecs.open(realpath, "w", "utf8") as f:
         f.write("# Climesync configuration file\n")
 
         # Write the config values
@@ -111,12 +112,12 @@ def print_json(response):
     if isinstance(response, list):  # List of dictionaries
         for json_dict in response:
             for key, value in json_dict.iteritems():
-                print "{}: {}".format(key, value)
+                print u"{}: {}".format(key, value)
 
             print ""
     elif isinstance(response, dict):  # Plain dictionary
         for key, value in response.iteritems():
-            print "{}: {}".format(key, value)
+            print u"{}: {}".format(key, value)
 
         print ""
     else:
@@ -235,7 +236,7 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
        and config.get("climesync", key) == value:
         return
 
-    print "> {} = {}".format(key, value)
+    print u"> {} = {}".format(key, value)
     response = get_field("Add to the config file?",
                          optional=True, field_type="?")
 
@@ -252,11 +253,11 @@ def get_user_permissions(users):
     for user in users:
         user_permissions = dict()
 
-        member = get_field("Is {} a project member?".format(user),
+        member = get_field(u"Is {} a project member?".format(user),
                            field_type="?")
-        spectator = get_field("Is {} a project spectator?".format(user),
+        spectator = get_field(u"Is {} a project spectator?".format(user),
                               field_type="?")
-        manager = get_field("Is {} a project manager?".format(user),
+        manager = get_field(u"Is {} a project manager?".format(user),
                             field_type="?")
 
         user_permissions["member"] = member
@@ -465,7 +466,7 @@ def delete_time():
         return {"error": "Not connected to TimeSync server"}
 
     uuid = get_field("Time UUID")
-    really = get_field("Do you really want to delete {}?".format(uuid),
+    really = get_field(u"Do you really want to delete {}?".format(uuid),
                        field_type="?")
 
     if really:  # If the user really wants to delete it
@@ -551,7 +552,7 @@ def delete_project():
         return {"error": "Not connected to TimeSync server"}
 
     slug = get_field("Project slug")
-    really = get_field("Do you really want to delete {}?".format(slug),
+    really = get_field(u"Do you really want to delete {}?".format(slug),
                        field_type="?")
 
     if really:  # If the user really wants to delete it
@@ -621,7 +622,7 @@ def delete_activity():
         return {"error": "Not connected to TimeSync server"}
 
     slug = get_field("Activity slug")
-    really = get_field("Do you really want to delete {}?".format(slug),
+    really = get_field(u"Do you really want to delete {}?".format(slug),
                        field_type="?")
 
     if really:  # If the user really wants to delete it
@@ -704,7 +705,7 @@ def delete_user():
         return {"error": "Not connected to TimeSync server"}
 
     username = get_field("Username")
-    really = get_field("Do you really want to delete {}?".format(username),
+    really = get_field(u"Do you really want to delete {}?".format(username),
                        field_type="?")
 
     if really:  # If the user really wants to delete it
