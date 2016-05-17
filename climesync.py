@@ -108,7 +108,6 @@ def print_json(response):
     """Prints values returned by Pymesync nicely"""
 
     print ""
-    print response
 
     if isinstance(response, list):  # List of dictionaries
         for json_dict in response:
