@@ -5,6 +5,7 @@ import os
 import sys
 import stat
 import codecs
+import re
 import ConfigParser
 import argparse
 
@@ -130,6 +131,29 @@ def print_json(response):
         print response
 
 
+def is_time(time_str):
+    """Checks if the supplied string is formatted as a time value for Pymesync
+
+    A string is formatted correctly if it matches the pattern
+
+        <value>h<value>m
+
+    where the first value is the number of hours and the second is the number
+    of minutes.
+    """
+
+    return True if re.match(r"\A[\d]+h[\d]+m\Z", time_str) else False
+
+
+def to_readable_time(seconds):
+    """Converts a time in seconds to a human-readable format"""
+
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+
+    return "{}h{}m".format(hours, minutes)
+
+
 def get_field(prompt, optional=False, field_type=""):
     """Prompts the user for input and returns it in the specified format
 
@@ -139,7 +163,7 @@ def get_field(prompt, optional=False, field_type=""):
 
     Valid field_types:
     ? - Yes/No input
-    # - Integer input
+    : - Time input
     ! - Multiple inputs delimited by commas returned as a list
     """
 
@@ -156,8 +180,8 @@ def get_field(prompt, optional=False, field_type=""):
         else:
             type_prompt = "(y/n) "
 
-    if field_type == "#":
-        type_prompt = "(Integer) "
+    if field_type == ":":
+        type_prompt = "(Time input - <value>h<value>m) "
 
     if field_type == "!":
         type_prompt = "(Comma delimited) "
@@ -175,9 +199,9 @@ def get_field(prompt, optional=False, field_type=""):
             if field_type == "?":
                 if response.upper() in ["Y", "YES", "N", "NO"]:
                     return True if response.upper() in ["Y", "YES"] else False
-            elif field_type == "#":
-                if response.isdigit():
-                    return int(response)
+            elif field_type == ":":
+                if is_time(response):
+                    return response
             elif field_type == "!":
                 return [r.strip() for r in response.split(",")]
             elif field_type == "":
@@ -196,7 +220,7 @@ def get_fields(fields):
 
     field_name can contain special characters that signify input type
     ? - Yes/No field
-    # - Integer field
+    : - Time field
     ! - List field
 
     In addition to those, field_name can contain a * for an optional field
@@ -211,9 +235,9 @@ def get_fields(fields):
         if "?" in field:
             field_type = "?"  # Yes/No question
             field = field.replace("?", "")
-        elif "#" in field:
-            field_type = "#"  # Integer
-            field = field.replace("#", "")
+        elif ":" in field:
+            field_type = ":"  # Time
+            field = field.replace(":", "")
         elif "!" in field:
             field_type = "!"  # Comma-delimited list
             field = field.replace("!", "")
@@ -373,7 +397,7 @@ def create_time():
         return {"error": "Not connected to TimeSync server"}
 
     # The data to send to the server containing the new time information
-    post_data = get_fields([("#duration",   "Duration in seconds"),
+    post_data = get_fields([(":duration",   "Duration"),
                             ("project",     "Project slug"),
                             ("!activities", "Activity slugs"),
                             ("date_worked", "Date worked (yyyy-mm-dd)"),
@@ -398,7 +422,7 @@ def update_time():
     uuid = get_field("UUID of time to update")
 
     # The data to send to the server containing revised time information
-    post_data = get_fields([("*#duration",   "Duration in seconds"),
+    post_data = get_fields([("*:duration",   "Duration"),
                             ("*project",     "Project slug"),
                             ("*user",        "New user"),
                             ("*!activities", "Activity slugs"),
@@ -406,7 +430,7 @@ def update_time():
                             ("*issue_url",   "Issue URI"),
                             ("*notes",       "Notes")])
 
-    # Attempt to update a time and return the reponse
+    # Attempt to update a time and return the response
     return ts.update_time(uuid=uuid, time=post_data)
 
 
@@ -429,8 +453,15 @@ def get_times():
                             ("*?include_deleted", "Include deleted times?"),
                             ("*uuid", "By UUID")])
 
+    times = ts.get_times(query_parameters=post_data)
+
+    # If the response is free of errors, make the times human-readable
+    if 'error' not in times and 'pymesync error' not in times:
+        for time in times:
+            time["duration"] = to_readable_time(time["duration"])
+
     # Attempt to query the server for times with filtering parameters
-    return ts.get_times(query_parameters=post_data)
+    return times
 
 
 def sum_times():
@@ -450,11 +481,12 @@ def sum_times():
                 if project in user_time["project"]:
                     time_sum += user_time["duration"]
 
-            print ""
-            print "Project: %s" % project
-            print "Hours: %d" % (time_sum // 3600)
-            print "Minutes: %d" % ((time_sum % 3600) // 60)
-            print "Seconds: %d" % (time_sum % 60)
+            minutes, seconds = divmod(time_sum, 60)
+            hours, minutes = divmod(minutes, 60)
+
+            print
+            print "{}".format(project)
+            print to_readable_time(time_sum)
 
         return list()
     except Exception as e:
