@@ -1,4 +1,5 @@
 pymesync
+docopt
 Sphinx
 sphinx_rtd_theme
 flake8
