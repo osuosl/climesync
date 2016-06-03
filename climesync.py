@@ -1,26 +1,59 @@
 #!/usr/bin/env python
 
-"""Climesync
+"""Climesync - CLI TimeSync Frontend
 
-Usage: climesync.py [-h -c BASEURL -u USERNAME -p PASSWORD]
+Usage: climesync.py [options] [<command> [<args>... ]]
 
--h, --help                       Show this dialog
--c BASEURL, --connect=BASEURL    TimeSync Server URL
--u USERNAME, --username=USERNAME Username of user to authenticate as
--p PASSWORD, --password=PASSWORD Password of user to authenticate as
+Options:
+    -h             --help                 Print this dialog
+    -c <baseurl>   --connect=<baseurl>    TimeSync Server URL
+    -u <username>  --username=<username>  Username of user to authenticate as
+    -p <password>  --password=<password>  Password of user to authenticate as
+
+By default, Climesync starts in interactive mode and allows the user to enter
+commands into a shell. However, you can access certain Climesync functionality
+without going into interactive mode by calling them from the command line.
+
+The following commands are available from the command line:
+
+    help             Get help for specific commands
+
+    create-time      Submit a new time
+    update-time      Update the fields of an existing time
+    get-times        List and optionally filter all times on the server
+    sum-times        Sum all the times worked on a project
+    delete-time      Delete a time
+
+    create-project   Create a new project
+    update-project   Update the fields of an existing project
+    get-projects     List and optionally filter all projects on the server
+    delete-project   Delete a project
+
+    create-activity  Create a new activity
+    update-activity  Update the fields of an existing activity
+    get-activities   List and optionally filter all activities on the server
+    delete-activity  Delete an activity
+
+    create-user      Create a new user
+    update-user      Update the information of an existing user
+    get-users        List all users or get information on a specific user
+    delete-user      Delete a user
+
+For more detailed information about a specific command, type
+climesync.py help <command>
 
 """
 
-import pymesync
 from docopt import docopt
 
-import commands
+from commands import *
+import scripting
 import util
 
 menu_options = (
     "\n"
     "===============================================================\n"
-    " pymesync CLI to interact with TimeSync\n"
+    " Climesync Interactive Mode\n"
     "===============================================================\n"
     "\nWhat do you want to do?\n"
     "c - connect\n"
@@ -55,47 +88,47 @@ def menu():
     response = list()  # A list of python dictionaries
 
     if choice == "c":
-        response = commands.connect()
+        response = connect()
     elif choice == "dc":
-        response = commands.disconnect()
+        response = disconnect()
     elif choice == "s":
-        response = commands.sign_in()
+        response = sign_in()
     elif choice == "so":
-        response = commands.sign_out()
+        response = sign_out()
     elif choice == "ct":
-        response = commands.create_time()
+        response = create_time()
     elif choice == "ut":
-        response = commands.update_time()
+        response = update_time()
     elif choice == "gt":
-        response = commands.get_times()
+        response = get_times()
     elif choice == "st":
-        response = commands.sum_times()
+        response = sum_times()
     elif choice == "dt":
-        response = commands.delete_time()
+        response = delete_time()
     elif choice == "cp":
-        response = commands.create_project()
+        response = create_project()
     elif choice == "up":
-        response = commands.update_project()
+        response = update_project()
     elif choice == "gp":
-        response = commands.get_projects()
+        response = get_projects()
     elif choice == "dp":
-        response = commands.delete_project()
+        response = delete_project()
     elif choice == "ca":
-        response = commands.create_activity()
+        response = create_activity()
     elif choice == "ua":
-        response = commands.update_activity()
+        response = update_activity()
     elif choice == "ga":
-        response = commands.get_activities()
+        response = get_activities()
     elif choice == "da":
-        response = commands.delete_activity()
+        response = delete_activity()
     elif choice == "cu":
-        response = commands.create_user()
+        response = create_user()
     elif choice == "uu":
-        response = commands.update_user()
+        response = update_user()
     elif choice == "gu":
-        response = commands.get_users()
+        response = get_users()
     elif choice == "du":
-        response = commands.delete_user()
+        response = delete_user()
     elif choice == "h":
         print menu_options
     elif choice == "q":
@@ -108,13 +141,29 @@ def menu():
     return True
 
 
+def interactive_mode():
+    """Start Climesync in interactive mode"""
+    while menu():
+        pass
+
+
+def scripting_mode(command, argv):
+    if command == 'create-time':
+        create_time(argv)
+
+
 def main(argv=None):
     # Command line arguments
-    args = docopt(__doc__, argv=argv)
+    args = docopt(__doc__, argv=argv, options_first = True)
 
-    url = args['--connect']
-    user = args['--username']
-    password = args['--password']
+    url = args['-c']
+    user = args['-u']
+    password = args['-p']
+
+    command = args['<command>']
+    argv = args['<args>']
+
+    interactive = False if command else True
 
     try:
         config_dict = dict(util.read_config().items("climesync"))
@@ -122,15 +171,18 @@ def main(argv=None):
         config_dict = {}
 
     # Attempt to connect with arguments and/or config
-    commands.connect(arg_url=url, config_dict=config_dict)
+    connect(arg_url=url, config_dict=config_dict,
+                     interactive=interactive)
 
-    response = commands.sign_in(arg_user=user, arg_pass=password,
-                                config_dict=config_dict)
+    response = sign_in(arg_user=user, arg_pass=password,
+                                config_dict=config_dict,
+                                interactive=interactive)
 
-    util.print_json(response)
-
-    while menu():
-        pass
+    if command:
+        scripting_mode(command, argv)
+    else:
+        util.print_json(response)
+        interactive_mode()
 
 if __name__ == "__main__":
     main()

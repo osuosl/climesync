@@ -255,3 +255,43 @@ def get_user_permissions(users):
     return permissions
 
 
+def fix_args(args):
+    """Fix the names and values of arguments gotten from docopt"""
+
+    fixed_args = {}
+
+    for arg in args:
+        # If the value is blank, don't include it
+        if not args[arg]:
+            continue
+
+        # If it's an argument inside brackets
+        if arg[0] == '<':
+            fixed_arg = arg[1:-1]
+        # If it's an argument in all uppercase
+        elif arg.isupper():
+            fixed_arg = arg.lower()
+        # If it's a long option
+        elif arg[0:2] == '--' and arg != "--help":
+            fixed_arg = arg[2:].replace('-', '_')
+        # If it's the help option or we don't know
+        else:
+            continue
+
+        value = args[arg]
+
+        # If the value is an integer duration value
+        if fixed_arg == "duration":
+            if value.isdigit():
+                fixed_value = int(value)
+            else:
+                fixed_value = value
+        # If the value is a space-delimited list
+        elif " " in value:
+            fixed_value = value.split()
+        else:
+            fixed_value = value
+
+        fixed_args[fixed_arg] = fixed_value
+
+    return fixed_args
