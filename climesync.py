@@ -449,6 +449,11 @@ def get_times():
 
     times = ts.get_times(query_parameters=post_data)
 
+    # If the user got a time via UUID, put the single time into a list
+    # in order for the duration conversion code below to work.
+    if isinstance(times, dict):
+        times = [times]
+
     # If the response is free of errors, make the times human-readable
     if 'error' not in times and 'pymesync error' not in times:
         for time in times:
