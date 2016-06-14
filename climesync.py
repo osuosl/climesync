@@ -10,13 +10,7 @@ Options:
     -u <username>  --username=<username>  Username of user to authenticate as
     -p <password>  --password=<password>  Password of user to authenticate as
 
-By default, Climesync starts in interactive mode and allows the user to enter
-commands into a shell. However, you can access certain Climesync functionality
-without going into interactive mode by calling them from the command line.
-
-The following commands are available from the command line:
-
-    help             Get help for specific commands
+Commands:
 
     create-time      Submit a new time
     update-time      Update the fields of an existing time
@@ -39,15 +33,18 @@ The following commands are available from the command line:
     get-users        List all users or get information on a specific user
     delete-user      Delete a user
 
+By default, Climesync starts in interactive mode and allows the user to enter
+commands into a shell. However, you can access certain Climesync functionality
+without going into interactive mode by calling them from the command line.
+
 For more detailed information about a specific command, type
-climesync.py help <command>
+climesync.py <command> --help
 
 """
 
 from docopt import docopt
 
 from commands import *
-import scripting
 import util
 
 menu_options = (
@@ -150,8 +147,16 @@ def interactive_mode():
 def scripting_mode(command, argv):
     response = []
 
-    if command == 'create-time':
+    if command == "create-time":
         response = create_time(argv)
+    elif command == "update-time":
+        response = update_time(argv)
+    elif command == "get-times":
+        response = get_times(argv)
+    elif command == "sum-times":
+        response = sum_times(argv)
+    elif command == "delete-time":
+        response = delete_time(argv)
 
     util.print_json(response)
 

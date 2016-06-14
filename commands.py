@@ -8,8 +8,9 @@ import util
 # climesync_command decorator
 class climesync_command():
 
-    def __init__(self, select_arg=None):
+    def __init__(self, select_arg=None, optional_args=False):
         self.select_arg = select_arg
+        self.optional_args = optional_args
 
     def __call__(self, command):
         def wrapped_command(argv=None):
@@ -17,11 +18,14 @@ class climesync_command():
                 args = docopt(command.__doc__, argv=argv)
 
                 # Put values gotten from docopt into a dictionary with Pymesync keys
-                post_data = util.fix_args(args)
+                post_data = util.fix_args(args, self.optional_args)
                 
                 if self.select_arg:
                     select = post_data.pop(self.select_arg)
-                    return command(post_data, select)
+                    if post_data:
+                        return command(post_data, select)
+                    else:
+                        return command(select)
                 else:
                     return command(post_data)
 
@@ -129,9 +133,9 @@ def create_time(post_data=None):
     """create-time
 
 Usage: create-time [-h] <duration> <project> <activities>
-                       [--date-worked=<date_worked>]
-                       [--issue-uri=<issue_uri>]
-                       [--notes=<notes>]
+                        [--date-worked=<date_worked>]
+                        [--issue-uri=<issue_uri>]
+                        [--notes=<notes>]
 
 Arguments:
     <duration>    Duration of time entry
@@ -141,6 +145,8 @@ Arguments:
 Options:
     -h --help                    Show this help message and exit
     --date-worked=<date_worked>  The date of the entry [Default: today]
+    --issue-uri=<issue_uri>      The URI of the issue on an issue tracker
+    --notes=<notes>              Additional notes
     """
 
     global ts
@@ -149,7 +155,6 @@ Options:
         return {"error": "Not connected to TimeSync server"}
 
     # The data to send to the server containing the new time information
-    
     if not post_data:
         post_data = util.get_fields([(":duration",   "Duration"),
                                      ("project",     "Project slug"),
@@ -173,32 +178,79 @@ Options:
     return ts.create_time(time=post_data)
 
 
-def update_time(post_data=None):
-    """Sends revised time information to the TimeSync server"""
+@climesync_command(select_arg="uuid", optional_args=True)
+def update_time(post_data=None, uuid=None):
+    """update-time
+
+Usage: update-time [-h] <uuid> [--duration=<duration>]
+                        [--project=<project>]
+                        [--activities=<activities>]
+                        [--date-worked=<date worked>]
+                        [--issue-uri=<issue uri>]
+                        [--notes=<notes>]
+
+Arguments:
+    <uuid>  The UUID of the time to update
+
+Options:
+    -h --help                    Show this help message and exit
+    --duration=<duration>        Duration of time entry
+    --project=<project>          Slug of project worked on
+    --activities=<activities>    Slugs of activities worked on
+    --date-worked=<date worked>  The date of the entry
+    --issue-uri=<issue uri>      The URI of the issue on an issue tracker
+    --notes=<notes>              Additional notes
+    """
 
     global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    uuid = util.get_field("UUID of time to update")
-
+    if not uuid:
+        uuid = util.get_field("UUID of time to update")
     
     # The data to send to the server containing revised time information
-    post_data = util.get_fields([("*:duration",   "Duration"),
-                                 ("*project",     "Project slug"),
-                                 ("*user",        "New user"),
-                                 ("*!activities", "Activity slugs"),
-                                 ("*date_worked", "Date worked (yyyy-mm-dd)"),
-                                 ("*issue_url",   "Issue URI"),
-                                 ("*notes",       "Notes")])
+    if not post_data:
+        post_data = util.get_fields([("*:duration",   "Duration"),
+                                     ("*project",     "Project slug"),
+                                     ("*user",        "New user"),
+                                     ("*!activities", "Activity slugs"),
+                                     ("*date_worked", "Date worked (yyyy-mm-dd)"),
+                                     ("*issue_url",   "Issue URI"),
+                                     ("*notes",       "Notes")])
 
     # Attempt to update a time and return the response
     return ts.update_time(uuid=uuid, time=post_data)
 
 
-def get_times():
-    """Queries the TimeSync server for submitted times with optional filters"""
+@climesync_command(optional_args=True)
+def get_times(post_data=None):
+    """get_times
+
+Usage: get-times [-h] [--user=<users>] [--project=<projects>]
+                      [--activity=<activities>] [--start=<start date>]
+                      [--end=<end date>] [--uuid=<uuid>]
+                      [--include-revisions=<True/False>]
+                      [--include-deleted=<True/False>]
+
+Options:
+    -h --help                         Show this help message and exit
+    --user=<users>                    Filter by a list of users
+    --project=<projects>              Filter by a list of project slugs
+    --activity=<activities>           Filter by a list of activity slugs
+    --start=<start date>              Filter by start date
+    --end=<end date>                  Filter by end date
+    --uuid=<uuid>                     Get a specific time by uuid
+                                      (If included, all options except
+                                      --include-revisions and
+                                      --include-deleted are ignored
+`   --include-revisions=<True/False>  Whether to include all time
+                                      revisions [Default: False]
+`   --include-deleted=<True/False>    Whether to include deleted
+                                      times [Default: False]
+
+    """
 
     global ts
 
@@ -206,20 +258,31 @@ def get_times():
         return {"error": "Not connected to TimeSync server"}
 
     # Optional filtering parameters to send to the server
-    print "Filtering times..."
-    post_data = util.get_fields([("*!user", "Submitted by users"),
-                                 ("*!project", "Belonging to projects"),
-                                 ("*!activity", "Belonging to activities"),
-                                 ("*start", "Beginning on date"),
-                                 ("*end", "Ending on date"),
-                                 ("*?include_revisions", "Include revised times?"),
-                                 ("*?include_deleted", "Include deleted times?"),
-                                 ("*uuid", "By UUID")])
+    if not post_data:
+        post_data = util.get_fields([("*!user", "Submitted by users"),
+                                     ("*!project", "Belonging to projects"),
+                                     ("*!activity", "Belonging to activities"),
+                                     ("*start", "Beginning on date"),
+                                     ("*end", "Ending on date"),
+                                     ("*?include_revisions", "Include revised times?"),
+                                     ("*?include_deleted", "Include deleted times?"),
+                                     ("*uuid", "By UUID")])
+
+
+    if "user" in post_data and isinstance(post_data["user"], str):
+        post_data["user"] = [post_data["user"]]
+
+    if "project" in post_data and isinstance(post_data["project"], str):
+        post_data["project"] = [post_data["project"]]
+
+    if "activity" in post_data and isinstance(post_data["activity"], str):
+        post_data["activity"] = [post_data["activity"]]
+
 
     times = ts.get_times(query_parameters=post_data)
 
     # If the response is free of errors, make the times human-readable
-    if 'error' not in times and 'pymesync error' not in times:
+    if 'error' not in times[0] and 'pymesync error' not in times[0]:
         for time in times:
             time["duration"] = util.to_readable_time(time["duration"])
 
@@ -227,12 +290,29 @@ def get_times():
     return times
 
 
-def sum_times():
-    """Sums all the times associated with a specific project"""
+@climesync_command(optional_args=True)
+def sum_times(query=None):
+    """sum-times
 
-    query = util.get_fields([("!project", "Project slugs"),
-                             ("*start", "Start date (yyyy-mm-dd)"),
-                             ("*end", "End date (yyyy-mm-dd)")])
+Usage: sum-times [-h] <project> [--start=<start date>] [--end=<end date>]
+
+Arguments:
+    <project>  The project slugs of the projects to sum times for
+
+Options:
+    -h --help             Show this help message and exit
+    --start=<start date>  The date to start summing times
+    --end=<end date>      The date to end summing times
+
+    """
+
+    if not query:
+        query = util.get_fields([("!project", "Project slugs"),
+                                 ("*start", "Start date (yyyy-mm-dd)"),
+                                 ("*end", "End date (yyyy-mm-dd)")])
+
+    if isinstance(query["project"], str):
+        query["project"] = [query["project"]]
 
     result = ts.get_times(query)
 
@@ -257,22 +337,31 @@ def sum_times():
         return result
 
 
-def delete_time():
-    """Deletes a time from the TimeSync server"""
+@climesync_command(select_arg="uuid")
+def delete_time(uuid=None):
+    """delete-time
+
+Usage: delete-time [-h] <uuid>
+
+Arguments:
+    <uuid>  The uuid of the time to delete
+
+    """
 
     global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    uuid = util.get_field("Time UUID")
-    really = util.get_field("Do you really want to delete {}?".format(uuid),
-                            field_type="?")
+    if not uuid:
+        uuid = util.get_field("Time UUID")
+        really = util.get_field("Do you really want to delete {}?".format(uuid),
+                                field_type="?")
 
-    if really:  # If the user really wants to delete it
-        return ts.delete_time(uuid=uuid)
-    else:  # If no, return an empty list
-        return list()
+        if not really:
+            return list()
+
+    return ts.delete_time(uuid=uuid)
 
 
 def create_project():

@@ -255,12 +255,16 @@ def get_user_permissions(users):
     return permissions
 
 
-def fix_args(args):
+def fix_args(args, optional_args):
     """Fix the names and values of arguments gotten from docopt"""
 
     fixed_args = {}
 
     for arg in args:
+        # If args are optional and an arg is empty, don't include it
+        if not args[arg] and optional_args:
+            continue
+
         # If it's an argument inside brackets
         if arg[0] == '<':
             fixed_arg = arg[1:-1]
