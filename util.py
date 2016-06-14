@@ -261,10 +261,6 @@ def fix_args(args):
     fixed_args = {}
 
     for arg in args:
-        # If the value is blank, don't include it
-        if not args[arg]:
-            continue
-
         # If it's an argument inside brackets
         if arg[0] == '<':
             fixed_arg = arg[1:-1]
@@ -287,7 +283,7 @@ def fix_args(args):
             else:
                 fixed_value = value
         # If the value is a space-delimited list
-        elif " " in value:
+        elif value and " " in value:
             fixed_value = value.split()
         else:
             fixed_value = value

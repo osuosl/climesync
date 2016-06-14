@@ -21,14 +21,12 @@ class climesync_command():
                 
                 if self.select_arg:
                     select = post_data.pop(self.select_arg)
-                    result = command(post_data, select)
+                    return command(post_data, select)
                 else:
-                    result = command(post_data)
+                    return command(post_data)
 
             else:
-                result = command()
-
-            util.print_json(result)
+                return command()
 
         return wrapped_command
 

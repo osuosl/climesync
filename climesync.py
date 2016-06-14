@@ -148,8 +148,12 @@ def interactive_mode():
 
 
 def scripting_mode(command, argv):
+    response = []
+
     if command == 'create-time':
-        create_time(argv)
+        response = create_time(argv)
+
+    util.print_json(response)
 
 
 def main(argv=None):
