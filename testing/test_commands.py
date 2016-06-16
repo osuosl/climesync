@@ -1,7 +1,6 @@
 import unittest
 
 import commands
-from commands import *
 
 
 class CommandsTest(unittest.TestCase):
@@ -13,13 +12,13 @@ class CommandsTest(unittest.TestCase):
             "password":     "test"
         }
 
-        connect(config_dict=self.config, test=True)
+        commands.connect(config_dict=self.config, test=True)
 
     def tearDown(self):
-        disconnect()
+        commands.disconnect()
 
     def authenticate_nonadmin(self):
-        res = sign_in(config_dict=self.config)
+        res = commands.sign_in(config_dict=self.config)
 
         return res
 
@@ -27,34 +26,32 @@ class CommandsTest(unittest.TestCase):
         config_admin = dict(self.config)
         config_admin["username"] = "admin"
 
-        res = sign_in(config_dict=config_nonadmin)
+        res = commands.sign_in(config_dict=config_admin)
 
         return res
 
     def test_connect(self):
-        global ts
-
         self.assertIsNotNone(commands.ts)
         self.assertTrue(commands.ts.test)
 
     def test_disconnect(self):
-        disconnect()
-        self.assertIsNone(ts)
+        commands.disconnect()
+        self.assertIsNone(commands.ts)
 
     def test_sign_in(self):
-        disconnect()
+        commands.disconnect()
         res = self.authenticate_nonadmin()
         self.assertIn("error", res)
 
-        connect(config_dict=self.config, test=True)
+        commands.connect(config_dict=self.config, test=True)
         res = self.authenticate_nonadmin()
         self.assertEqual(res["token"], "TESTTOKEN")
 
     def test_sign_out(self):
-        res = self.authenticate_nonadmin()
+        self.authenticate_nonadmin()
 
         self.assertIsNotNone(commands.ts.user)
 
-        sign_out()
+        commands.sign_out()
 
         self.assertIsNone(commands.ts.user)

@@ -51,7 +51,7 @@ in the following order:
 
 **User input inside program > Command line arguments > Configuration file values**
 
-Climesync Options
+Interactive Mode
 -----------------
 
 Through an interactive shell, users have the following options:
@@ -123,13 +123,36 @@ Admin-only options:
     **du**
         Delete a user
 
+Scripting Mode
+--------------
+
+In addition to providing an interactive shell, Climesync also allows commands
+to be run from the command line. This is useful when calling Climesync from
+shell scripts and makes automating repetitive tasks for admins a breeze!
+
+When running Climesync in scripting mode, authentication can be done by
+specifying the username and password as command line arguments or by using
+the configuration file (See below)
+
+To get a list of scripting mode commands, run
+
+.. code-block:: none
+
+    (venv) $ ./climesync.py --help
+
+To get help for a specific scripting mode command, run
+
+.. code-block:: none
+
+    (venv) $ ./climesync.py <command_name> --help
+
 Climesync Configuration
 -----------------------
 
-On the first run of the program, the configuration file .climesyncrc is
-created in the user's home directory. This configuration file stores server
-information and user credentials. Editing this file manually should not be
-necessary because Climesync updates these values as necessary.
+On the first run of the program in interactive mode, the configuration file
+`.climesyncrc` is created in the user's home directory. This configuration
+file stores server information and user credentials. Editing this file manually
+should not be necessary because Climesync updates these values as necessary.
 
 If you did feel so inclined as to manually edit this file, information on
 the structure of this file can be obtained `here`_.

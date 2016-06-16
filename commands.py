@@ -5,6 +5,9 @@ from docopt import docopt
 
 import util
 
+ts = None  # pymesync.TimeSync object
+
+
 # climesync_command decorator
 class climesync_command():
 
@@ -17,9 +20,9 @@ class climesync_command():
             if argv is not None:
                 args = docopt(command.__doc__, argv=argv)
 
-                # Put values gotten from docopt into a dictionary with Pymesync keys
+                # Put values gotten from docopt into a Pymesync dictionary
                 post_data = util.fix_args(args, self.optional_args)
-                
+
                 if self.select_arg:
                     select = post_data.pop(self.select_arg)
                     if post_data:
@@ -33,9 +36,6 @@ class climesync_command():
                 return command()
 
         return wrapped_command
-
-
-ts = None  # pymesync.TimeSync object
 
 
 def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
@@ -209,14 +209,14 @@ Options:
 
     if uuid is None:
         uuid = util.get_field("UUID of time to update")
-    
+
     # The data to send to the server containing revised time information
     if post_data is None:
         post_data = util.get_fields([("*:duration",   "Duration"),
                                      ("*project",     "Project slug"),
                                      ("*user",        "New user"),
                                      ("*!activities", "Activity slugs"),
-                                     ("*date_worked", "Date worked (yyyy-mm-dd)"),
+                                     ("*date_worked", "Date (yyyy-mm-dd)"),
                                      ("*issue_url",   "Issue URI"),
                                      ("*notes",       "Notes")])
 
@@ -264,10 +264,9 @@ Options:
                                      ("*!activity", "Belonging to activities"),
                                      ("*start", "Beginning on date"),
                                      ("*end", "Ending on date"),
-                                     ("*?include_revisions", "Include revised times?"),
-                                     ("*?include_deleted", "Include deleted times?"),
+                                     ("*?include_revisions", "Allow revised?"),
+                                     ("*?include_deleted", "Allow deleted?"),
                                      ("*uuid", "By UUID")])
-
 
     if "user" in post_data and isinstance(post_data["user"], str):
         post_data["user"] = [post_data["user"]]
@@ -363,7 +362,8 @@ Options:
 
     if uuid is None:
         uuid = util.get_field("Time UUID")
-        really = util.get_field("Do you really want to delete {}?".format(uuid),
+        really = util.get_field("Do you really want to delete {}?"
+                                .format(uuid),
                                 field_type="?")
 
         if not really:
@@ -420,12 +420,13 @@ User permissions help:
                                      ("!slugs", "Project slugs"),
                                      ("*uri", "Project URI"),
                                      ("*!users", "Users"),
-                                     ("*default_activity", "Default activity")])
+                                     ("*default_activity",
+                                      "Default activity")])
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
                                     post_data.pop("access_mode")))
         post_data["users"] = util.fix_user_permissions(permissions_dict)
-     
+
     # If users have been added to the project, ask for user permissions
     if "users" in post_data and not isinstance(post_data["users"], dict):
         users = post_data["users"]
@@ -491,7 +492,8 @@ User permissions help:
                                      ("*!slugs", "Updated project slugs"),
                                      ("*uri", "Updated project URI"),
                                      ("*!users", "Updated users"),
-                                     ("*default_activity", "Updated default activity")])
+                                     ("*default_activity",
+                                      "Updated default activity")])
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
                                     post_data.pop("access_mode")))
@@ -534,8 +536,8 @@ Options:
 
     # Optional filtering parameters
     if post_data is None:
-        post_data = util.get_fields([("*?include_revisions", "Include revisions?"),
-                                     ("*?include_deleted", "Include deleted?"),
+        post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
+                                     ("*?include_deleted", "Allow revised?"),
                                      ("*slug", "By project slug")])
 
     # Attempt to query the server with filtering parameters
@@ -563,7 +565,8 @@ Options:
 
     if slug is None:
         slug = util.get_field("Project slug")
-        really = util.get_field("Do you really want to delete {}?".format(slug),
+        really = util.get_field("Do you really want to delete {}?"
+                                .format(slug),
                                 field_type="?")
 
         if not really:
@@ -688,12 +691,13 @@ Options:
 
     if slug is None:
         slug = util.get_field("Activity slug")
-        really = util.get_field("Do you really want to delete {}?".format(slug),
+        really = util.get_field("Do you really want to delete {}?"
+                                .format(slug),
                                 field_type="?")
 
         if not really:
             return list()
-    
+
     return ts.delete_activity(slug=slug)
 
 
@@ -736,11 +740,11 @@ Options:
     if post_data is None:
         post_data = util.get_fields([("username", "New user username"),
                                      ("password", "New user password"),
-                                     ("*display_name", "New user display name"),
+                                     ("*display_name", "New display name"),
                                      ("*email", "New user email"),
-                                     ("*?site_admin", "Is the user an admin?"),
-                                     ("*?site_manager", "Is the user a manager?"),
-                                     ("*?site_spectator", "Is the user a spectator?"),
+                                     ("*?site_admin", "Site admin?"),
+                                     ("*?site_manager", "Site manager?"),
+                                     ("*?site_spectator", "Site spectator?"),
                                      ("*meta", "Extra meta-information"),
                                      ("*?active", "Is the new user active?")])
 
@@ -790,9 +794,9 @@ Options:
                                      ("*password", "Updated password"),
                                      ("*display_name", "Updated display name"),
                                      ("*email", "Updated email"),
-                                     ("*?site_admin", "Is the user an admin?"),
-                                     ("*?site_manager", "Is the user a manager?"),
-                                     ("*?site_spectator", "Is the user a spectator?"),
+                                     ("*?site_admin", "Site admin?"),
+                                     ("*?site_manager", "Site manager?"),
+                                     ("*?site_spectator", "Site spectator?"),
                                      ("*meta", "New metainformation"),
                                      ("*?active", "Is the user active?")])
 
@@ -849,12 +853,11 @@ Options:
 
     if username is None:
         username = util.get_field("Username")
-        really = util.get_field("Do you really want to delete {}?".format(username),
+        really = util.get_field("Do you really want to delete {}?"
+                                .format(username),
                                 field_type="?")
 
         if not really:
             return list()
 
     return ts.delete_user(username=username)
-
-

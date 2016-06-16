@@ -44,7 +44,7 @@ climesync.py <command> --help
 
 from docopt import docopt
 
-from commands import *
+import commands
 import util
 
 menu_options = (
@@ -77,28 +77,31 @@ menu_options = (
     "h - print this menu\n"
     "q - exit\n")
 
+# Lookup table for Climesync commands in both interactive mode and
+# scripting mode. Table entries are represented as a tuple in the form
+# (interactive_name, scripting_name, command)
 command_lookup = [
-    ("c",  None,              connect),
-    ("dc", None,              disconnect),
-    ("s",  None,              sign_in),
-    ("so", None,              sign_out),
-    ("ct", "create-time",     create_time),
-    ("ut", "update-time",     update_time),
-    ("gt", "get-times",       get_times),
-    ("st", "sum-times",       sum_times),
-    ("dt", "delete-time",     delete_time),
-    ("cp", "create-project",  create_project),
-    ("up", "update-project",  update_project),
-    ("gp", "get-projects",    get_projects),
-    ("dp", "delete-project",  delete_project),
-    ("ca", "create-activity", create_activity),
-    ("ua", "update-activity", update_activity),
-    ("ga", "get-activities",  get_activities),
-    ("da", "delete-activity", delete_activity),
-    ("cu", "create-user",     create_user),
-    ("uu", "update-user",     update_user),
-    ("gu", "get-users",       get_users),
-    ("du", "delete-user",     delete_user),
+    ("c",  None,              commands.connect),
+    ("dc", None,              commands.disconnect),
+    ("s",  None,              commands.sign_in),
+    ("so", None,              commands.sign_out),
+    ("ct", "create-time",     commands.create_time),
+    ("ut", "update-time",     commands.update_time),
+    ("gt", "get-times",       commands.get_times),
+    ("st", "sum-times",       commands.sum_times),
+    ("dt", "delete-time",     commands.delete_time),
+    ("cp", "create-project",  commands.create_project),
+    ("up", "update-project",  commands.update_project),
+    ("gp", "get-projects",    commands.get_projects),
+    ("dp", "delete-project",  commands.delete_project),
+    ("ca", "create-activity", commands.create_activity),
+    ("ua", "update-activity", commands.update_activity),
+    ("ga", "get-activities",  commands.get_activities),
+    ("da", "delete-activity", commands.delete_activity),
+    ("cu", "create-user",     commands.create_user),
+    ("uu", "update-user",     commands.update_user),
+    ("gu", "get-users",       commands.get_users),
+    ("du", "delete-user",     commands.delete_user),
 ]
 
 
@@ -150,7 +153,7 @@ def scripting_mode(command_name, argv):
 
 def main(argv=None):
     # Command line arguments
-    args = docopt(__doc__, argv=argv, options_first = True)
+    args = docopt(__doc__, argv=argv, options_first=True)
 
     url = args['-c']
     user = args['-u']
@@ -167,10 +170,10 @@ def main(argv=None):
         config_dict = {}
 
     # Attempt to connect with arguments and/or config
-    connect(arg_url=url, config_dict=config_dict,
+    commands.connect(arg_url=url, config_dict=config_dict,
                      interactive=interactive)
 
-    response = sign_in(arg_user=user, arg_pass=password,
+    response = commands.sign_in(arg_user=user, arg_pass=password,
                                 config_dict=config_dict,
                                 interactive=interactive)
 
