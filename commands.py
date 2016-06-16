@@ -662,9 +662,9 @@ Options:
 
     # Optional filtering parameters
     if post_data is None:
-        post_data = get_fields([("*?include_revisions", "Include revisions?"),
-                                ("*?include_deleted", "Include deleted?"),
-                                ("*slug", "By activity slug")])
+        post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
+                                     ("*?include_deleted", "Allow deleted?"),
+                                     ("*slug", "By activity slug")])
 
     # Attempt to query the server with filtering parameters
     return ts.get_activities(query_parameters=post_data)
