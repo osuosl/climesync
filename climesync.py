@@ -77,63 +77,57 @@ menu_options = (
     "h - print this menu\n"
     "q - exit\n")
 
+command_lookup = [
+    ("c",  None,              connect),
+    ("dc", None,              disconnect),
+    ("s",  None,              sign_in),
+    ("so", None,              sign_out),
+    ("ct", "create-time",     create_time),
+    ("ut", "update-time",     update_time),
+    ("gt", "get-times",       get_times),
+    ("st", "sum-times",       sum_times),
+    ("dt", "delete-time",     delete_time),
+    ("cp", "create-project",  create_project),
+    ("up", "update-project",  update_project),
+    ("gp", "get-projects",    get_projects),
+    ("dp", "delete-project",  delete_project),
+    ("ca", "create-activity", create_activity),
+    ("ua", "update-activity", update_activity),
+    ("ga", "get-activities",  get_activities),
+    ("da", "delete-activity", delete_activity),
+    ("cu", "create-user",     create_user),
+    ("uu", "update-user",     update_user),
+    ("gu", "get-users",       get_users),
+    ("du", "delete-user",     delete_user),
+]
+
+
+def lookup_command(name, col):
+    """Look for a command in the command lookup table by matching a name
+       with a value in the specified column
+    """
+    names = [c[col] for c in command_lookup]
+
+    if name in names:
+        return command_lookup[names.index(name)][2]
+    else:
+        return None
+
 
 def menu():
-    """Provides the user with options and executes commands"""
-
+    """Provide an interactive shell for the user to execute commands"""
     choice = raw_input("(h for help) $ ")
-    response = list()  # A list of python dictionaries
 
-    if choice == "c":
-        response = connect()
-    elif choice == "dc":
-        response = disconnect()
-    elif choice == "s":
-        response = sign_in()
-    elif choice == "so":
-        response = sign_out()
-    elif choice == "ct":
-        response = create_time()
-    elif choice == "ut":
-        response = update_time()
-    elif choice == "gt":
-        response = get_times()
-    elif choice == "st":
-        response = sum_times()
-    elif choice == "dt":
-        response = delete_time()
-    elif choice == "cp":
-        response = create_project()
-    elif choice == "up":
-        response = update_project()
-    elif choice == "gp":
-        response = get_projects()
-    elif choice == "dp":
-        response = delete_project()
-    elif choice == "ca":
-        response = create_activity()
-    elif choice == "ua":
-        response = update_activity()
-    elif choice == "ga":
-        response = get_activities()
-    elif choice == "da":
-        response = delete_activity()
-    elif choice == "cu":
-        response = create_user()
-    elif choice == "uu":
-        response = update_user()
-    elif choice == "gu":
-        response = get_users()
-    elif choice == "du":
-        response = delete_user()
+    command = lookup_command(choice, 0)
+
+    if command:
+        util.print_json(command())
     elif choice == "h":
         print menu_options
     elif choice == "q":
         return False
-
-    # Print server response
-    if response:
-        util.print_json(response)
+    elif choice:
+        print "Invalid choice!"
 
     return True
 
@@ -144,21 +138,14 @@ def interactive_mode():
         pass
 
 
-def scripting_mode(command, argv):
-    response = []
+def scripting_mode(command_name, argv):
+    """Call a climesync command with command line arguments"""
+    command = lookup_command(command_name, 1)
 
-    if command == "create-time":
-        response = create_time(argv)
-    elif command == "update-time":
-        response = update_time(argv)
-    elif command == "get-times":
-        response = get_times(argv)
-    elif command == "sum-times":
-        response = sum_times(argv)
-    elif command == "delete-time":
-        response = delete_time(argv)
-
-    util.print_json(response)
+    if command:
+        util.print_json(command(argv))
+    else:
+        print __doc__
 
 
 def main(argv=None):

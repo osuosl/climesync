@@ -14,7 +14,7 @@ class climesync_command():
 
     def __call__(self, command):
         def wrapped_command(argv=None):
-            if argv:
+            if argv is not None:
                 args = docopt(command.__doc__, argv=argv)
 
                 # Put values gotten from docopt into a dictionary with Pymesync keys
@@ -155,7 +155,7 @@ Options:
         return {"error": "Not connected to TimeSync server"}
 
     # The data to send to the server containing the new time information
-    if not post_data:
+    if post_data is None:
         post_data = util.get_fields([(":duration",   "Duration"),
                                      ("project",     "Project slug"),
                                      ("!activities", "Activity slugs"),
@@ -207,11 +207,11 @@ Options:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    if not uuid:
+    if uuid is None:
         uuid = util.get_field("UUID of time to update")
     
     # The data to send to the server containing revised time information
-    if not post_data:
+    if post_data is None:
         post_data = util.get_fields([("*:duration",   "Duration"),
                                      ("*project",     "Project slug"),
                                      ("*user",        "New user"),
@@ -226,7 +226,7 @@ Options:
 
 @climesync_command(optional_args=True)
 def get_times(post_data=None):
-    """get_times
+    """get-times
 
 Usage: get-times [-h] [--user=<users>] [--project=<projects>]
                       [--activity=<activities>] [--start=<start date>]
@@ -258,7 +258,7 @@ Options:
         return {"error": "Not connected to TimeSync server"}
 
     # Optional filtering parameters to send to the server
-    if not post_data:
+    if post_data is None:
         post_data = util.get_fields([("*!user", "Submitted by users"),
                                      ("*!project", "Belonging to projects"),
                                      ("*!activity", "Belonging to activities"),
@@ -278,6 +278,11 @@ Options:
     if "activity" in post_data and isinstance(post_data["activity"], str):
         post_data["activity"] = [post_data["activity"]]
 
+    if "start" in post_data:
+        post_data["start"] = [post_data["start"]]
+
+    if "end" in post_data:
+        post_data["end"] = [post_data["end"]]
 
     times = ts.get_times(query_parameters=post_data)
 
@@ -306,7 +311,7 @@ Options:
 
     """
 
-    if not query:
+    if query is None:
         query = util.get_fields([("!project", "Project slugs"),
                                  ("*start", "Start date (yyyy-mm-dd)"),
                                  ("*end", "End date (yyyy-mm-dd)")])
@@ -346,6 +351,9 @@ Usage: delete-time [-h] <uuid>
 Arguments:
     <uuid>  The uuid of the time to delete
 
+Options:
+    -h --help  Show this help message and exit
+
     """
 
     global ts
@@ -353,7 +361,7 @@ Arguments:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    if not uuid:
+    if uuid is None:
         uuid = util.get_field("Time UUID")
         really = util.get_field("Do you really want to delete {}?".format(uuid),
                                 field_type="?")
@@ -364,8 +372,42 @@ Arguments:
     return ts.delete_time(uuid=uuid)
 
 
-def create_project():
-    """Creates a new project on the TimeSync server"""
+@climesync_command(optional_args=True)
+def create_project(post_data=None):
+    """create-project (Site admins only)
+
+Usage: create-project [-h] <name> <slugs> [(<username> <access_mode>) ...]
+                           [--uri=<project_uri>]
+                           [--default-activity=<default_activity>]
+
+Arguments:
+    <name>         The project name
+    <slugs>        Unique slugs associated with this project
+    <username>     The name of a user to add to the project
+    <access_mode>  The permissions of a user to add to the project
+
+Options:
+    -h --help                              Show this help message and exit
+    --uri=<project_uri>                    The project's URI
+    --default-activity=<default_activity>  The slug of the default activity
+                                           associated with this project
+
+User permissions help:
+    User permissions are entered in a similar format to *nix file permissions.
+    Each possible permission is represented as a binary 0 or 1 in the following
+    format where each argument is a binary 0 or 1:
+
+    <member><spectator><manager>
+
+    For example, to set a user's permission level to both member and manager
+    this would be the permission number:
+
+    <member = 1><spectator = 0><manager = 1> == 101 == 5
+
+    So the entire command would be entered as:
+
+    create-project <name> <slugs> <username> 5
+    """
 
     global ts
 
@@ -373,49 +415,117 @@ def create_project():
         return {"error": "Not connected to TimeSync server"}
 
     # The data to send to the server containing new project information
-    post_data = util.get_fields([("name", "Project name"),
-                                 ("!slugs", "Project slugs"),
-                                 ("*uri", "Project URI"),
-                                 ("*!users", "Users"),
-                                 ("*default_activity", "Default activity")])
+    if post_data is None:
+        post_data = util.get_fields([("name", "Project name"),
+                                     ("!slugs", "Project slugs"),
+                                     ("*uri", "Project URI"),
+                                     ("*!users", "Users"),
+                                     ("*default_activity", "Default activity")])
+    else:
+        permissions_dict = dict(zip(post_data.pop("username"),
+                                    post_data.pop("access_mode")))
+        post_data["users"] = util.fix_user_permissions(permissions_dict)
      
     # If users have been added to the project, ask for user permissions
-    if "users" in post_data:
+    if "users" in post_data and not isinstance(post_data["users"], dict):
         users = post_data["users"]
         post_data["users"] = util.get_user_permissions(users)
+
+    if isinstance(post_data["slugs"], str):
+        post_data["slugs"] = [post_data["slugs"]]
 
     # Attempt to create a new project and return the response
     return ts.create_project(project=post_data)
 
 
-def update_project():
-    """Sends revised project information to the TimeSync server"""
+@climesync_command(select_arg="slug", optional_args=True)
+def update_project(post_data=None, slug=None):
+    """update-project (Site admins only)
+
+Usage: update-project [-h] <slug> [(<username> <access_mode>) ...]
+                           [--name=<project_name>]
+                           [--slugs=<project_slugs>]
+                           [--uri=<project_uri>]
+                           [--default-activity=<default_activity>]
+
+Arguments:
+    <username>     The name of a user to add to the project
+    <access_mode>  The permissions of a user to add to the project
+
+Options:
+    -h --help                              Show this help message and exit
+    --name=<project_name>                  Updated project name
+    --slugs=<project_slugs>                Updated list of project slugs
+    --uri=<project_uri>                    Updated project's URI
+    --default-activity=<default_activity>  Updated slug of the default activity
+                                           associated with this project
+
+User permissions help:
+    User permissions are entered in a similar format to *nix file permissions.
+    Each possible permission is represented as a binary 0 or 1 in the following
+    format where each argument is a binary 0 or 1:
+
+    <member><spectator><manager>
+
+    For example, to set a user's permission level to both member and manager
+    this would be the permission number:
+
+    <member = 1><spectator = 0><manager = 1> == 101 == 5
+
+    So the entire command would be entered as:
+
+    update-project <name> <slugs> <username> 5
+    """
 
     global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    slug = util.get_field("Slug of project to update")
+    if slug is None:
+        slug = util.get_field("Slug of project to update")
 
     # The data to send to the server containing revised project information
-    post_data = util.get_fields([("*name", "Updated project name"),
-                                 ("*!slugs", "Updated project slugs"),
-                                 ("*uri", "Updated project URI"),
-                                 ("*!users", "Updated users"),
-                                 ("*default_activity", "Updated default activity")])
+    if post_data is None:
+        post_data = util.get_fields([("*name", "Updated project name"),
+                                     ("*!slugs", "Updated project slugs"),
+                                     ("*uri", "Updated project URI"),
+                                     ("*!users", "Updated users"),
+                                     ("*default_activity", "Updated default activity")])
+    else:
+        permissions_dict = dict(zip(post_data.pop("username"),
+                                    post_data.pop("access_mode")))
+        post_data["users"] = util.fix_user_permissions(permissions_dict)
 
     # If user permissions are going to be updated, ask for them
-    if "users" in post_data:
+    if "users" in post_data and not isinstance(post_data["users"], dict):
         users = post_data["users"]
         post_data["users"] = util.get_user_permissions(users)
+
+    if "slugs" in post_data and isinstance(post_data["slugs"], str):
+        post_data["slugs"] = [post_data["slugs"]]
 
     # Attempt to update the project information and return the response
     return ts.update_project(project=post_data, slug=slug)
 
 
-def get_projects():
-    """Queries the TimeSync server for projects with optional filters"""
+@climesync_command(optional_args=True)
+def get_projects(post_data=None):
+    """get-projects
+
+Usage: get-projects [-h] [--include-revisions=<True/False>]
+                         [--include-deleted=<True/False>]
+                         [--slug=<slug>]
+
+Options:
+    -h --help                         Show this help message and exit
+    --include-revisions=<True/False>  Whether to include revised entries
+                                      [Default: False]
+    --include-deleted=<True/False>    Whether to include deleted entries
+                                      [Default: False]
+    --slug=<slug>                     Filter by project slug
+
+    """
 
     global ts
 
@@ -423,35 +533,59 @@ def get_projects():
         return {"error": "Not connected to TimeSync server"}
 
     # Optional filtering parameters
-    print "Filtering projects..."
-    post_data = util.get_fields([("*?include_revisions", "Include revisions?"),
-                                 ("*?include_deleted", "Include deleted?"),
-                                 ("*!slugs", "By project slug")])
+    if post_data is None:
+        post_data = util.get_fields([("*?include_revisions", "Include revisions?"),
+                                     ("*?include_deleted", "Include deleted?"),
+                                     ("*slug", "By project slug")])
 
     # Attempt to query the server with filtering parameters
     return ts.get_projects(query_parameters=post_data)
 
 
-def delete_project():
-    """Deletes a project from the TimeSync server"""
+@climesync_command(select_arg="slug")
+def delete_project(slug=None):
+    """delete-project (Site admins only)
+
+Usage: delete-project [-h] <slug>
+
+Arguments:
+    <slug>  The slug of the project to delete
+
+Options:
+    -h --help  Show this help message and exit
+
+    """
 
     global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    slug = util.get_field("Project slug")
-    really = util.get_field("Do you really want to delete {}?".format(slug),
-                            field_type="?")
+    if slug is None:
+        slug = util.get_field("Project slug")
+        really = util.get_field("Do you really want to delete {}?".format(slug),
+                                field_type="?")
 
-    if really:  # If the user really wants to delete it
-        return ts.delete_project(slug=slug)
-    else:  # If no, return an empty list
-        return list()
+        if not really:
+            return list()
+
+    return ts.delete_project(slug=slug)
 
 
-def create_activity():
-    """Creates a new activity on the TimeSync server"""
+@climesync_command()
+def create_activity(post_data=None):
+    """create-activity (Site admins only)
+
+Usage: create-activity [-h] <name> <slug>
+
+Arguments:
+    <name>  The name of the new activity
+    <slug>  The slug of the new activity
+
+Options:
+    -h --help  Show this help message and exit
+
+    """
 
     global ts
 
@@ -459,33 +593,64 @@ def create_activity():
         return {"error": "Not connected to TimeSync server"}
 
     # The data to send to the server containing new activity information
-    post_data = util.get_fields([("name", "Activity name"),
-                                 ("slug", "Activity slug")])
+    if post_data is None:
+        post_data = util.get_fields([("name", "Activity name"),
+                                     ("slug", "Activity slug")])
 
     # Attempt to create a new activity and return the response
     return ts.create_activity(activity=post_data)
 
 
-def update_activity():
-    """Sends revised activity information to the TimeSync server"""
+@climesync_command(select_arg="old_slug", optional_args=True)
+def update_activity(post_data=None, old_slug=None):
+    """update-activity (Site admins only)
+
+Usage: update-activity [-h] <old_slug> [--name=<name>] [--slug=<slug>]
+
+Arguments:
+    <old_slug>  The slug of the activity to update
+
+Options:
+    -h --help      Show this help message and exit
+    --name=<name>  The updated activity name
+    --slug=<slug>  The updated activity slug
+
+    """
 
     global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    slug_to_update = util.get_field("Slug of activity to update")
+    if old_slug is None:
+        old_slug = util.get_field("Slug of activity to update")
 
     # The data to send to the server containing revised activity information
-    post_data = util.get_fields([("*name", "Updated activity name"),
-                                 ("*slug", "Updated activity slug")])
+    if post_data is None:
+        post_data = util.get_fields([("*name", "Updated activity name"),
+                                     ("*slug", "Updated activity slug")])
 
     # Attempt to update the activity information and return the repsonse
-    return ts.update_activity(activity=post_data, slug=slug_to_update)
+    return ts.update_activity(activity=post_data, slug=old_slug)
 
 
-def get_activities():
-    """Queries the TimeSync server for activities with optional filters"""
+@climesync_command(optional_args=True)
+def get_activities(post_data=None):
+    """get-activities
+
+Usage: get-activities [-h] [--include-revisions=<True/False>]
+                           [--include-deleted=<True/False>]
+                           [--slug=<slug>]
+
+Options:
+    -h --help                         Show this help message and exit
+    --include-revisions=<True/False>  Whether to include revised entries
+                                      [Default: False]
+    --include-deleted=<True/False>    Whether to include deleted entries
+                                      [Default: False]
+    --slug=<slug>                     Filter by activity slug
+
+    """
 
     global ts
 
@@ -493,36 +658,74 @@ def get_activities():
         return {"error": "Not connected to TimeSync server"}
 
     # Optional filtering parameters
-    print "Filtering activities..."
-    post_data = get_fields([("*?include_revisions", "Include revisions?"),
-                            ("*?include_deleted", "Include deleted?"),
-                            ("*slug", "By activity slug")])
+    if post_data is None:
+        post_data = get_fields([("*?include_revisions", "Include revisions?"),
+                                ("*?include_deleted", "Include deleted?"),
+                                ("*slug", "By activity slug")])
 
     # Attempt to query the server with filtering parameters
     return ts.get_activities(query_parameters=post_data)
 
 
-def delete_activity():
-    """Deletes an activity from the TimeSync server"""
+@climesync_command(select_arg="slug")
+def delete_activity(slug=None):
+    """delete-activity (Site admins only)
+
+Usage: delete-activity [-h] <slug>
+
+Arguments:
+    <slug>  The slug of the activity to delete
+
+Options:
+    -h --help  Show this help message and exit
+
+    """
 
     global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    slug = util.get_field("Activity slug")
-    really = util.get_field("Do you really want to delete {}?".format(slug),
-                            field_type="?")
+    if slug is None:
+        slug = util.get_field("Activity slug")
+        really = util.get_field("Do you really want to delete {}?".format(slug),
+                                field_type="?")
 
-    if really:  # If the user really wants to delete it
-        return ts.delete_activity(slug=slug)
+        if not really:
+            return list()
+    
+    return ts.delete_activity(slug=slug)
 
-    else:  # If no, return an empty list
-        return list()
 
+@climesync_command(optional_args=True)
+def create_user(post_data=None):
+    """create-user (Site admins only)
 
-def create_user():
-    """Creates a new user on the TimeSync server"""
+Usage: create-user [-h] <username> <password> [--display-name=<display_name>]
+                        [--email=<email>] [--site-admin=<True/False>]
+                        [--site-manager=<True/False>]
+                        [--site-spectator=<True/False>] [--meta=<metainfo>]
+                        [--active=<True/False>]
+
+Arguments:
+    <username>  The username of the new user
+    <password>  The password of the new user
+
+Options:
+    -h --help                      Show this help message and exit
+    --display-name=<display_name>  The display name of the new user
+    --email=<email>                The email address of the new user
+    --site-admin=<True/False>      Whether the new user is a site admin
+                                   [Default: False]
+    --site-manager=<True/False>    Whether the new user is a site manager
+                                   [Default: False]
+    --site-spectator=<True/False>  Whether the new user is a site spectator
+                                   [Default: False]
+    --meta=<metainfo>              Extra user metainformation
+    --active=<True/False>          Whether the new user is active
+                                   [Default: True]
+
+    """
 
     global ts
 
@@ -530,47 +733,84 @@ def create_user():
         return {"error": "Not connected to TimeSync server"}
 
     # The data to send to the server containing new user information
-    post_data = util.get_fields([("username", "New user username"),
-                                 ("password", "New user password"),
-                                 ("*display_name", "New user display name"),
-                                 ("*email", "New user email"),
-                                 ("*?site_admin", "Is the user an admin?"),
-                                 ("*?site_manager", "Is the user a manager?"),
-                                 ("*?site_spectator", "Is the user a spectator?"),
-                                 ("*meta", "Extra meta-information"),
-                                 ("*?active", "Is the new user active?")])
+    if post_data is None:
+        post_data = util.get_fields([("username", "New user username"),
+                                     ("password", "New user password"),
+                                     ("*display_name", "New user display name"),
+                                     ("*email", "New user email"),
+                                     ("*?site_admin", "Is the user an admin?"),
+                                     ("*?site_manager", "Is the user a manager?"),
+                                     ("*?site_spectator", "Is the user a spectator?"),
+                                     ("*meta", "Extra meta-information"),
+                                     ("*?active", "Is the new user active?")])
 
     # Attempt to create a new user and return the response
     return ts.create_user(user=post_data)
 
 
-def update_user():
-    """Sends revised user information to the TimeSync server"""
+@climesync_command(select_arg="old_username", optional_args=True)
+def update_user(post_data=None, old_username=None):
+    """update-user (Site admins only)
+
+Usage: update-user [-h] <old_username> [--username=<username>]
+                        [--password=<password>] [--display-name=<display_name>]
+                        [--email=<email>] [--site-admin=<True/False>]
+                        [--site-manager=<True/False>]
+                        [--site-spectator=<True/False>] [--meta=<metainfo>]
+                        [--active=<True/False>]
+
+Arguments:
+    <old_username>  The username of the user to update
+
+Options:
+    -h --help                      Show this help message and exit
+    --username=<username>          The updated username of the user
+    --password=<password>          The updated password of the user
+    --display-name=<display_name>  The updated display name of the user
+    --email=<email>                The updated email address of the user
+    --site-admin=<True/False>      Whether the user is a site admin
+    --site-manager=<True/False>    Whether the user is a site manager
+    --site-spectator=<True/False>  Whether the user is a site spectator
+    --meta=<metainfo>              Extra user metainformation
+    --active=<True/False>          Whether the user is active
+
+    """
 
     global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    username_to_update = util.get_field("Username of user to update")
+    if old_username is None:
+        old_username = util.get_field("Username of user to update")
 
     # The data to send to the server containing revised user information
-    post_data = util.get_fields([("*username", "Updated username"),
-                                 ("*password", "Updated password"),
-                                 ("*display_name", "Updated display name"),
-                                 ("*email", "Updated email"),
-                                 ("*?site_admin", "Is the user an admin?"),
-                                 ("*?site_manager", "Is the user a manager?"),
-                                 ("*?site_spectator", "Is the user a spectator?"),
-                                 ("*meta", "New metainformation"),
-                                 ("*?active", "Is the user active?")])
+    if post_data is None:
+        post_data = util.get_fields([("*username", "Updated username"),
+                                     ("*password", "Updated password"),
+                                     ("*display_name", "Updated display name"),
+                                     ("*email", "Updated email"),
+                                     ("*?site_admin", "Is the user an admin?"),
+                                     ("*?site_manager", "Is the user a manager?"),
+                                     ("*?site_spectator", "Is the user a spectator?"),
+                                     ("*meta", "New metainformation"),
+                                     ("*?active", "Is the user active?")])
 
     # Attempt to update the user and return the response
-    return ts.update_user(user=post_data, username=username_to_update)
+    return ts.update_user(user=post_data, username=old_username)
 
 
-def get_users():
-    """Queries the TimeSync server for users with optional filters"""
+@climesync_command(optional_args=True)
+def get_users(post_data=None):
+    """get-users
+
+Usage: get-users [-h] [--username=<username>]
+
+Options:
+    -h --help              Show this help message and exit
+    --username=<username>  Search for a user by username
+
+    """
 
     global ts
 
@@ -578,28 +818,43 @@ def get_users():
         return {"error": "Not connected to TimeSync server"}
 
     # Optional filtering parameters
-    print "Filtering users..."
-    username = util.get_field("By username", optional=True)
+    if post_data is None:
+        post_data = util.get_fields([("*username", "Username")])
+
+    # Using dict.get so that None is returned if the key doesn't exist
+    username = post_data.get("username")
 
     # Attempt to query the server with filtering parameters
     return ts.get_users(username=username)
 
 
-def delete_user():
-    """Deletes a user from the TimeSync server"""
+@climesync_command(select_arg="username")
+def delete_user(username=None):
+    """delete-user (Site admins only)
+
+Usage: delete-user [-h] <username>
+
+Arguments:
+    <username>  The username of the user to delete
+
+Options:
+    -h --help  Show this help message and exit
+
+    """
 
     global ts
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    username = util.get_field("Username")
-    really = util.get_field("Do you really want to delete {}?".format(username),
-                            field_type="?")
+    if username is None:
+        username = util.get_field("Username")
+        really = util.get_field("Do you really want to delete {}?".format(username),
+                                field_type="?")
 
-    if really:  # If the user really wants to delete it
-        return ts.delete_user(username=username)
-    else:  # If no, return an empty list
-        return list()
+        if not really:
+            return list()
+
+    return ts.delete_user(username=username)
 
 

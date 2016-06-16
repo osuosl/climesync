@@ -2,7 +2,7 @@ import unittest
 import util
 
 
-class TimeFormatTest(unittest.TestCase):
+class UtilTest(unittest.TestCase):
 
     def test_is_time(self):
         self.assertFalse(util.is_time("AhBm"))

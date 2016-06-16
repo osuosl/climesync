@@ -255,6 +255,24 @@ def get_user_permissions(users):
     return permissions
 
 
+def fix_user_permissions(permissions):
+    """Converts numeric user permissions to a dictionary of permissions"""
+
+    fixed_permissions = dict()
+
+    for user in permissions:
+        mode = int(permissions[user])
+
+        user_permissions = dict()
+        user_permissions["member"] = (mode & 0b100 != 0)
+        user_permissions["spectator"] = (mode & 0b010 != 0)
+        user_permissions["manager"] = (mode & 0b001 != 0)
+
+        fixed_permissions[user] = user_permissions
+
+    return fixed_permissions
+
+
 def fix_args(args, optional_args):
     """Fix the names and values of arguments gotten from docopt"""
 
@@ -289,6 +307,9 @@ def fix_args(args, optional_args):
         # If the value is a space-delimited list
         elif value and " " in value:
             fixed_value = value.split()
+        # If it's a True/False value
+        elif value == "True" or value == "False":
+            fixed_value = True if value == "True" else False
         else:
             fixed_value = value
 

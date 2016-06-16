@@ -1,0 +1,180 @@
+import unittest
+import shlex
+
+from commands import *
+
+class ScriptingTest(unittest.TestCase):
+
+    def setUp(self):
+        connect(test=True)
+
+    def tearDown(self):
+        disconnect()
+
+    def auth_admin(self):
+        sign_in("admin", "test")
+
+    def auth_nonadmin(self):
+        sign_in("user", "test")
+
+    def run_command(self, command, argv_str):
+        return command(shlex.split(argv_str))
+
+    def test_create_time(self):
+        self.auth_nonadmin()
+        response = self.run_command(create_time, "0h2m proj_slug \"act1 act2\"")
+
+        self.assertEqual(response["duration"], 120)
+        self.assertEqual(response["project"], "proj_slug")
+        self.assertEqual(response["activities"], ["act1", "act2"])
+
+    def test_update_time(self):
+        self.auth_nonadmin()
+        response = self.run_command(update_time, "uuid --duration=0h5m --activities=\"act1 act2\"")
+
+        self.assertEqual(response["duration"], 300)
+        self.assertEqual(response["activities"], ["act1", "act2"])
+
+    def test_get_times(self):
+        self.auth_nonadmin()
+        response = self.run_command(get_times, "--end=2016-05-04")
+
+        self.assertEqual(len(response), 3)
+
+        response = self.run_command(get_times, "--uuid=uuid")
+
+        self.assertEqual(len(response), 1)
+        self.assertEqual(response[0]["uuid"], "uuid")
+
+    def test_sum_times(self):
+        self.auth_nonadmin()
+        response = self.run_command(sum_times, "proj_slug --start=2016-06-01")
+
+        self.assertEqual(len(response), 0)
+
+    def test_delete_time(self):
+        self.auth_nonadmin()
+        response = self.run_command(delete_time, "uuid")
+
+        self.assertEqual(response[0]["status"], 200)
+
+    def test_create_project(self):
+        self.auth_admin()
+        response = self.run_command(create_project, "name \"slug1 slug2\" userone 2 usertwo 5")
+
+        self.assertEqual(response["name"], "name")
+        self.assertEqual(response["slugs"], ["slug1", "slug2"])
+        self.assertEqual(response["users"], {
+            "userone": {
+                "member": False,
+                "spectator": True,
+                "manager": False
+            },
+            "usertwo": {
+                "member": True,
+                "spectator": False,
+                "manager": True
+            }
+        })
+
+    def test_update_project(self):
+        self.auth_admin()
+        response = self.run_command(update_project, "slug userone 6 usertwo 4 --name=newname")
+
+        self.assertEqual(response["name"], "newname")
+        # Commented out for now because of a Pymesync bug
+#        self.assertEqual(response["users"], {
+#            "userone": {
+#                "member": True,
+#                "spectator": True,
+#                "manager": False
+#            },
+#            "usertwo": {
+#                "member": True,
+#                "spectator": False,
+#                "manager": False
+#            }
+#        })
+
+    def test_get_projects(self):
+        self.auth_nonadmin()
+        response = self.run_command(get_projects, "")
+
+        self.assertEqual(len(response), 3)
+
+        response = self.run_command(get_projects, "--slug=slug")
+
+        self.assertEqual(len(response), 1)
+
+    def test_delete_project(self):
+        self.auth_admin()
+        response = self.run_command(delete_project, "slug")[0]
+
+        self.assertIn("status", response)
+        self.assertEqual(response["status"], 200)
+
+    def test_create_activity(self):
+        self.auth_admin()
+        response = self.run_command(create_activity, "name slug")
+
+        self.assertEqual(response["name"], "name")
+        self.assertEqual(response["slug"], "slug")
+
+    def test_update_activity(self):
+        self.auth_admin()
+        response = self.run_command(update_activity, "slug --name=newname --slug=newslug")
+
+        self.assertEqual(response["name"], "newname")
+        self.assertEqual(response["slug"], "newslug")
+
+    def test_get_activities(self):
+        self.auth_nonadmin()
+        response = self.run_command(get_activities, "--include-deleted=True")
+
+        self.assertEqual(len(response), 3)
+
+        response = self.run_command(get_activities, "--slug=slug")
+
+        self.assertEqual(len(response), 1)
+
+    def test_delete_activity(self):
+        self.auth_admin()
+        response = self.run_command(delete_activity, "slug")[0]
+
+        self.assertIn("status", response)
+        self.assertEqual(response["status"], 200)
+
+    def test_create_user(self):
+        self.auth_admin()
+        response = self.run_command(create_user, "username password \
+                                                  --email=testuser@osuosl.org \
+                                                  --site-admin=True")
+
+        self.assertEqual(response["username"], "username")
+        self.assertEqual(response["email"], "testuser@osuosl.org")
+        self.assertEqual(response["site_admin"], True)
+
+    def test_update_user(self):
+        self.auth_admin()
+        response = self.run_command(update_user, "username --username=newname \
+                                                  --site-admin=True")
+
+        self.assertEqual(response["username"], "newname")
+        self.assertEqual(response["site_admin"], True)
+
+    def test_get_users(self):
+        self.auth_nonadmin()
+        response = self.run_command(get_users, "")
+
+        self.assertEqual(len(response), 4)
+
+        response = self.run_command(get_users, "--username=user")
+
+        self.assertEqual(len(response), 1)
+
+    def test_delete_user(self):
+        self.auth_admin()
+        response = self.run_command(delete_user, "user")[0]
+
+        self.assertIn("status", response)
+        self.assertEqual(response["status"], 200)
