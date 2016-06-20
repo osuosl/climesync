@@ -151,11 +151,12 @@ Climesync Configuration
 
 On the first run of the program in interactive mode, the configuration file
 `.climesyncrc` is created in the user's home directory. This configuration
-file stores server information and user credentials. Editing this file manually
-should not be necessary because Climesync updates these values as necessary.
+file stores server information and user credentials. If Climesync is going to
+only be run in interactive mode then manually editing this file manually won't
+be necessary because Climesync will handle updating these values while it's
+being run in interactive mode,
 
-If you did feel so inclined as to manually edit this file, information on
-the structure of this file can be obtained `here`_.
+Information on the structure of this file can be obtained `here`_.
 
 The following configuration values are stored under the "climesync" header
 in .climesyncrc:
