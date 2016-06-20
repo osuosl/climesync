@@ -305,8 +305,8 @@ def fix_args(args, optional_args):
             else:
                 fixed_value = value
         # If the value is a space-delimited list
-        elif value and " " in value:
-            fixed_value = value.split()
+        elif value and value[0] == "[" and value[-1] == "]":
+            fixed_value = value[1:-1].split()
         # If it's a True/False value
         elif value == "True" or value == "False":
             fixed_value = True if value == "True" else False

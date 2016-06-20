@@ -130,6 +130,16 @@ In addition to providing an interactive shell, Climesync also allows commands
 to be run from the command line. This is useful when calling Climesync from
 shell scripts and makes automating repetitive tasks for admins a breeze!
 
+Scripting mode accepts arguments and options in the usual bash script format
+with one addition. To pass a list of values to a command, you format the values
+as a space-separated list enclosed within square brackets. For example:
+
+.. code-block:: none
+
+    (venv) $ ./climesync.py get-times --users="[user1 user2 user3]"
+
+This example gets all the time entries submitted either by user1, user2, or user3.
+
 When running Climesync in scripting mode, authentication can be done by
 specifying the username and password as command line arguments or by using
 the configuration file (See below)
