@@ -245,10 +245,8 @@ Options:
                                       (If included, all options except
                                       --include-revisions and
                                       --include-deleted are ignored
-`   --include-revisions=<True/False>  Whether to include all time
-                                      revisions [Default: False]
-`   --include-deleted=<True/False>    Whether to include deleted
-                                      times [Default: False]
+`   --include-revisions=<True/False>  Whether to include all time revisions
+`   --include-deleted=<True/False>    Whether to include deleted times
 
     """
 
@@ -522,9 +520,7 @@ Usage: get-projects [-h] [--include-revisions=<True/False>]
 Options:
     -h --help                         Show this help message and exit
     --include-revisions=<True/False>  Whether to include revised entries
-                                      [Default: False]
     --include-deleted=<True/False>    Whether to include deleted entries
-                                      [Default: False]
     --slug=<slug>                     Filter by project slug
 
     """
@@ -648,9 +644,7 @@ Usage: get-activities [-h] [--include-revisions=<True/False>]
 Options:
     -h --help                         Show this help message and exit
     --include-revisions=<True/False>  Whether to include revised entries
-                                      [Default: False]
     --include-deleted=<True/False>    Whether to include deleted entries
-                                      [Default: False]
     --slug=<slug>                     Filter by activity slug
 
     """

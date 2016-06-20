@@ -146,6 +146,13 @@ class ScriptingTest(unittest.TestCase):
 
         self.assertEqual(len(response), 1)
 
+        # Test that both --slug and --include-deleted isn't accepted
+
+        response = self.run_command(commands.get_activities,
+                                    "--slug=slug --include-deleted=True")
+
+        self.assertIn("pymesync error", response[0])
+
     def test_delete_activity(self):
         self.auth_admin()
         response = self.run_command(commands.delete_activity, "slug")[0]
