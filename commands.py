@@ -292,7 +292,7 @@ Options:
     times = ts.get_times(query_parameters=post_data)
 
     # If the response is free of errors, make the times human-readable
-    if 'error' not in times[0] and 'pymesync error' not in times[0]:
+    if times and 'error' not in times[0] and 'pymesync error' not in times[0]:
         for time in times:
             time["duration"] = util.to_readable_time(time["duration"])
 
