@@ -136,7 +136,7 @@ as a space-separated list enclosed within square brackets. For example:
 
 .. code-block:: none
 
-    (venv) $ ./climesync.py get-times --users="[user1 user2 user3]"
+    (venv) $ ./climesync.py get-times --user="[user1 user2 user3]"
 
 This example gets all the time entries submitted either by user1, user2, or user3.
 

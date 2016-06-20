@@ -140,7 +140,7 @@ def sign_out():
 def create_time(post_data=None):
     """create-time
 
-Usage: create-time [-h] <duration> <project> <activities>
+Usage: create-time [-h] <duration> <project> <activities> ...
                         [--date-worked=<date_worked>]
                         [--issue-uri=<issue_uri>]
                         [--notes=<notes>]
@@ -155,6 +155,12 @@ Options:
     --date-worked=<date_worked>  The date of the entry [Default: today]
     --issue-uri=<issue_uri>      The URI of the issue on an issue tracker
     --notes=<notes>              Additional notes
+
+Examples:
+    climesync.py create-time 1h0m projectx docs design qa
+`       --issue-uri=https//www.github.com/foo/projectx/issue/42
+
+    climesync.py create-time 0h45m projecty design --notes="Designing the API"
     """
 
     global ts
@@ -208,6 +214,13 @@ Options:
     --date-worked=<date worked>  The date of the entry
     --issue-uri=<issue uri>      The URI of the issue on an issue tracker
     --notes=<notes>              Additional notes
+
+Examples:
+    climesync.py update-time 838853e3-3635-4076-a26f-7efr4e60981f
+`       --activities="[dev planning code]" --date-worked=2016-06-15
+
+    climesync.py update-time c3706e79-1c9a-4765-8d7f-89b4544cad56
+`       --project=projecty --notes="Notes notes notes"
     """
 
     global ts
@@ -256,6 +269,13 @@ Options:
 `   --include-revisions=<True/False>  Whether to include all time revisions
 `   --include-deleted=<True/False>    Whether to include deleted times
 
+Examples:
+    climesync.py get-times
+
+    climesync.py get-times --project=projectx --activity=planning
+`       --user="[userone usertwo]"
+
+    climesync.py get-times --uuid=12345676-1c9a-rrrr-bbbb-89b4544cad56
     """
 
     global ts
@@ -304,7 +324,7 @@ Options:
 def sum_times(query=None):
     """sum-times
 
-Usage: sum-times [-h] <project> [--start=<start date>] [--end=<end date>]
+Usage: sum-times [-h] <project> ... [--start=<start date>] [--end=<end date>]
 
 Arguments:
     <project>  The project slugs of the projects to sum times for
@@ -314,6 +334,10 @@ Options:
     --start=<start date>  The date to start summing times
     --end=<end date>      The date to end summing times
 
+Examples:
+    climesync.py sum-times projectx
+
+    climesync.py sum-times projectx projecty --start=2016-06-01
     """
 
     if query is None:
@@ -359,6 +383,8 @@ Arguments:
 Options:
     -h --help  Show this help message and exit
 
+Examples:
+    climesync.py delete-time 12345676-1c9a-rrrr-bbbb-89b4544cad56
     """
 
     global ts
@@ -413,6 +439,13 @@ User permissions help:
     So the entire command would be entered as:
 
     create-project <name> <slugs> <username> 5
+
+Examples:
+    climesync.py create-project "Project Z" "[pz projectz]"
+`       userone 4 usertwo 5 userthree 7
+
+    climesync.py create-project "Project Foo" foo userone 7
+`       --uri=https://www.github.com/bar/foo --default-activity=planning
     """
 
     global ts
@@ -482,6 +515,12 @@ User permissions help:
     So the entire command would be entered as:
 
     update-project <name> <slugs> <username> 5
+
+Examples:
+    climesync.py update-project foo --name=Foobarbaz --slugs="[foo bar baz]"
+
+    climesync.py update-project pz userone 7
+`       --uri=https://www.github.com/bar/projectz
     """
 
     global ts
@@ -531,6 +570,10 @@ Options:
     --include-deleted=<True/False>    Whether to include deleted entries
     --slug=<slug>                     Filter by project slug
 
+Examples:
+    climesync.py get-projects
+
+    climesync.py get-projects --slug=projectx --include-revisions=True
     """
 
     global ts
@@ -560,6 +603,8 @@ Arguments:
 Options:
     -h --help  Show this help message and exit
 
+Examples:
+    climesync.py delete-project foo
     """
 
     global ts
@@ -592,6 +637,10 @@ Arguments:
 Options:
     -h --help  Show this help message and exit
 
+Examples:
+    climesync.py create-activity Coding code
+
+    climesync.py create-activity "Project Planning" planning
     """
 
     global ts
@@ -622,6 +671,10 @@ Options:
     --name=<name>  The updated activity name
     --slug=<slug>  The updated activity slug
 
+Examples:
+    climesync.py update-activity planning --name=Planning
+
+    climesync.py update-activity code --slug=coding
     """
 
     global ts
@@ -655,6 +708,12 @@ Options:
     --include-deleted=<True/False>    Whether to include deleted entries
     --slug=<slug>                     Filter by activity slug
 
+Examples:
+    climesync.py get-activities
+
+    climesync.py get-activities --include-deleted=True
+
+    climesync.py get-activities --slug=planning
     """
 
     global ts
@@ -684,6 +743,8 @@ Arguments:
 Options:
     -h --help  Show this help message and exit
 
+Examples:
+    climesync.py delete-activity planning
     """
 
     global ts
@@ -731,6 +792,12 @@ Options:
     --active=<True/False>          Whether the new user is active
                                    [Default: True]
 
+Examples:
+    climesync.py create-user userfour pa$$word --display-name=4chan
+`       --meta="Who is this 4chan?"
+
+    climesync.py create-user anotheruser "correct horse battery staple"
+`       --email=anotheruser@osuosl.org --site-admin=True
     """
 
     global ts
@@ -780,6 +847,12 @@ Options:
     --meta=<metainfo>              Extra user metainformation
     --active=<True/False>          Whether the user is active
 
+Examples:
+    climesync.py update-user userfour --display-name="System Administrator"
+`       --active=False --site-spectator=True
+
+    climesync.py update-user anotheruser --username=newuser
+`       --meta="Metainformation goes here" --site-admin=False
     """
 
     global ts
@@ -816,6 +889,10 @@ Options:
     -h --help              Show this help message and exit
     --username=<username>  Search for a user by username
 
+Examples:
+    climesync.py get-users
+
+    climesync.py get-users userfour
     """
 
     global ts
@@ -846,6 +923,8 @@ Arguments:
 Options:
     -h --help  Show this help message and exit
 
+Examples:
+    climesync.py delete-user userfour
     """
 
     global ts

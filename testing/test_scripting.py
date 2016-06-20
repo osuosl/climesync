@@ -55,7 +55,7 @@ class ScriptingTest(unittest.TestCase):
     def test_create_time(self):
         self.auth_nonadmin()
         response = self.run_command(commands.create_time,
-                                    "0h2m proj_slug \"[act1 act2]\"")
+                                    "0h2m proj_slug act1 act2")
 
         self.assertEqual(response["duration"], 120)
         self.assertEqual(response["project"], "proj_slug")
@@ -97,7 +97,8 @@ class ScriptingTest(unittest.TestCase):
     def test_create_project(self):
         self.auth_admin()
         response = self.run_command(commands.create_project,
-                                    "name \"[slug1 slug2]\" userone 2 usertwo 5")
+                                    "name \"[slug1 slug2]\" "
+                                    "userone 2 usertwo 5")
 
         self.assertEqual(response["name"], "name")
         self.assertEqual(response["slugs"], ["slug1", "slug2"])
