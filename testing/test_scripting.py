@@ -13,13 +13,44 @@ class ScriptingTest(unittest.TestCase):
         commands.disconnect()
 
     def auth_admin(self):
-        commands.sign_in("admin", "test")
+        return commands.sign_in("admin", "test")
 
     def auth_nonadmin(self):
-        commands.sign_in("user", "test")
+        return commands.sign_in("user", "test")
+
+    def auth_configdict(self, config_dict):
+        return commands.sign_in(config_dict=config_dict, interactive=False)
 
     def run_command(self, command, argv_str):
         return command(shlex.split(argv_str))
+
+    def test_incomplete_config(self):
+        complete_config = {
+            "username": "user",
+            "password": "test"
+        }
+
+        incomplete_config_username = {
+            "username": "user"
+        }
+
+        incomplete_config_password = {
+            "password": "test"
+        }
+
+        blank_config = {}
+
+        response = self.auth_configdict(complete_config)
+        self.assertNotIn("climesync error", response)
+
+        response = self.auth_configdict(incomplete_config_username)
+        self.assertIn("climesync error", response)
+
+        response = self.auth_configdict(incomplete_config_password)
+        self.assertIn("climesync error", response)
+
+        response = self.auth_configdict(blank_config)
+        self.assertIn("climesync error", response)
 
     def test_create_time(self):
         self.auth_nonadmin()

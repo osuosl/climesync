@@ -170,12 +170,21 @@ def main(argv=None):
         config_dict = {}
 
     # Attempt to connect with arguments and/or config
-    commands.connect(arg_url=url, config_dict=config_dict,
-                     interactive=interactive)
+    response = commands.connect(arg_url=url, config_dict=config_dict,
+                                interactive=interactive)
+
+    if "climesync error" in response:
+        util.print_json(response)
+        return
 
     response = commands.sign_in(arg_user=user, arg_pass=password,
                                 config_dict=config_dict,
                                 interactive=interactive)
+
+    if "error" in response or "pymesync error" in response or \
+            "climesync error" in response:
+        util.print_json(response)
+        return
 
     if command:
         scripting_mode(command, argv)

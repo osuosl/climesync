@@ -52,8 +52,11 @@ def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
         url = arg_url
     elif "timesync_url" in config_dict:
         url = config_dict["timesync_url"]
-    else:
+    elif interactive:
         url = raw_input("URL of TimeSync server: ") if not test else "tst"
+    else:
+        return {"climesync error": "Couldn't connect to TimeSync. Is "
+                                   "timesync_url set in ~/.climesyncrc?"}
 
     if interactive and not test:
         util.add_kv_pair("timesync_url", url)
@@ -92,15 +95,20 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
         username = arg_user
     elif "username" in config_dict:
         username = config_dict["username"]
-    else:
+    elif interactive:
         username = raw_input("Username: ")
 
     if arg_pass:
         password = arg_pass
     elif "password" in config_dict:
         password = config_dict["password"]
-    else:
+    elif interactive:
         password = raw_input("Password: ")
+
+    if not username or not password:
+        return {"climesync error": "Couldn't authenticate with TimeSync. Are "
+                                   "username and password set in "
+                                   "~/.climesyncrc?"}
 
     if interactive and not ts.test:
         util.add_kv_pair("username", username)
