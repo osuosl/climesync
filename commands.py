@@ -238,7 +238,7 @@ Examples:
                                      ("*user",        "New user"),
                                      ("*!activities", "Activity slugs"),
                                      ("*date_worked", "Date (yyyy-mm-dd)"),
-                                     ("*issue_url",   "Issue URI"),
+                                     ("*issue_uri",   "Issue URI"),
                                      ("*notes",       "Notes")])
 
     # Attempt to update a time and return the response
