@@ -38,7 +38,8 @@ class UtilTest(unittest.TestCase):
         }
 
         fixed_permissions = {
-            "userzero": {"member": False, "spectator": False, "manager": False},
+            "userzero": {"member": False, "spectator": False,
+                         "manager": False},
             "userone": {"member": False, "spectator": False, "manager": True},
             "usertwo": {"member": False, "spectator": True, "manager": False},
             "userthree": {"member": False, "spectator": True, "manager": True},
