@@ -1,19 +1,15 @@
 from pymesync import mock_pymesync
 
-import commands
-
 
 class TestData():
 
-    def __init__(self, command, mocked_input, expected_response, admin):
-        self.command = command
+    def __init__(self, mocked_input, expected_response, admin):
         self.mocked_input = mocked_input
         self.expected_response = expected_response
         self.admin = admin
 
 
 create_time_data = TestData(
-        command=commands.create_time,
         mocked_input=[
             "1h0m", # Duration
             "p_foo", # Project slug
@@ -39,7 +35,6 @@ create_time_data = TestData(
         admin=False)
 
 update_time_data = TestData(
-        command=commands.update_time,
         mocked_input=[
             "838853e3-3635-4076-a26f-7efr4e60981f", # UUID of time to update
             "2h0m", # Updated duration
@@ -67,7 +62,6 @@ update_time_data = TestData(
         admin=False)
 
 get_times_no_uuid_data = TestData(
-        command=commands.get_times,
         mocked_input=[None]*8,
         expected_response=[{
             "created_at": "2014-04-17",
@@ -114,7 +108,6 @@ get_times_no_uuid_data = TestData(
         admin=False)
 
 get_times_uuid_data = TestData(
-        command=commands.get_times,
         mocked_input=[
             "userone", # User
             ["gwm"], # Project slugs
@@ -142,7 +135,6 @@ get_times_uuid_data = TestData(
         admin=False)
 
 sum_times_data = TestData(
-        command=commands.sum_times,
         mocked_input=[
             ["gwm"], # Project slugs
             "", # Include revisions
@@ -152,7 +144,6 @@ sum_times_data = TestData(
         admin=False)
 
 delete_time_no_data = TestData(
-        command=commands.delete_time,
         mocked_input=[
             "838853e3-3635-4076-a26f-7efr4e60981f", # UUID
             False # Really?
@@ -161,7 +152,6 @@ delete_time_no_data = TestData(
         admin=False)
 
 delete_time_data = TestData(
-        command=commands.delete_time,
         mocked_input=[
             "838853e3-3635-4076-a26f-7efr4e60981f", # UUID
             True # Really?
@@ -172,7 +162,6 @@ delete_time_data = TestData(
         admin=False)
 
 create_project_data = TestData(
-        command=commands.create_project,
         mocked_input=[
             "projectx", # Project name
             ["projx", "px"], # Project slugs
@@ -206,7 +195,6 @@ create_project_data = TestData(
         admin=True)
 
 update_project_data = TestData(
-        command=commands.update_project,
         mocked_input=[
             "projx", # Slug of project to update
             "Project X", # Updated name
@@ -247,7 +235,6 @@ update_project_data = TestData(
         admin=True)
 
 get_projects_no_slug_data = TestData(
-        command=commands.get_projects,
         mocked_input=[
             False, # Include revisions
             False, # Include deleted
@@ -342,7 +329,6 @@ get_projects_no_slug_data = TestData(
         admin=False)
 
 get_projects_slug_data = TestData(
-        command=commands.get_projects,
         mocked_input=[
             "", # Include revisions
             "", # Include deleted
@@ -373,7 +359,6 @@ get_projects_slug_data = TestData(
         admin=False)
 
 delete_project_no_data = TestData(
-        command=commands.delete_project,
         mocked_input=[
             "slug", # Project slug
             False # Really?
@@ -382,7 +367,6 @@ delete_project_no_data = TestData(
         admin=True)
 
 delete_project_data = TestData(
-        command=commands.delete_project,
         mocked_input=[
             "slug", # Project slug
             True # Really?
@@ -393,7 +377,6 @@ delete_project_data = TestData(
         admin=True)
 
 create_activity_data = TestData(
-        command=commands.create_activity,
         mocked_input=[
             "Coding", # Activity name
             "code" # Activity slug
@@ -410,7 +393,6 @@ create_activity_data = TestData(
         admin=True)
 
 update_activity_data = TestData(
-        command=commands.update_activity,
         mocked_input=[
             "slug", # Slug of activity to update
             "Write Documentation", # Activity name
@@ -428,7 +410,6 @@ update_activity_data = TestData(
         admin=True)
 
 get_activities_no_slug_data = TestData(
-        command=commands.get_activities,
         mocked_input=[
             "", # Include revisions
             "", # Include deleted
@@ -464,7 +445,6 @@ get_activities_no_slug_data = TestData(
         admin=False)
 
 get_activities_slug_data = TestData(
-        command=commands.get_activities,
         mocked_input=[
             "", # Include revisions
             "", # Include deleted
@@ -482,7 +462,6 @@ get_activities_slug_data = TestData(
         admin=False)
 
 delete_activity_no_data = TestData(
-        command=commands.delete_activity,
         mocked_input=[
             "slug", # Activity slug
             False # Really?
@@ -491,7 +470,6 @@ delete_activity_no_data = TestData(
         admin=True)
 
 delete_activity_data = TestData(
-        command=commands.delete_activity,
         mocked_input=[
             "slug", # Activity slug
             True # Really?
@@ -502,7 +480,6 @@ delete_activity_data = TestData(
         admin=True)
 
 create_user_data = TestData(
-        command=commands.create_user,
         mocked_input=[
             "newuser", # Username
             "password", # Password
@@ -529,7 +506,6 @@ create_user_data = TestData(
         admin=True)
 
 update_user_data = TestData(
-        command=commands.update_user,
         mocked_input=[
             "olduser", # Username of user to update
             "newuser", # Updated username
@@ -556,7 +532,6 @@ update_user_data = TestData(
         admin=True)
 
 get_users_no_slug_data = TestData(
-        command=commands.get_users,
         mocked_input=[
             "" # Username
         ],
@@ -607,7 +582,6 @@ get_users_no_slug_data = TestData(
         admin=True)
 
 get_users_slug_data = TestData(
-        command=commands.get_users,
         mocked_input=[
             "userone" # Username
         ],
@@ -625,7 +599,6 @@ get_users_slug_data = TestData(
         admin=False)
 
 delete_user_no_data = TestData(
-        command=commands.delete_user,
         mocked_input=[
             "user", # Username
             False # Really?
@@ -634,7 +607,6 @@ delete_user_no_data = TestData(
         admin=True)
 
 delete_user_data = TestData(
-        command=commands.delete_user,
         mocked_input=[
             "user", # Username
             True # Really?
