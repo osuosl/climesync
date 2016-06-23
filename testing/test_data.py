@@ -1,6 +1,3 @@
-from pymesync import mock_pymesync
-
-
 class TestData():
 
     def __init__(self, mocked_input, expected_response, admin):
@@ -11,12 +8,12 @@ class TestData():
 
 create_time_data = TestData(
         mocked_input=[
-            "1h0m", # Duration
-            "p_foo", # Project slug
-            ["planning", "code"], # Activity slugs
-            "2016-05-04", # Date worked
-            "https://www.github.com/osuosl/projectfoo/issues/42", # Issue URI
-            "Worked on coding" # Notes
+            "1h0m",  # Duration
+            "p_foo",  # Project slug
+            ["planning", "code"],  # Activity slugs
+            "2016-05-04",  # Date worked
+            "https://www.github.com/osuosl/projectfoo/issues/42",  # Issue URI
+            "Worked on coding"  # Notes
         ],
         expected_response={
             "created_at": "2015-05-23",
@@ -30,20 +27,20 @@ create_time_data = TestData(
             "date_worked": "2016-05-04",
             "user": "test",
             "notes": "Worked on coding",
-            "issue_uri": "https://www.github.com/osuosl/projectfoo/issues/42" 
+            "issue_uri": "https://www.github.com/osuosl/projectfoo/issues/42"
         },
         admin=False)
 
 update_time_data = TestData(
         mocked_input=[
-            "838853e3-3635-4076-a26f-7efr4e60981f", # UUID of time to update
-            "2h0m", # Updated duration
-            "p_bar", # Updated project slug
-            "usertwo", # Updated user
-            ["docs"], # Updated activity slugs
-            "2016-06-20", # Updated date worked
-            "https://www.github.com/osuosl/projectbar/issues/20", # Updated URI
-            "Worked on documentation" # Updated notes
+            "838853e3-3635-4076-a26f-7efr4e60981f",  # UUID of time to update
+            "2h0m",  # Updated duration
+            "p_bar",  # Updated project slug
+            "usertwo",  # Updated user
+            ["docs"],  # Updated activity slugs
+            "2016-06-20",  # Updated date worked
+            "https://www.github.com/osuosl/projectbar/issues/5",  # Updated URI
+            "Worked on documentation"  # Updated notes
         ],
         expected_response={
             "created_at": "2014-06-12",
@@ -57,66 +54,66 @@ update_time_data = TestData(
             "date_worked": "2016-06-20",
             "user": "usertwo",
             "notes": "Worked on documentation",
-            "issue_uri": "https://www.github.com/osuosl/projectbar/issues/20"
+            "issue_uri": "https://www.github.com/osuosl/projectbar/issues/5"
         },
         admin=False)
 
 get_times_no_uuid_data = TestData(
         mocked_input=[None]*8,
         expected_response=[{
-            "created_at": "2014-04-17",
-            "updated_at": None,
-            "deleted_at": None,
-            "uuid": "c3706e79-1c9a-4765-8d7f-89b4544cad56",
-            "revision": 1,
-            "duration": "0h0m",
-            "project": ["ganeti-webmgr", "gwm"],
-            "activities": ["docs", "planning"],
-            "date_worked": "2014-04-17",
-            "user": "userone",
-            "notes": "Worked on documentation.",
-            "issue_uri": "https://github.com/osuosl/ganeti_webmgr"
-        },
-        {
-            "created_at": "2014-04-17",
-            "updated_at": None,
-            "deleted_at": None,
-            "uuid": "12345676-1c9a-rrrr-bbbb-89b4544cad56",
-            "revision": 1,
-            "duration": "0h0m",
-            "project": ["ganeti-webmgr", "gwm"],
-            "activities": ["code", "planning"],
-            "date_worked": "2014-04-17",
-            "user": "usertwo",
-            "notes": "Worked on coding",
-            "issue_uri": "https://github.com/osuosl/ganeti_webmgr"
-        },
-        {
-            "created_at": "2014-04-17",
-            "updated_at": None,
-            "deleted_at": None,
-            "uuid": "12345676-1c9a-ssss-cccc-89b4544cad56",
-            "revision": 1,
-            "duration": "0h0m",
-            "project": ["timesync", "ts"],
-            "activities": ["code"],
-            "date_worked": "2014-04-17",
-            "user": "userthree",
-            "notes": "Worked on coding",
-            "issue_uri": "https://github.com/osuosl/timesync"
+                "created_at": "2014-04-17",
+                "updated_at": None,
+                "deleted_at": None,
+                "uuid": "c3706e79-1c9a-4765-8d7f-89b4544cad56",
+                "revision": 1,
+                "duration": "0h0m",
+                "project": ["ganeti-webmgr", "gwm"],
+                "activities": ["docs", "planning"],
+                "date_worked": "2014-04-17",
+                "user": "userone",
+                "notes": "Worked on documentation.",
+                "issue_uri": "https://github.com/osuosl/ganeti_webmgr"
+            },
+            {
+                "created_at": "2014-04-17",
+                "updated_at": None,
+                "deleted_at": None,
+                "uuid": "12345676-1c9a-rrrr-bbbb-89b4544cad56",
+                "revision": 1,
+                "duration": "0h0m",
+                "project": ["ganeti-webmgr", "gwm"],
+                "activities": ["code", "planning"],
+                "date_worked": "2014-04-17",
+                "user": "usertwo",
+                "notes": "Worked on coding",
+                "issue_uri": "https://github.com/osuosl/ganeti_webmgr"
+            },
+            {
+                "created_at": "2014-04-17",
+                "updated_at": None,
+                "deleted_at": None,
+                "uuid": "12345676-1c9a-ssss-cccc-89b4544cad56",
+                "revision": 1,
+                "duration": "0h0m",
+                "project": ["timesync", "ts"],
+                "activities": ["code"],
+                "date_worked": "2014-04-17",
+                "user": "userthree",
+                "notes": "Worked on coding",
+                "issue_uri": "https://github.com/osuosl/timesync"
         }],
         admin=False)
 
 get_times_uuid_data = TestData(
         mocked_input=[
-            "userone", # User
-            ["gwm"], # Project slugs
-            ["docs"], # Activity slugs
-            "2014-04-16", # Start date
-            "2014-04-18", # End date
-            False, # Include revisions
-            False, # Include deleted
-            "838853e3-3635-4076-a26f-7efr4e60981f" # UUID
+            "userone",  # User
+            ["gwm"],  # Project slugs
+            ["docs"],  # Activity slugs
+            "2014-04-16",  # Start date
+            "2014-04-18",  # End date
+            False,  # Include revisions
+            False,  # Include deleted
+            "838853e3-3635-4076-a26f-7efr4e60981f"  # UUID
         ],
         expected_response=[{
             "created_at": "2014-04-17",
@@ -136,25 +133,25 @@ get_times_uuid_data = TestData(
 
 sum_times_data = TestData(
         mocked_input=[
-            ["gwm"], # Project slugs
-            "", # Include revisions
-            "" # Include deleted
+            ["gwm"],  # Project slugs
+            "",  # Include revisions
+            ""  # Include deleted
         ],
         expected_response=[],
         admin=False)
 
 delete_time_no_data = TestData(
         mocked_input=[
-            "838853e3-3635-4076-a26f-7efr4e60981f", # UUID
-            False # Really?
+            "838853e3-3635-4076-a26f-7efr4e60981f",  # UUID
+            False  # Really?
         ],
         expected_response=[],
         admin=False)
 
 delete_time_data = TestData(
         mocked_input=[
-            "838853e3-3635-4076-a26f-7efr4e60981f", # UUID
-            True # Really?
+            "838853e3-3635-4076-a26f-7efr4e60981f",  # UUID
+            True  # Really?
         ],
         expected_response=[{
             "status": 200
@@ -163,11 +160,11 @@ delete_time_data = TestData(
 
 create_project_data = TestData(
         mocked_input=[
-            "projectx", # Project name
-            ["projx", "px"], # Project slugs
-            "https://www.github.com/osuosl/projectx", # Project URI
-            ["userone", "usertwo"], # Project users
-            "code" # Default activity
+            "projectx",  # Project name
+            ["projx", "px"],  # Project slugs
+            "https://www.github.com/osuosl/projectx",  # Project URI
+            ["userone", "usertwo"],  # Project users
+            "code"  # Default activity
         ],
         expected_response={
             "created_at": "2015-05-23",
@@ -196,12 +193,12 @@ create_project_data = TestData(
 
 update_project_data = TestData(
         mocked_input=[
-            "projx", # Slug of project to update
-            "Project X", # Updated name
-            ["px"], # Updated slugs
-            "https://www.github.com/osuosl/projectx", # Updated URI
-            ["userone", "usertwo", "userthree"], # Updated users
-            "planning" # Updated default activity
+            "projx",  # Slug of project to update
+            "Project X",  # Updated name
+            ["px"],  # Updated slugs
+            "https://www.github.com/osuosl/projectx",  # Updated URI
+            ["userone", "usertwo", "userthree"],  # Updated users
+            "planning"  # Updated default activity
         ],
         expected_response={
             "created_at": "2015-05-23",
@@ -236,103 +233,103 @@ update_project_data = TestData(
 
 get_projects_no_slug_data = TestData(
         mocked_input=[
-            False, # Include revisions
-            False, # Include deleted
-            "" # Project slug
+            False,  # Include revisions
+            False,  # Include deleted
+            ""  # Project slug
         ],
-        expected_response = [{
-            "created_at": "2014-07-17",
-            "updated_at": "2014-07-20",
-            "deleted_at": None,
-            "revision": 4,
-            "uuid": "a034806c-00db-4fe1-8de8-514575f31bfb",
-            "name": "Ganeti Web Manager",
-            "slugs": ["gwm"],
-            "uri": "https://code.osuosl.org/projects/ganeti-webmgr",
-            "users": {
-                "patcht": {
-                    "member": True,
-                    "spectator": False,
-                    "manager": False
-                },
-                "tschuy": {
-                    "member": True,
-                    "spectator": True,
-                    "manager": True
+        expected_response=[{
+                "created_at": "2014-07-17",
+                "updated_at": "2014-07-20",
+                "deleted_at": None,
+                "revision": 4,
+                "uuid": "a034806c-00db-4fe1-8de8-514575f31bfb",
+                "name": "Ganeti Web Manager",
+                "slugs": ["gwm"],
+                "uri": "https://code.osuosl.org/projects/ganeti-webmgr",
+                "users": {
+                    "patcht": {
+                        "member": True,
+                        "spectator": False,
+                        "manager": False
+                    },
+                    "tschuy": {
+                        "member": True,
+                        "spectator": True,
+                        "manager": True
+                    }
                 }
-            }
-        },
-        {
-            "created_at": "2014-07-17",
-            "updated_at": "2014-07-20",
-            "deleted_at": None,
-            "revision": 2,
-            "uuid": "a034806c-rrrr-bbbb-8de8-514575f31bfb",
-            "name": "TimeSync",
-            "slugs": ["timesync", "ts"],
-            "uri": "https://code.osuosl.org/projects/timesync",
-            "users": {
-                "patcht": {
-                    "member": True,
-                    "spectator": False,
-                    "manager": False
-                },
-                "mrsj": {
-                    "member": True,
-                    "spectator": True,
-                    "manager": False
-                },
-                "tschuy": {
-                    "member": True,
-                    "spectator": True,
-                    "manager": True
+            },
+            {
+                "created_at": "2014-07-17",
+                "updated_at": "2014-07-20",
+                "deleted_at": None,
+                "revision": 2,
+                "uuid": "a034806c-rrrr-bbbb-8de8-514575f31bfb",
+                "name": "TimeSync",
+                "slugs": ["timesync", "ts"],
+                "uri": "https://code.osuosl.org/projects/timesync",
+                "users": {
+                    "patcht": {
+                        "member": True,
+                        "spectator": False,
+                        "manager": False
+                    },
+                    "mrsj": {
+                        "member": True,
+                        "spectator": True,
+                        "manager": False
+                    },
+                    "tschuy": {
+                        "member": True,
+                        "spectator": True,
+                        "manager": True
+                    }
                 }
-            }
-        },
-        {
-            "created_at": "2014-07-17",
-            "updated_at": "2014-07-20",
-            "deleted_at": None,
-            "revision": 1,
-            "uuid": "a034806c-ssss-cccc-8de8-514575f31bfb",
-            "name": "pymesync",
-            "slugs": ["pymesync", "ps"],
-            "uri": "https://code.osuosl.org/projects/pymesync",
-            "users": {
-                "patcht": {
-                    "member": True,
-                    "spectator": False,
-                    "manager": False
-                },
-                "tschuy": {
-                    "member": True,
-                    "spectator": True,
-                    "manager": False
-                },
-                "mrsj": {
-                    "member": True,
-                    "spectator": True,
-                    "manager": True
-                },
-                "MaraJade": {
-                    "member": True,
-                    "spectator": False,
-                    "manager": False
-                },
-                "thai": {
-                    "member": True,
-                    "spectator": False,
-                    "manager": False
+            },
+            {
+                "created_at": "2014-07-17",
+                "updated_at": "2014-07-20",
+                "deleted_at": None,
+                "revision": 1,
+                "uuid": "a034806c-ssss-cccc-8de8-514575f31bfb",
+                "name": "pymesync",
+                "slugs": ["pymesync", "ps"],
+                "uri": "https://code.osuosl.org/projects/pymesync",
+                "users": {
+                    "patcht": {
+                        "member": True,
+                        "spectator": False,
+                        "manager": False
+                    },
+                    "tschuy": {
+                        "member": True,
+                        "spectator": True,
+                        "manager": False
+                    },
+                    "mrsj": {
+                        "member": True,
+                        "spectator": True,
+                        "manager": True
+                    },
+                    "MaraJade": {
+                        "member": True,
+                        "spectator": False,
+                        "manager": False
+                    },
+                    "thai": {
+                        "member": True,
+                        "spectator": False,
+                        "manager": False
+                    }
                 }
-            }
         }],
         admin=False)
 
 get_projects_slug_data = TestData(
         mocked_input=[
-            "", # Include revisions
-            "", # Include deleted
-            "gwm" # Project slug
+            "",  # Include revisions
+            "",  # Include deleted
+            "gwm"  # Project slug
         ],
         expected_response=[{
             "created_at": "2014-07-17",
@@ -360,16 +357,16 @@ get_projects_slug_data = TestData(
 
 delete_project_no_data = TestData(
         mocked_input=[
-            "slug", # Project slug
-            False # Really?
+            "slug",  # Project slug
+            False  # Really?
         ],
         expected_response=[],
         admin=True)
 
 delete_project_data = TestData(
         mocked_input=[
-            "slug", # Project slug
-            True # Really?
+            "slug",  # Project slug
+            True  # Really?
         ],
         expected_response=[{
             "status": 200
@@ -378,8 +375,8 @@ delete_project_data = TestData(
 
 create_activity_data = TestData(
         mocked_input=[
-            "Coding", # Activity name
-            "code" # Activity slug
+            "Coding",  # Activity name
+            "code"  # Activity slug
         ],
         expected_response={
             "created_at": "2013-07-27",
@@ -394,9 +391,9 @@ create_activity_data = TestData(
 
 update_activity_data = TestData(
         mocked_input=[
-            "slug", # Slug of activity to update
-            "Write Documentation", # Activity name
-            "docs" # Activity slug
+            "slug",  # Slug of activity to update
+            "Write Documentation",  # Activity name
+            "docs"  # Activity slug
         ],
         expected_response={
             "created_at": "2014-04-16",
@@ -411,44 +408,44 @@ update_activity_data = TestData(
 
 get_activities_no_slug_data = TestData(
         mocked_input=[
-            "", # Include revisions
-            "", # Include deleted
-            "", # Activity slug
+            "",  # Include revisions
+            "",  # Include deleted
+            "",  # Activity slug
         ],
         expected_response=[{
-            "created_at": "2014-04-17",
-            "updated_at": None,
-            "deleted_at": None,
-            "revision": 5,
-            "uuid": "adf036f5-3d49-4a84-bef9-062b46380bbf",
-            "name": "Documentation",
-            "slug": "docs"
-        },
-        {
-            "created_at": "2014-04-17",
-            "updated_at": None,
-            "deleted_at": None,
-            "revision": 1,
-            "uuid": "adf036f5-3d49-bbbb-rrrr-062b46380bbf",
-            "name": "Coding",
-            "slug": "dev"
-        },
-        {
-            "created_at": "2014-04-17",
-            "updated_at": None,
-            "deleted_at": None,
-            "revision": 1,
-            "uuid": "adf036f5-3d49-cccc-ssss-062b46380bbf",
-            "name": "Planning",
-            "slug": "plan"
+                "created_at": "2014-04-17",
+                "updated_at": None,
+                "deleted_at": None,
+                "revision": 5,
+                "uuid": "adf036f5-3d49-4a84-bef9-062b46380bbf",
+                "name": "Documentation",
+                "slug": "docs"
+            },
+            {
+                "created_at": "2014-04-17",
+                "updated_at": None,
+                "deleted_at": None,
+                "revision": 1,
+                "uuid": "adf036f5-3d49-bbbb-rrrr-062b46380bbf",
+                "name": "Coding",
+                "slug": "dev"
+            },
+            {
+                "created_at": "2014-04-17",
+                "updated_at": None,
+                "deleted_at": None,
+                "revision": 1,
+                "uuid": "adf036f5-3d49-cccc-ssss-062b46380bbf",
+                "name": "Planning",
+                "slug": "plan"
         }],
         admin=False)
 
 get_activities_slug_data = TestData(
         mocked_input=[
-            "", # Include revisions
-            "", # Include deleted
-            "docs", # Activity slug
+            "",  # Include revisions
+            "",  # Include deleted
+            "docs",  # Activity slug
         ],
         expected_response=[{
             "created_at": "2014-04-17",
@@ -463,16 +460,16 @@ get_activities_slug_data = TestData(
 
 delete_activity_no_data = TestData(
         mocked_input=[
-            "slug", # Activity slug
-            False # Really?
+            "slug",  # Activity slug
+            False  # Really?
         ],
         expected_response=[],
         admin=True)
 
 delete_activity_data = TestData(
         mocked_input=[
-            "slug", # Activity slug
-            True # Really?
+            "slug",  # Activity slug
+            True  # Really?
         ],
         expected_response=[{
             "status": 200
@@ -481,15 +478,15 @@ delete_activity_data = TestData(
 
 create_user_data = TestData(
         mocked_input=[
-            "newuser", # Username
-            "password", # Password
-            "John Doe", # Display name
-            "newuser@osuosl.org", # Email
-            False, # Site admin?
-            False, # Site manager?
-            False, # Site spectator?
-            "A new user", # Metainfo
-            True # Active?
+            "newuser",  # Username
+            "password",  # Password
+            "John Doe",  # Display name
+            "newuser@osuosl.org",  # Email
+            False,  # Site admin?
+            False,  # Site manager?
+            False,  # Site spectator?
+            "A new user",  # Metainfo
+            True  # Active?
         ],
         expected_response={
             "created_at": "2015-05-23",
@@ -507,16 +504,16 @@ create_user_data = TestData(
 
 update_user_data = TestData(
         mocked_input=[
-            "olduser", # Username of user to update
-            "newuser", # Updated username
-            "pa$$word", # Updated password
-            "A. User", # Updated display name
-            "auser@osuosl.org", # Updated email
-            True, # Site admin?
-            False, # Site manager?
-            False, # Site spectator?
-            "Admin user", # Metainfo
-            True, # Active?
+            "olduser",  # Username of user to update
+            "newuser",  # Updated username
+            "pa$$word",  # Updated password
+            "A. User",  # Updated display name
+            "auser@osuosl.org",  # Updated email
+            True,  # Site admin?
+            False,  # Site manager?
+            False,  # Site spectator?
+            "Admin user",  # Metainfo
+            True,  # Active?
         ],
         expected_response={
             "created_at": "2015-02-29",
@@ -533,57 +530,57 @@ update_user_data = TestData(
 
 get_users_no_slug_data = TestData(
         mocked_input=[
-            "" # Username
+            ""  # Username
         ],
         expected_response=[{
-            "username": "userone",
-            "display_name": "One Is The Loneliest Number",
-            "email": "exampleone@example.com",
-            "active": True,
-            "site_admin": False,
-            "site_manager": False,
-            "site_spectator": False,
-            "created_at": "2015-02-29",
-            "deleted_at": None
-        },
-        {
-            "username": "usertwo",
-            "display_name": "Two Can Be As Bad As One",
-            "email": "exampletwo@example.com",
-            "active": True,
-            "site_admin": False,
-            "site_manager": False,
-            "site_spectator": False,
-            "created_at": "2015-02-29",
-            "deleted_at": None
-        },
-        {
-            "username": "userthree",
-            "display_name": "Yes It's The Saddest Experience",
-            "email": "examplethree@example.com",
-            "active": True,
-            "site_admin": False,
-            "site_manager": False,
-            "site_spectator": False,
-            "created_at": "2015-02-29",
-            "deleted_at": None
-        },
-        {
-            "username": "userfour",
-            "display_name": "You'll Ever Do",
-            "email": "examplefour@example.com",
-            "active": True,
-            "site_admin": False,
-            "site_manager": False,
-            "site_spectator": False,
-            "created_at": "2015-02-29",
-            "deleted_at": None
+                "username": "userone",
+                "display_name": "One Is The Loneliest Number",
+                "email": "exampleone@example.com",
+                "active": True,
+                "site_admin": False,
+                "site_manager": False,
+                "site_spectator": False,
+                "created_at": "2015-02-29",
+                "deleted_at": None
+            },
+            {
+                "username": "usertwo",
+                "display_name": "Two Can Be As Bad As One",
+                "email": "exampletwo@example.com",
+                "active": True,
+                "site_admin": False,
+                "site_manager": False,
+                "site_spectator": False,
+                "created_at": "2015-02-29",
+                "deleted_at": None
+            },
+            {
+                "username": "userthree",
+                "display_name": "Yes It's The Saddest Experience",
+                "email": "examplethree@example.com",
+                "active": True,
+                "site_admin": False,
+                "site_manager": False,
+                "site_spectator": False,
+                "created_at": "2015-02-29",
+                "deleted_at": None
+            },
+            {
+                "username": "userfour",
+                "display_name": "You'll Ever Do",
+                "email": "examplefour@example.com",
+                "active": True,
+                "site_admin": False,
+                "site_manager": False,
+                "site_spectator": False,
+                "created_at": "2015-02-29",
+                "deleted_at": None
         }],
         admin=True)
 
 get_users_slug_data = TestData(
         mocked_input=[
-            "userone" # Username
+            "userone"  # Username
         ],
         expected_response=[{
             "username": "userone",
@@ -600,16 +597,16 @@ get_users_slug_data = TestData(
 
 delete_user_no_data = TestData(
         mocked_input=[
-            "user", # Username
-            False # Really?
+            "user",  # Username
+            False  # Really?
         ],
         expected_response=[],
         admin=True)
 
 delete_user_data = TestData(
         mocked_input=[
-            "user", # Username
-            True # Really?
+            "user",  # Username
+            True  # Really?
         ],
         expected_response=[{
             "status": 200
