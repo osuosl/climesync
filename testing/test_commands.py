@@ -1,23 +1,26 @@
 import unittest
-from mock import patch
+from mock import patch, create_autospec
 
-import climesync
 import commands
+import util
+
+from test_data import *
 
 
-class CommandsTest(unittest.TestCase):
+# test_command decorator
+class test_command():
+    
+    def __init__(self, data=None):
+        self.command = data.command
+        self.mocked_input = data.mocked_input
+        self.expected_response = data.expected_response
+        self.admin = data.admin
 
-    def setUp(self):
         self.config = {
             "timesync_url": "test",
-            "username":     "test",
-            "password":     "test"
+            "username": "test",
+            "password": "test"
         }
-
-        commands.connect(config_dict=self.config, test=True)
-
-    def tearDown(self):
-        commands.disconnect()
 
     def authenticate_nonadmin(self):
         res = commands.sign_in(config_dict=self.config)
@@ -32,192 +35,88 @@ class CommandsTest(unittest.TestCase):
 
         return res
 
-    def test_connect(self):
-        self.assertIsNotNone(commands.ts)
-        self.assertTrue(commands.ts.test)
+    def __call__(self, test):
+        @patch("util.get_field")
+        def wrapped_test(testcase, mock_get_field):
+            commands.connect(config_dict=self.config, test=True)
 
-    def test_disconnect(self):
-        commands.disconnect()
-        self.assertIsNone(commands.ts)
+            # Set up any additional mocks
+            test(testcase)
 
-    def test_sign_in(self):
-        commands.disconnect()
-        res = self.authenticate_nonadmin()
-        self.assertIn("error", res)
+            mock_get_field.side_effect = self.mocked_input
 
-        commands.connect(config_dict=self.config, test=True)
-        res = self.authenticate_nonadmin()
-        self.assertEqual(res["token"], "TESTTOKEN")
+            if self.admin:
+                self.authenticate_admin()
+            else:
+                self.authenticate_nonadmin()
 
-    def test_sign_out(self):
-        self.authenticate_nonadmin()
+            response = self.command()
 
-        self.assertIsNotNone(commands.ts.user)
+            print response
+            print self.expected_response
+            assert response == self.expected_response
 
-        commands.sign_out()
+        return wrapped_test
 
-        self.assertIsNone(commands.ts.user)
 
-    def test_command_decorator(self):
-        for command in [c[2] for c in climesync.command_lookup if c[1]]:
-            self.assertEqual(command.__name__, "wrapped_command")
+class CommandsTest(unittest.TestCase):
 
-    @patch("util.get_field")
-    def test_create_time(self, mock_get_field):
-        expected_response = {
-            "created_at": "2015-05-23",
-            "updated_at": None,
-            "deleted_at": None,
-            "uuid": "838853e3-3635-4076-a26f-7efr4e60981f",
-            "revision": 1,
-            "duration": 3600,
-            "project": "proj",
-            "activities": ["act1", "act2"],
-            "date_worked": "2016-05-04",
-            "user": "test",
-            "notes": "notes",
-            "issue_uri": "Issue"
-        }
+    @test_command(data=create_time_data)
+    def test_create_time(self):
+        pass
 
-        mock_get_field.side_effect = ["1h0m", "proj", ["act1", "act2"],
-                                      "2016-05-04", "Issue", "notes"]
+    @test_command(data=update_time_data)
+    def test_update_time(self):
+        pass
 
-        self.authenticate_nonadmin()
+    @test_command(data=get_times_no_uuid_data)
+    def test_get_times_no_uuid(self):
+        pass
 
-        response = commands.create_time()
+    @test_command(data=get_times_uuid_data)
+    def test_get_times_uuid(self):
+        pass
 
-        self.assertEqual(response, expected_response)
+    @test_command(data=sum_times_data)
+    def test_sum_times(self):
+        pass
 
-    @patch("util.get_field")
-    def test_update_time(self, mock_get_field):
-        expected_response = {
-            "created_at": "2014-06-12",
-            "updated_at": "2015-10-18",
-            "deleted_at": None,
-            "uuid": "myuuid",
-            "revision": 2,
-            "duration": 7200,
-            "project": "other_proj",
-            "activities": ["other_act1", "other_act2"],
-            "date_worked": "2016-06-20",
-            "user": "other_user",
-            "notes": "more notes",
-            "issue_uri": "URI"
-        }
+    @test_command(data=delete_time_no_data)
+    def test_delete_time_no(self):
+        pass
 
-        mock_get_field.side_effect = ["myuuid", "2h0m", "other_proj",
-                                      "other_user",
-                                      ["other_act1", "other_act2"],
-                                      "2016-06-20", "URI", "more notes"]
+    @test_command(data=delete_time_data)
+    def test_delete_time(self):
+        pass
 
-        self.authenticate_nonadmin()
+    @test_command(data=create_project_data)
+    def test_create_project(self):
+        patcher = patch("util.get_user_permissions",
+                        return_value=create_project_data.expected_response["users"])
 
-        response = commands.update_time()
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
-        self.assertEqual(response, expected_response)
+    @test_command(data=update_project_data)
+    def test_update_project(self):
+        patcher = patch("util.get_user_permissions",
+                        return_value=update_project_data.expected_response["users"])
 
-    @patch("util.get_field")
-    def test_get_times_no_uuid(self, mock_get_field):
-        expected_response = [{
-            "created_at": "2014-04-17",
-            "updated_at": None,
-            "deleted_at": None,
-            "uuid": "c3706e79-1c9a-4765-8d7f-89b4544cad56",
-            "revision": 1,
-            "duration": "0h0m",
-            "project": ["ganeti-webmgr", "gwm"],
-            "activities": ["docs", "planning"],
-            "date_worked": "2014-04-17",
-            "user": "userone",
-            "notes": "Worked on documentation.",
-            "issue_uri": "https://github.com/osuosl/ganeti_webmgr"
-        },
-        {
-            "created_at": "2014-04-17",
-            "updated_at": None,
-            "deleted_at": None,
-            "uuid": "12345676-1c9a-rrrr-bbbb-89b4544cad56",
-            "revision": 1,
-            "duration": "0h0m",
-            "project": ["ganeti-webmgr", "gwm"],
-            "activities": ["code", "planning"],
-            "date_worked": "2014-04-17",
-            "user": "usertwo",
-            "notes": "Worked on coding",
-            "issue_uri": "https://github.com/osuosl/ganeti_webmgr"
-        },
-        {
-            "created_at": "2014-04-17",
-            "updated_at": None,
-            "deleted_at": None,
-            "uuid": "12345676-1c9a-ssss-cccc-89b4544cad56",
-            "revision": 1,
-            "duration": "0h0m",
-            "project": ["timesync", "ts"],
-            "activities": ["code"],
-            "date_worked": "2014-04-17",
-            "user": "userthree",
-            "notes": "Worked on coding",
-            "issue_uri": "https://github.com/osuosl/timesync"
-        }]
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
-        mock_get_field.return_value = None
+    @test_command(data=get_projects_no_slug_data)
+    def test_get_projects_no_slug(self):
+        pass
 
-        self.authenticate_nonadmin()
+    @test_command(data=get_projects_slug_data)
+    def test_get_projects_slug(self):
+        pass
 
-        response = commands.get_times()
+    @test_command(data=delete_project_no_data)
+    def test_delete_project_no(self):
+        pass
 
-        self.assertEqual(response, expected_response)
-
-    @patch("util.get_field")
-    def test_get_times_uuid(self, mock_get_field):
-        expected_response = [{
-            "created_at": "2014-04-17",
-            "updated_at": None,
-            "deleted_at": None,
-            "uuid": "myuuid",
-            "revision": 1,
-            "duration": "0h0m",
-            "project": ["ganeti-webmgr", "gwm"],
-            "activities": ["docs", "planning"],
-            "date_worked": "2014-04-17",
-            "user": "userone",
-            "notes": "Worked on documentation.",
-            "issue_uri": "https://github.com/osuosl/ganeti_webmgr"
-        }]
-
-        mock_get_field.side_effect = ["userone", ["gwm"], ["docs"],
-                                      "2014-04-16", "2014-04-18", False, False,
-                                      "myuuid"]
-
-        self.authenticate_nonadmin()
-
-        response = commands.get_times()
-
-        self.assertEqual(response, expected_response)
-
-    @patch("util.get_field")
-    def test_delete_time_no(self, mock_get_field):
-        expected_response = []
-
-        mock_get_field.side_effect = ["uuid", False]
-
-        self.authenticate_nonadmin()
-
-        response = commands.delete_time()
-
-        self.assertEqual(response, expected_response)
-
-    @patch("util.get_field")
-    def test_delete_time(self, mock_get_field):
-        expected_response = [{
-            "status": 200
-        }]
-
-        mock_get_field.side_effect = ["uuid", True]
-
-        self.authenticate_nonadmin()
-
-        response = commands.delete_time()
-
-        self.assertEqual(response, expected_response)
+    @test_command(data=delete_project_data)
+    def test_delete_project(self):
+        pass
