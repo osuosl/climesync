@@ -120,3 +120,51 @@ class CommandsTest(unittest.TestCase):
     @test_command(data=delete_project_data)
     def test_delete_project(self):
         pass
+
+    @test_command(data=create_activity_data)
+    def test_create_activity(self):
+        pass
+
+    @test_command(data=update_activity_data)
+    def test_update_activity(self):
+        pass
+
+    @test_command(data=get_activities_no_slug_data)
+    def test_get_activities_no_slug(self):
+        pass
+
+    @test_command(data=get_activities_slug_data)
+    def test_get_activities_slug(self):
+        pass
+
+    @test_command(data=delete_activity_no_data)
+    def test_delete_activity_no(self):
+        pass
+
+    @test_command(data=delete_activity_data)
+    def test_delete_activity(self):
+        pass
+
+    @test_command(data=create_user_data)
+    def test_create_user(self):
+        pass
+
+    @test_command(data=update_user_data)
+    def test_update_user(self):
+        pass
+
+    @test_command(data=get_users_no_slug_data)
+    def test_get_users_no_slug(self):
+        pass
+
+    @test_command(data=get_users_slug_data)
+    def test_get_users_slug(self):
+        pass
+
+    @test_command(data=delete_user_no_data)
+    def test_delete_user_no(self):
+        pass
+
+    @test_command(data=delete_user_data)
+    def test_delete_user(self):
+        pass
