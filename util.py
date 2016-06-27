@@ -141,12 +141,13 @@ def get_field(prompt, optional=False, field_type=""):
             type_prompt = "(y/N) "
         else:
             type_prompt = "(y/n) "
-
-    if field_type == ":":
+    elif field_type == ":":
         type_prompt = "(Time input - <value>h<value>m) "
-
-    if field_type == "!":
+    elif field_type == "!":
         type_prompt = "(Comma delimited) "
+    elif field_type != "":
+        # If the field type isn't valid, return an empty string
+        return ""
 
     # Format the original prompt with prepended additions
     formatted_prompt = "{}{}{}: ".format(optional_prompt, type_prompt, prompt)
@@ -168,9 +169,6 @@ def get_field(prompt, optional=False, field_type=""):
                 return [r.strip() for r in response.split(",")]
             elif field_type == "":
                 return response
-            else:
-                # If the provided field_type isn't valid, return empty string
-                return ""
 
         print "Please submit a valid input"
 

@@ -1,8 +1,126 @@
+import os
+import stat
+import ConfigParser
+
 import unittest
 import util
 
+from mock import call, patch, Mock, MagicMock
+from forbiddenfruit import curse, reverse
+
 
 class UtilTest(unittest.TestCase):
+
+    @patch("util.os")
+    @patch("util.os.path")
+    def test_create_config_default_path(self, mock_path, mock_os):
+        default_path = "~/.climesyncrc"
+        fullpath = "/path/to/config"
+        open_args = [os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR]
+        filedescriptor = 0
+
+        mock_path.expanduser.return_value = fullpath
+
+        mock_os.path = mock_path
+        mock_os.open.return_value = filedescriptor
+        mock_os.O_CREAT = os.O_CREAT
+
+        util.create_config()
+
+        mock_os.open.assert_called_with(fullpath, *open_args)
+        mock_os.close.assert_called_with(filedescriptor)
+
+    @patch("util.os")
+    @patch("util.os.path")
+    def test_create_config_provided_path(self, mock_path, mock_os):
+        provided_path = "~/.config/climesync/config"
+        fullpath = "/path/to/config"
+        open_args = [os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR]
+        filedescriptor = 0
+
+        mock_path.expanduser.return_value = fullpath
+
+        mock_os.path = mock_path
+        mock_os.open.return_value = filedescriptor
+        mock_os.O_CREAT = os.O_CREAT
+
+        util.create_config(path=provided_path)
+
+        mock_os.open.assert_called_with(fullpath, *open_args)
+        mock_os.close.assert_called_with(filedescriptor)
+
+    @patch("util.ConfigParser.RawConfigParser")
+    @patch("util.os.path")
+    def test_read_config_path_exists(self, mock_path, _):
+        fullpath = "/path/to/config"
+
+        mock_path.expanduser.return_value = fullpath
+        mock_path.isfile.return_value = True
+
+        mock_configparser = util.read_config()
+
+        mock_configparser.read.assert_called_with(fullpath)
+
+    @patch("util.ConfigParser.RawConfigParser")
+    @patch("util.os.path")
+    def test_read_config_path_not_exist(self, mock_path, _):
+        fullpath = "/path/to/config"
+
+        mock_path.expanduser.return_value = fullpath
+        mock_path.isfile.return_value = False
+
+        mock_configparser = util.read_config()
+
+        mock_configparser.read.assert_not_called()
+
+    @patch("util.ConfigParser.RawConfigParser")
+    @patch("util.os.path")
+    def test_read_config_parsing_error(self, mock_path, mock_rawconfigparser):
+        fullpath = "/path/to/config"
+
+        mock_path.expanduser.return_value = fullpath
+        mock_path.isfile.return_value = True
+
+        mock_parser = MagicMock()
+        mock_parser.read.side_effect = ConfigParser.ParsingError("")
+
+        mock_rawconfigparser.return_value = mock_parser
+
+        result = util.read_config()
+
+        assert result == None
+
+    @patch("util.create_config")
+    @patch("util.read_config")
+    @patch("util.open")
+    def test_write_config_file_exists(self, mock_open, mock_read_config, mock_create_config):
+        section_name = "climesync"
+        key = "key"
+        value = "value"
+
+        mock_config = MagicMock()
+        mock_config.sections.return_value = [section_name]
+
+        mock_file = MagicMock(spec=file)
+
+        mock_open.return_value.__enter__.return_value = mock_file
+        mock_read_config.return_value = mock_config
+
+        util.write_config(key, value)
+
+        mock_create_config.assert_not_called()
+        mock_config.set.assert_called_with(section_name, key, value)
+        mock_config.add_section.assert_not_called()
+        mock_config.write.assert_called_with(mock_file)
+
+    def test_write_config_file_not_exist(self):
+        pass
+
+    def test_write_config_blank_file(self):
+        pass
+
+    def test_write_config_parsing_error(self):
+        pass
 
     def test_is_time(self):
         self.assertFalse(util.is_time("AhBm"))
@@ -24,6 +142,337 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(util.to_readable_time(60), "0h1m")
         self.assertEqual(util.to_readable_time(3600), "1h0m")
         self.assertEqual(util.to_readable_time(1000), "0h16m")
+
+    @patch("util.raw_input")
+    def test_get_field_string(self, mock_raw_input):
+        prompt = "Prompt"
+        expected_formatted_prompt = "Prompt: "
+
+        mocked_input = "test input"
+
+        mock_raw_input.return_value = mocked_input
+
+        value = util.get_field(prompt)
+
+        assert value == mocked_input
+        mock_raw_input.assert_called_with(expected_formatted_prompt)
+
+    @patch("util.raw_input")
+    def test_get_field_string_empty(self, mock_raw_input):
+        prompt = "Prompt"
+        expected_formatted_prompt = "Prompt: "
+
+        mocked_input = ["", "value"]
+
+        mock_raw_input.side_effect = mocked_input
+
+        value = util.get_field(prompt)
+
+        assert value == mocked_input[1]
+        assert mock_raw_input.call_count == 2
+
+    @patch("util.raw_input")
+    def test_get_field_string_optional(self, mock_raw_input):
+        prompt = "Prompt"
+        expected_formatted_prompt = "(Optional) Prompt: "
+
+        mocked_input = ""
+
+        mock_raw_input.return_value = mocked_input
+
+        value = util.get_field(prompt, optional=True)
+
+        assert value == ""
+        mock_raw_input.assert_called_with(expected_formatted_prompt)
+
+    @patch("util.raw_input")
+    def test_get_field_bool_yes(self, mock_raw_input):
+        prompt = "Prompt"
+        expected_formatted_prompt = "(y/n) Prompt: "
+
+        mocked_input = "Y"
+
+        mock_raw_input.return_value = mocked_input
+
+        value = util.get_field(prompt, field_type="?")
+
+        assert value == True
+        mock_raw_input.assert_called_with(expected_formatted_prompt)
+
+    @patch("util.raw_input")
+    def test_get_field_bool_no(self, mock_raw_input):
+        prompt = "Prompt"
+
+        mocked_input = "N"
+
+        mock_raw_input.return_value = mocked_input
+
+        value = util.get_field(prompt, field_type="?")
+
+        assert value == False
+
+    @patch("util.raw_input")
+    def test_get_field_bool_empty(self, mock_raw_input):
+        prompt = "Prompt"
+
+        mocked_input = ["", "yes"]
+
+        mock_raw_input.side_effect = mocked_input
+
+        value = util.get_field(prompt, field_type="?")
+
+        assert value == True
+        assert mock_raw_input.call_count == 2
+
+    @patch("util.raw_input")
+    def test_get_field_bool_invalid(self, mock_raw_input):
+        prompt = "Prompt"
+
+        mocked_input = ["maybe", "yes"]
+
+        mock_raw_input.side_effect = mocked_input
+
+        value = util.get_field(prompt, field_type="?")
+
+        assert value == True
+        assert mock_raw_input.call_count == 2
+
+    @patch("util.raw_input")
+    def test_get_field_bool_optional(self, mock_raw_input):
+        prompt = "Prompt"
+        expected_formatted_prompt = "(Optional) (y/N) Prompt: "
+
+        mocked_input = ""
+
+        mock_raw_input.return_value = mocked_input
+
+        value = util.get_field(prompt, optional=True, field_type="?")
+
+        assert value == ""
+        mock_raw_input.assert_called_with(expected_formatted_prompt)
+
+    @patch("util.raw_input")
+    def test_get_field_time(self, mock_raw_input):
+         prompt = "Prompt"
+         expected_formatted_prompt = "(Time input - <value>h<value>m) Prompt: "
+
+         mocked_input = "1h0m"
+
+         mock_raw_input.return_value = mocked_input
+
+         value = util.get_field(prompt, field_type=":")
+
+         assert value == "1h0m"
+         mock_raw_input.assert_called_with(expected_formatted_prompt)
+
+    @patch("util.raw_input")
+    def test_get_field_time_invalid(self, mock_raw_input):
+         prompt = "Prompt"
+
+         mocked_input = ["1 hour", "1h0m"]
+
+         mock_raw_input.side_effect = mocked_input
+
+         value = util.get_field(prompt, field_type=":")
+
+         assert value == "1h0m"
+
+    @patch("util.raw_input")
+    def test_get_field_time_optional(self, mock_raw_input):
+         prompt = "Prompt"
+         expected_formatted_prompt = "(Optional) (Time input - <value>h<value>m) Prompt: "
+
+         mocked_input = ""
+
+         mock_raw_input.return_value = mocked_input
+
+         value = util.get_field(prompt, optional=True, field_type=":")
+
+         assert value == ""
+         mock_raw_input.assert_called_with(expected_formatted_prompt)
+
+    @patch("util.raw_input")
+    def test_get_field_list(self, mock_raw_input):
+        prompt = "Prompt"
+        expected_formatted_prompt = "(Comma delimited) Prompt: "
+
+        mocked_input = " v1 ,   v2, v3,v4"
+
+        mock_raw_input.return_value = mocked_input
+
+        value = util.get_field(prompt, field_type="!")
+
+        assert value == ["v1", "v2", "v3", "v4"]
+        mock_raw_input.assert_called_with(expected_formatted_prompt)
+
+    @patch("util.raw_input")
+    def test_get_field_list_single_value(self, mock_raw_input):
+        prompt = "Prompt"
+
+        mocked_input = "v1"
+
+        mock_raw_input.return_value = mocked_input
+
+        value = util.get_field(prompt, field_type="!")
+
+        assert value == ["v1"]
+
+    @patch("util.raw_input")
+    def test_get_field_list_empty(self, mock_raw_input):
+        prompt = "Prompt"
+
+        mocked_input = ["", "v1, v2"]
+
+        mock_raw_input.side_effect = mocked_input
+
+        value = util.get_field(prompt, field_type="!")
+
+        assert value == ["v1", "v2"]
+
+    @patch("util.raw_input")
+    def test_get_field_list_optional(self, mock_raw_input):
+        prompt = "Prompt"
+        expected_formatted_prompt = "(Optional) (Comma delimited) Prompt: "
+
+        mocked_input = ""
+
+        mock_raw_input.return_value = mocked_input
+
+        value = util.get_field(prompt, optional=True, field_type="!")
+
+        assert value == ""
+        mock_raw_input.assert_called_with(expected_formatted_prompt)
+
+    @patch("util.raw_input")
+    def test_get_field_type_invalid(self, mock_raw_input):
+        prompt = "Prompt"
+        
+        value = util.get_field(prompt, field_type="invalid")
+
+        assert value == ""
+
+    @patch("util.get_field")
+    def test_get_fields(self, mock_get_field):
+        fields = [
+            ("strval",       "String value"),
+            ("*optstrval",   "Optional string value"),
+            ("?boolval",     "Bool value"),
+            ("*?optboolval", "Optional bool value"),
+            (":timeval",     "Time value"),
+            ("*:opttimeval", "Optional time value"),
+            ("!listval",     "List value"),
+            ("*!optlistval", "Optional list value")
+        ]
+
+        mocked_input = ["str", "", True, False, "1h0m", "0h30m",
+                        ["val1", "val2"], []]
+
+        expected_values = {
+            "strval": "str",
+            "boolval": True,
+            "optboolval": False,
+            "timeval": "1h0m",
+            "opttimeval": "0h30m",
+            "listval": ["val1", "val2"],
+            "optlistval": []
+        }
+
+        mock_get_field.side_effect = mocked_input
+
+        values = util.get_fields(fields)
+
+        assert values == expected_values
+
+    @patch("util.get_field")
+    @patch("util.read_config")
+    def test_add_kv_pair_redundant(self, mock_read_config, mock_get_field):
+        key = "redundant"
+        value = "value"
+
+        mock_config = MagicMock()
+        mock_config.has_option.return_value = True
+        mock_config.get.return_value = value
+
+        mock_read_config.return_value = mock_config
+
+        util.add_kv_pair(key, value)
+
+        mock_get_field.assert_not_called()
+
+    @patch("util.get_field")
+    @patch("util.write_config")
+    @patch("util.read_config")
+    def test_add_kv_pair_no(self, mock_read_config, mock_write_config,
+                            mock_get_field):
+        key = "key"
+        value = "value"
+        path = "~/.climesyncrc"
+
+        mock_config = MagicMock()
+        mock_config.has_option.return_value = True
+        mock_config.get.return_value = None
+
+        mock_read_config.return_value = mock_config
+
+        mock_get_field.return_value = False
+
+        util.add_kv_pair(key, value, path)
+
+        mock_write_config.assert_not_called()
+
+    @patch("util.get_field")
+    @patch("util.write_config")
+    @patch("util.read_config")
+    def test_add_kv_pair(self, mock_read_config, mock_write_config,
+                         mock_get_field):
+        key = "key"
+        value = "value"
+        path = "~/.climesyncrc"
+
+        mock_config = MagicMock()
+        mock_config.has_option.return_value = True
+        mock_config.get.return_value = None
+
+        mock_read_config.return_value = mock_config
+
+        mock_get_field.return_value = True
+
+        util.add_kv_pair(key, value, path)
+
+        mock_write_config.assert_called_with(key, value, path)
+
+    @patch("util.get_field")
+    def test_get_user_permissions(self, mock_get_field):
+        users = ["userone", "usertwo"]
+
+        expected_permissions = {
+            "userone": {
+                "member": True,
+                "spectator": False,
+                "manager": False
+            },
+            "usertwo": {
+                "member": True,
+                "spectator": True,
+                "manager": True
+            }
+        }
+
+        mocked_input = [True, False, False,
+                        True, True, True]
+
+        mock_get_field.side_effect = mocked_input
+
+        permissions = util.get_user_permissions(users)
+
+        assert permissions == expected_permissions
+
+    def test_get_user_permissions_empty(self):
+        users = []
+
+        permissions = util.get_user_permissions(users)
+
+        assert not permissions
 
     def test_fix_user_permissions(self):
         permissions = {
@@ -53,7 +502,7 @@ class UtilTest(unittest.TestCase):
 
         self.assertEqual(fixed, fixed_permissions)
 
-    def test_fix_args(self):
+    def test_fix_args_optional(self):
         args = {
             "<angle_arg>": "value",
             "--long-opt": "[list values]",
@@ -62,7 +511,29 @@ class UtilTest(unittest.TestCase):
             "--blank-arg": None
         }
 
-        fixed_args_nonoptional = {
+        expected_args = {
+            "angle_arg": "value",
+            "long_opt": ["list", "values"],
+            "upper_arg": True,
+            "duration": 300,
+        }
+
+        fixed_args = util.fix_args(args, True)
+
+        print fixed_args
+        print expected_args
+        assert fixed_args == expected_args
+
+    def test_fix_args_nonoptional(self):
+        args = {
+            "<angle_arg>": "value",
+            "--long-opt": "[list values]",
+            "UPPER_ARG": "True",
+            "--duration": "300",
+            "--blank-arg": None
+        }
+
+        expected_args = {
             "angle_arg": "value",
             "long_opt": ["list", "values"],
             "upper_arg": True,
@@ -70,11 +541,6 @@ class UtilTest(unittest.TestCase):
             "blank_arg": None
         }
 
-        fixed_args_optional = dict(fixed_args_nonoptional)
-        del(fixed_args_optional["blank_arg"])
+        fixed_args = util.fix_args(args, False)
 
-        nonoptional = util.fix_args(args, False)
-        optional = util.fix_args(args, True)
-
-        self.assertEqual(nonoptional, fixed_args_nonoptional)
-        self.assertEqual(optional, fixed_args_optional)
+        assert fixed_args == expected_args
