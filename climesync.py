@@ -568,7 +568,7 @@ def get_projects():
     print "Filtering projects..."
     post_data = get_fields([("*?include_revisions", "Include revisions?"),
                             ("*?include_deleted", "Include deleted?"),
-                            ("*!slugs", "By project slug")])
+                            ("*slug", "By project slug")])
 
     # Attempt to query the server with filtering parameters
     return ts.get_projects(query_parameters=post_data)
