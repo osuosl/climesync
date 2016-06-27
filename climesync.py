@@ -5,10 +5,10 @@
 Usage: climesync.py [options] [<command> [<args>... ]]
 
 Options:
-    -h             --help                 Print this dialog
-    -c <baseurl>   --connect=<baseurl>    TimeSync Server URL
-    -u <username>  --username=<username>  Username of user to authenticate as
-    -p <password>  --password=<password>  Password of user to authenticate as
+    -h --help      Print this dialog
+    -c <baseurl>   TimeSync Server URL
+    -u <username>  Username of user to authenticate as
+    -p <password>  Password of user to authenticate as
 
 Commands:
 
@@ -151,7 +151,7 @@ def scripting_mode(command_name, argv):
         print __doc__
 
 
-def main(argv=None):
+def main(argv=None, test=False):
     # Command line arguments
     args = docopt(__doc__, argv=argv, options_first=True)
     url = args['-c']
@@ -170,7 +170,7 @@ def main(argv=None):
 
     # Attempt to connect with arguments and/or config
     response = commands.connect(arg_url=url, config_dict=config_dict,
-                                interactive=interactive)
+                                interactive=interactive, test=test)
 
     if "climesync error" in response:
         util.print_json(response)

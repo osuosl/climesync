@@ -201,8 +201,8 @@ update_project_data = TestData(
             "planning"  # Updated default activity
         ],
         expected_response={
-            "created_at": "2015-05-23",
-            "updated_at": None,
+            "created_at": "2014-04-16",
+            "updated_at": "2014-04-18",
             "deleted_at": None,
             "revision": 2,
             "uuid": "309eae69-21dc-4538-9fdc-e6892a9c4dd4",
@@ -226,8 +226,6 @@ update_project_data = TestData(
                     "manager": False
                 }
             },
-            "default_activity": "planning"
-
         },
         admin=True)
 

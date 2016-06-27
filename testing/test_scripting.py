@@ -122,18 +122,18 @@ class ScriptingTest(unittest.TestCase):
 
         self.assertEqual(response["name"], "newname")
         # Commented out for now because of a Pymesync bug
-#        self.assertEqual(response["users"], {
-#            "userone": {
-#                "member": True,
-#                "spectator": True,
-#                "manager": False
-#            },
-#            "usertwo": {
-#                "member": True,
-#                "spectator": False,
-#                "manager": False
-#            }
-#        })
+        self.assertEqual(response["users"], {
+            "userone": {
+                "member": True,
+                "spectator": True,
+                "manager": False
+            },
+            "usertwo": {
+                "member": True,
+                "spectator": False,
+                "manager": False
+            }
+        })
 
     def test_get_projects(self):
         self.auth_nonadmin()
