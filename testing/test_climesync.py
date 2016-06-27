@@ -1,4 +1,3 @@
-from StringIO import StringIO
 import unittest
 from mock import call, patch, MagicMock
 
@@ -129,6 +128,7 @@ class ClimesyncTest(unittest.TestCase):
         mocked_input = [username, password]
 
         mock_util.get_field.side_effect = mocked_input
+
         mock_ts.test = False
 
         commands.sign_in()
@@ -232,61 +232,9 @@ class ClimesyncTest(unittest.TestCase):
                                                  interactive=True)
         mock_interactive_mode.assert_called_with()
 
-    @patch("climesync.util")
-    @patch("climesync.lookup_command")
-    def test_menu_command(self, mock_lookup_command, mock_util):
-        command = "ct"
-        command_result = {}
-
-        mock_command = MagicMock()
-        mock_command.return_value = command_result
-
-        mock_lookup_command.return_value = mock_command
-
-        mock_util.get_field.return_value = command
-
-        result = climesync.menu()
-
-        assert result
-        mock_util.print_json.assert_called_with(command_result)
-
-    @patch("climesync.util")
-    @patch("climesync.sys.stdout", new_callable=StringIO)
-    def test_menu_help(self, mock_stdout, mock_util):
-        command = "h"
-
-        mock_util.get_field.return_value = command
-
-        result = climesync.menu()
-
-        assert result
-        assert climesync.menu_options in mock_stdout.getvalue()
-
-    @patch("climesync.util")
-    def test_menu_quit(self, mock_util):
-        command = "q"
-
-        mock_util.get_field.return_value = command
-
-        result = climesync.menu()
-
-        assert not result
-
-    @patch("climesync.util")
-    @patch("climesync.sys.stdout", new_callable=StringIO)
-    def test_menu_invalid(self, mock_stdout, mock_util):
-        command = "invalid"
-
-        mock_util.get_field.return_value = command
-
-        result = climesync.menu()
-
-        assert result
-        assert "Invalid choice!" in mock_stdout.getvalue()
-
     @patch("climesync.scripting_mode")
     @patch("climesync.util.read_config")
-    def test_main_use_config(self, mock_read_config, mock_scripting_mode):
+    def test_use_config(self, mock_read_config, mock_scripting_mode):
         baseurl = "ts_url"
         username = "test"
         password = "password"
