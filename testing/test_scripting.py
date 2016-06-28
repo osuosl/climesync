@@ -3,6 +3,54 @@ import shlex
 
 import commands
 
+import test_data
+
+
+class test_script():
+
+    def __init__(self, data):
+        self.command = data.command
+        self.cli_args = data.cli_args
+        self.expected_response = data.expected_response
+        self.admin = data.admin
+
+        self.config = {
+            "timesync_url": "test",
+            "username": "test",
+            "password": "test"
+        }
+
+    def authenticate_nonadmin(self):
+        res = commands.sign_in(config_dict=self.config)
+
+        return res
+
+    def authenticate_admin(self):
+        config_admin = dict(self.config)
+        config_admin["username"] = "admin"
+
+        res = commands.sign_in(config_dict=config_admin)
+
+        return res
+
+    def run_command(self):
+        return self.command(shlex.split(self.cli_args))
+
+    def __call__(self, test):
+        def test_wrapped(testcase):
+            commands.connect(config_dict = self.config, test=True)
+
+            if self.admin:
+                self.authenticate_admin()
+            else:
+                self.authenticate_nonadmin()
+
+            response = self.run_command()
+
+            test(testcase, self.expected_response, response)
+
+        return test_wrapped
+
 
 class ScriptingTest(unittest.TestCase):
 
@@ -52,47 +100,37 @@ class ScriptingTest(unittest.TestCase):
         response = self.auth_configdict(blank_config)
         self.assertIn("climesync error", response)
 
-    def test_create_time(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.create_time,
-                                    "0h2m proj_slug act1 act2")
+    @test_script(data=test_data.create_time_data)
+    def test_create_time(self, expected, result):
+        assert result == expected
 
-        self.assertEqual(response["duration"], 120)
-        self.assertEqual(response["project"], "proj_slug")
-        self.assertEqual(response["activities"], ["act1", "act2"])
+    @test_script(data=test_data.update_time_data)
+    def test_update_time(self, expected, result):
+        assert result == expected
 
-    def test_update_time(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.update_time,
-                                    "uuid --duration=0h5m \
-                                     --activities=\"[act1 act2]\"")
+    @test_script(data=test_data.get_times_no_uuid_data)
+    def test_get_times_no_uuid(self, expected, result):
+        assert result == expected
 
-        self.assertEqual(response["duration"], 300)
-        self.assertEqual(response["activities"], ["act1", "act2"])
+    @test_script(data=test_data.get_times_uuid_data)
+    def test_get_times_uuid(self, expected, result):
+        assert result == expected
 
-    def test_get_times(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.get_times, "--end=2016-05-04")
+    @test_script(data=test_data.sum_times_data)
+    def test_sum_times(self, expected, result):
+        assert result == expected
 
-        self.assertEqual(len(response), 3)
+    @test_script(data=test_data.delete_time_data)
+    def test_delete_time(self, expected, result):
+        assert result == expected
 
-        response = self.run_command(commands.get_times, "--uuid=uuid")
+    @test_script(data=test_data.create_project_data)
+    def test_create_project(self, expected, result):
+        assert result == expected
 
-        self.assertEqual(len(response), 1)
-        self.assertEqual(response[0]["uuid"], "uuid")
-
-    def test_sum_times(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.sum_times,
-                                    "proj_slug --start=2016-06-01")
-
-        self.assertEqual(len(response), 0)
-
-    def test_delete_time(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.delete_time, "uuid")
-
-        self.assertEqual(response[0]["status"], 200)
+    @test_script(data=test_data.update_project_data)
+    def test_update_project(self, expected, result):
+        assert result == expected
 
     def test_create_project(self):
         self.auth_admin()

@@ -1,12 +1,18 @@
+import commands
+
 class TestData():
 
-    def __init__(self, mocked_input, expected_response, admin):
+    def __init__(self, command=None, mocked_input=None, cli_args=None,
+                 expected_response=None, admin=None):
+        self.command = command
         self.mocked_input = mocked_input
+        self.cli_args = cli_args
         self.expected_response = expected_response
         self.admin = admin
 
 
 create_time_data = TestData(
+        command=commands.create_time,
         mocked_input=[
             "1h0m",  # Duration
             "p_foo",  # Project slug
@@ -15,6 +21,10 @@ create_time_data = TestData(
             "https://www.github.com/osuosl/projectfoo/issues/42",  # Issue URI
             "Worked on coding"  # Notes
         ],
+        cli_args=
+            "1h0m p_foo planning code --date-worked=2016-05-04 \
+             --issue-uri=https://www.github.com/osuosl/projectfoo/issues/42 \
+             --notes=\"Worked on coding\"",
         expected_response={
             "created_at": "2015-05-23",
             "updated_at": None,
@@ -32,6 +42,7 @@ create_time_data = TestData(
         admin=False)
 
 update_time_data = TestData(
+        command=commands.update_time,
         mocked_input=[
             "838853e3-3635-4076-a26f-7efr4e60981f",  # UUID of time to update
             "2h0m",  # Updated duration
@@ -42,6 +53,12 @@ update_time_data = TestData(
             "https://www.github.com/osuosl/projectbar/issues/5",  # Updated URI
             "Worked on documentation"  # Updated notes
         ],
+        cli_args=
+            "838853e3-3635-4076-a26f-7efr4e60981f --duration=2h0m \
+             --project=2h0m --user=usertwo --activities=docs \
+             --date-worked=2016-06-20 \
+             --issue-uri=https://www.github.com/osuosl/projectbar/issues/5 \
+             --notes=\"Worked on documentation\"",
         expected_response={
             "created_at": "2014-06-12",
             "updated_at": "2015-10-18",
@@ -59,7 +76,9 @@ update_time_data = TestData(
         admin=False)
 
 get_times_no_uuid_data = TestData(
+        command=commands.get_times,
         mocked_input=[None]*8,
+        cli_args="",
         expected_response=[{
                 "created_at": "2014-04-17",
                 "updated_at": None,
@@ -105,6 +124,7 @@ get_times_no_uuid_data = TestData(
         admin=False)
 
 get_times_uuid_data = TestData(
+        command=commands.get_times,
         mocked_input=[
             "userone",  # User
             ["gwm"],  # Project slugs
@@ -115,6 +135,10 @@ get_times_uuid_data = TestData(
             False,  # Include deleted
             "838853e3-3635-4076-a26f-7efr4e60981f"  # UUID
         ],
+        cli_args="--user=userone --project=gwm --activity=docs \
+                  --start=2014-04-16 --end=2014-05-18 \
+                  --include-revisions=False --include-deleted=False \
+                  --uuid=838853e3-3635-4076-a26f-7efr4e60981f",
         expected_response=[{
             "created_at": "2014-04-17",
             "updated_at": None,
@@ -132,11 +156,13 @@ get_times_uuid_data = TestData(
         admin=False)
 
 sum_times_data = TestData(
+        command=commands.sum_times,
         mocked_input=[
             ["gwm"],  # Project slugs
             "",  # Include revisions
             ""  # Include deleted
         ],
+        cli_args="gwm",
         expected_response=[],
         admin=False)
 
@@ -149,16 +175,19 @@ delete_time_no_data = TestData(
         admin=False)
 
 delete_time_data = TestData(
+        command=commands.delete_time,
         mocked_input=[
             "838853e3-3635-4076-a26f-7efr4e60981f",  # UUID
             True  # Really?
         ],
+        cli_args="838853e3-3635-4076-a26f-7efr4e60981f",
         expected_response=[{
             "status": 200
         }],
         admin=False)
 
 create_project_data = TestData(
+        command=commands.create_project,
         mocked_input=[
             "projectx",  # Project name
             ["projx", "px"],  # Project slugs
@@ -166,6 +195,9 @@ create_project_data = TestData(
             ["userone", "usertwo"],  # Project users
             "code"  # Default activity
         ],
+        cli_args="projectx [projx px] userone 4 usertwo 7 \
+                  --uri=https://www.github.com/osuosl/projectx \
+                  --default-activity=code",
         expected_response={
             "created_at": "2015-05-23",
             "updated_at": None,
@@ -192,6 +224,7 @@ create_project_data = TestData(
         admin=True)
 
 update_project_data = TestData(
+        command=commands.update_project,
         mocked_input=[
             "projx",  # Slug of project to update
             "Project X",  # Updated name
@@ -200,6 +233,9 @@ update_project_data = TestData(
             ["userone", "usertwo", "userthree"],  # Updated users
             "planning"  # Updated default activity
         ],
+        cli_args="projx userone 4 usertwo 7 userthree 2 --name=\"Project X\" \
+                  --slugs=px --uri=https://www.github.com/osuosl/projectx \
+                  --default-activity=planning",
         expected_response={
             "created_at": "2014-04-16",
             "updated_at": "2014-04-18",
