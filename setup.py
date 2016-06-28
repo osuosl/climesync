@@ -12,5 +12,6 @@ setup(
         "console_scripts": [
             "climesync = climesync:main"
         ]
-    }
+    },
+    test_suite="testing"
 )
