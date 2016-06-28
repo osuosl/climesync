@@ -1,4 +1,4 @@
-pymesync==0.1.6
+pymesync==0.1.7
 Sphinx==1.4.4
 sphinx_rtd_theme==0.1.9
 flake8==2.6.2
