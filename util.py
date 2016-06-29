@@ -2,6 +2,8 @@ import ConfigParser
 import os
 import re
 import stat
+import sys
+import codecs
 
 
 def create_config(path="~/.climesyncrc"):
@@ -10,9 +12,10 @@ def create_config(path="~/.climesyncrc"):
     realpath = os.path.expanduser(path)
 
     # Create the file if it doesn't exist then set its mode to 600 (Owner RW)
-    fd = os.open(realpath, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
-    os.close(fd)
+    with codecs.open(realpath, "w", "utf-8-sig") as f:
+        f.write(u"# Climesync configuration file")
 
+    os.chmod(realpath, stat.S_IRUSR, stat.S_IWUSR)
 
 def read_config(path="~/.climesyncrc"):
     """Read the configuration file and return its contents"""
@@ -26,7 +29,8 @@ def read_config(path="~/.climesyncrc"):
         # Try to read the config file at the given path. If the file isn't
         # formatted correctly, inform the user
         try:
-            config.read(realpath)
+            with codecs.open(realpath, "r", "utf-8") as f:
+                config.readfp(f)
         except ConfigParser.ParsingError as e:
             print e
             print "ERROR: Invalid configuration file!"
@@ -42,26 +46,26 @@ def write_config(key, value, path="~/.climesyncrc"):
 
     config = read_config(path)
 
+    # If read_config errored and returned None instead of a ConfigParser
+    if not config:
+        return
+
     # If the configuration file doesn't exist (read_config returned an
     # empty config), create it
     if "climesync" not in config.sections():
         create_config(path)
 
-    # If read_config errored and returned None instead of a ConfigParser
-    if not config:
-        return
-
     # Attempt to set the option value in the config
     # If the "climesync" section doesn't exist (NoSectionError), create it
     try:
-        config.set("climesync", key, value)
+        config.set("climesync", key, value.encode("utf-8"))
     except ConfigParser.NoSectionError:
         config.add_section("climesync")
-        config.set("climesync", key, value)
+        config.set("climesync", key, value.encode("utf-8"))
 
     # Truncate existing file before writing to it
-    with open(realpath, "w") as f:
-        f.write("# Climesync configuration file\n")
+    with codecs.open(realpath, "w", "utf-8") as f:
+        f.write(u"# Climesync configuration file\n")
 
         # Write the config values
         config.write(f)
@@ -75,12 +79,12 @@ def print_json(response):
     if isinstance(response, list):  # List of dictionaries
         for json_dict in response:
             for key, value in json_dict.iteritems():
-                print "{}: {}".format(key, value)
+                print u"{}: {}".format(key, value)
 
             print ""
     elif isinstance(response, dict):  # Plain dictionary
         for key, value in response.iteritems():
-            print "{}: {}".format(key, value)
+            print u"{}: {}".format(key, value)
 
         print ""
     else:
@@ -148,7 +152,7 @@ def get_field(prompt, optional=False, field_type=""):
     response = ""
 
     while True:
-        response = raw_input(formatted_prompt)
+        response = raw_input(formatted_prompt).decode(sys.stdin.encoding)
 
         if not response and optional:
             return ""
@@ -222,7 +226,7 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
        and config.get("climesync", key) == value:
         return
 
-    print "> {} = {}".format(key, value)
+    print u"> {} = {}".format(key, value)
     response = get_field("Add to the config file?",
                          optional=True, field_type="?")
 
@@ -239,11 +243,11 @@ def get_user_permissions(users):
     for user in users:
         user_permissions = dict()
 
-        member = get_field("Is {} a project member?".format(user),
+        member = get_field(u"Is {} a project member?".format(user),
                            field_type="?")
-        spectator = get_field("Is {} a project spectator?".format(user),
+        spectator = get_field(u"Is {} a project spectator?".format(user),
                               field_type="?")
-        manager = get_field("Is {} a project manager?".format(user),
+        manager = get_field(u"Is {} a project manager?".format(user),
                             field_type="?")
 
         user_permissions["member"] = member

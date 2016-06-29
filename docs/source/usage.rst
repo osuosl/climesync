@@ -19,15 +19,12 @@ Climesync currently supports the following versions of the TimeSync API:
 Install Climesync
 -----------------
 
-To install Climesync, clone the `Github repo`_ and run the following command 
-in a `virtualenv`_
+To install Climesync from git, run the following commands:
 
 .. code-block:: none
 
-    (venv) $ pip install -r requirements.txt
-
-.. _Github repo: https://www.github.com/osuosl/climesync/
-.. _virtualenv: http://docs.python-guide.org/en/latest/dev/virtualenvs/
+    $ git clone https://github.com/osuosl/climesync && cd climesync
+    $ python setup.py install
 
 Running Climesync
 -----------------
@@ -37,7 +34,7 @@ have been installed, you can run climesync with
 
 .. code-block:: none
 
-    (venv) $ ./climesync
+    $ climesync
 
 Climesync also accepts several optional command line arguments
 

@@ -53,7 +53,7 @@ def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
     elif "timesync_url" in config_dict:
         url = config_dict["timesync_url"]
     elif interactive:
-        url = raw_input("URL of TimeSync server: ") if not test else "tst"
+        url = util.get_field("URL of TimeSync server") if not test else "tst"
     else:
         return {"climesync error": "Couldn't connect to TimeSync. Is "
                                    "timesync_url set in ~/.climesyncrc?"}
@@ -96,14 +96,14 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
     elif "username" in config_dict:
         username = config_dict["username"]
     elif interactive:
-        username = raw_input("Username: ")
+        username = util.get_field("Username")
 
     if arg_pass:
         password = arg_pass
     elif "password" in config_dict:
         password = config_dict["password"]
     elif interactive:
-        password = raw_input("Password: ")
+        password = util.get_field("Password")
 
     if not username or not password:
         return {"climesync error": "Couldn't authenticate with TimeSync. Are "
@@ -394,7 +394,7 @@ Examples:
 
     if uuid is None:
         uuid = util.get_field("Time UUID")
-        really = util.get_field("Do you really want to delete {}?"
+        really = util.get_field(u"Do you really want to delete {}?"
                                 .format(uuid),
                                 field_type="?")
 
@@ -614,7 +614,7 @@ Examples:
 
     if slug is None:
         slug = util.get_field("Project slug")
-        really = util.get_field("Do you really want to delete {}?"
+        really = util.get_field(u"Do you really want to delete {}?"
                                 .format(slug),
                                 field_type="?")
 
@@ -754,7 +754,7 @@ Examples:
 
     if slug is None:
         slug = util.get_field("Activity slug")
-        really = util.get_field("Do you really want to delete {}?"
+        really = util.get_field(u"Do you really want to delete {}?"
                                 .format(slug),
                                 field_type="?")
 
@@ -934,7 +934,7 @@ Examples:
 
     if username is None:
         username = util.get_field("Username")
-        really = util.get_field("Do you really want to delete {}?"
+        really = util.get_field(u"Do you really want to delete {}?"
                                 .format(username),
                                 field_type="?")
 

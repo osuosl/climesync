@@ -154,7 +154,6 @@ def scripting_mode(command_name, argv):
 def main(argv=None):
     # Command line arguments
     args = docopt(__doc__, argv=argv, options_first=True)
-
     url = args['-c']
     user = args['-u']
     password = args['-p']
@@ -175,7 +174,6 @@ def main(argv=None):
 
     if "climesync error" in response:
         util.print_json(response)
-        return
 
     response = commands.sign_in(arg_user=user, arg_pass=password,
                                 config_dict=config_dict,
@@ -184,7 +182,6 @@ def main(argv=None):
     if "error" in response or "pymesync error" in response or \
             "climesync error" in response:
         util.print_json(response)
-        return
 
     if command:
         scripting_mode(command, argv)
