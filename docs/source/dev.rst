@@ -5,6 +5,24 @@ Developer Documentation for Climesync
 
 .. contents::
 
+Setting up the Development Environment
+--------------------------------------
+
+Climesync is developed using the `virtualenvwrapper`_ utility to manage versions
+and dependencies. To install virtualenvwrapper, run
+
+.. code-block:: none
+
+    $ pip install virtualenvwrapper
+
+To create a new virtualenv and install all of Climesync's dependencies, do
+
+.. code-block:: none
+
+    $ mkvirtualenv venv
+    ...
+    (venv) $ pip install -r requirements.txt
+
 Testing Climesync
 -----------------
 
@@ -12,7 +30,7 @@ To lint climesync for non-PEP8 compliance, run
 
 .. code-block:: none
     
-    (venv) $ flake8 climesync.py
+    (venv) $ flake8 climesync.py testing
 
 To run unit tests, use this command:
 
