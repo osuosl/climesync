@@ -1,3 +1,4 @@
+from StringIO import StringIO
 import unittest
 from mock import call, patch, MagicMock
 
@@ -59,12 +60,10 @@ class ClimesyncTest(unittest.TestCase):
 
     @patch("commands.util")
     @patch("commands.pymesync.TimeSync")
-    @patch("commands.raw_input")
-    def test_connect_interactive(self, mock_raw_input, mock_timesync,
-                                 mock_util):
+    def test_connect_interactive(self, mock_timesync, mock_util):
         baseurl = "ts_url"
 
-        mock_raw_input.return_value = baseurl
+        mock_util.get_field.return_value = baseurl
         
         commands.connect()
 
@@ -128,13 +127,12 @@ class ClimesyncTest(unittest.TestCase):
 
     @patch("commands.util")
     @patch("commands.ts")
-    @patch("commands.raw_input")
-    def test_sign_in_interactive(self, mock_raw_input, mock_ts, mock_util):
+    def test_sign_in_interactive(self, mock_ts, mock_util):
         username = "test"
         password = "test"
         mocked_input = [username, password]
 
-        mock_raw_input.side_effect = mocked_input
+        mock_util.get_field.side_effect = mocked_input
         mock_ts.test = False
 
         commands.sign_in()
@@ -238,6 +236,60 @@ class ClimesyncTest(unittest.TestCase):
                                                  interactive=True)
         mock_interactive_mode.assert_called_with()
 
+    @patch("climesync.raw_input")
+    @patch("climesync.util")
+    @patch("climesync.lookup_command")
+    def test_menu_command(self, mock_lookup_command, mock_util,
+                          mock_raw_input):
+        command = "ct"
+        command_result = {}
+
+        mock_command = MagicMock()
+        mock_command.return_value = command_result
+
+        mock_lookup_command.return_value = mock_command
+
+        mock_raw_input.return_value = command
+
+        result = climesync.menu()
+
+        assert result
+        mock_util.print_json.assert_called_with(command_result)
+
+    @patch("climesync.raw_input")
+    @patch("climesync.sys.stdout", new_callable=StringIO)
+    def test_menu_help(self, mock_stdout, mock_raw_input):
+        command = "h"
+
+        mock_raw_input.return_value = command
+
+        result = climesync.menu()
+
+        assert result
+        assert climesync.menu_options in mock_stdout.getvalue()
+
+    @patch("climesync.raw_input")
+    def test_menu_quit(self, mock_raw_input):
+        command = "q"
+
+        mock_raw_input.return_value = command
+
+        result = climesync.menu()
+
+        assert not result
+
+    @patch("climesync.raw_input")
+    @patch("climesync.sys.stdout", new_callable=StringIO)
+    def test_menu_invalid(self, mock_stdout, mock_raw_input):
+        command = "invalid"
+
+        mock_raw_input.return_value = command
+
+        result = climesync.menu()
+
+        assert result
+        assert "Invalid choice!" in mock_stdout.getvalue()
+
     @patch("climesync.scripting_mode")
     @patch("climesync.util.read_config")
     def test_use_config(self, mock_read_config, mock_scripting_mode):
@@ -263,9 +315,11 @@ class ClimesyncTest(unittest.TestCase):
 
     @patch("climesync.util")
     def test_connect_error(self, mock_util):
+        username = "test"
+        password = "test"
         argv = ["command"]
 
-        config_dict = {}
+        config_dict = {"username": username, "password": password}
 
         mock_config = MagicMock()
         mock_config.items.return_value = config_dict
@@ -274,7 +328,7 @@ class ClimesyncTest(unittest.TestCase):
 
         climesync.main(argv=argv, test=True)
 
-        assert mock_util.print_json.call_count == 1
+        assert mock_util.print_json.call_count == 2
 
     @patch("climesync.util")
     def test_authenticate_error(self, mock_util):

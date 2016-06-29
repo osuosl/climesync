@@ -297,6 +297,7 @@ def fix_args(args, optional_args):
             fixed_arg = arg[2:].replace('-', '_')
         # If it's the help option or we don't know
         else:
+            print "Invalid arg: {}".format(arg)
             continue
 
         value = args[arg]

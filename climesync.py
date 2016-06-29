@@ -42,6 +42,8 @@ climesync.py <command> --help
 
 """
 
+import sys
+
 from docopt import docopt
 
 import commands

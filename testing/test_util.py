@@ -1,6 +1,7 @@
 import os
 import stat
 import ConfigParser
+from StringIO import StringIO
 
 import unittest
 import util
@@ -10,55 +11,54 @@ from mock import call, patch, Mock, MagicMock
 
 class UtilTest(unittest.TestCase):
 
-    @patch("util.os")
+    @patch("util.codecs.open")
+    @patch("util.os.chmod")
     @patch("util.os.path")
-    def test_create_config_default_path(self, mock_path, mock_os):
+    def test_create_config_default_path(self, mock_path, mock_chmod, mock_open):
         default_path = "~/.climesyncrc"
         fullpath = "/path/to/config"
-        open_args = [os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR]
-        filedescriptor = 0
+        open_args = ["w", "utf-8-sig"]
+        chmod_args = [stat.S_IRUSR | stat.S_IWUSR]
 
         mock_path.expanduser.return_value = fullpath
-
-        mock_os.path = mock_path
-        mock_os.open.return_value = filedescriptor
-        mock_os.O_CREAT = os.O_CREAT
 
         util.create_config()
 
-        mock_os.open.assert_called_with(fullpath, *open_args)
-        mock_os.close.assert_called_with(filedescriptor)
+        mock_open.assert_called_with(fullpath, *open_args)
+        mock_chmod.assert_called_with(fullpath, *chmod_args)
 
-    @patch("util.os")
+    @patch("util.codecs.open")
+    @patch("util.os.chmod")
     @patch("util.os.path")
-    def test_create_config_provided_path(self, mock_path, mock_os):
+    def test_create_config_provided_path(self, mock_path, mock_chmod, mock_open):
         provided_path = "~/.config/climesync/config"
         fullpath = "/path/to/config"
-        open_args = [os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR]
-        filedescriptor = 0
+        open_args = ["w", "utf-8-sig"]
+        chmod_args = [stat.S_IRUSR | stat.S_IWUSR]
 
         mock_path.expanduser.return_value = fullpath
 
-        mock_os.path = mock_path
-        mock_os.open.return_value = filedescriptor
-        mock_os.O_CREAT = os.O_CREAT
-
         util.create_config(path=provided_path)
 
-        mock_os.open.assert_called_with(fullpath, *open_args)
-        mock_os.close.assert_called_with(filedescriptor)
+        mock_open.assert_called_with(fullpath, *open_args)
+        mock_chmod.assert_called_with(fullpath, *chmod_args)
 
     @patch("util.ConfigParser.RawConfigParser")
+    @patch("util.codecs.open")
     @patch("util.os.path")
-    def test_read_config_path_exists(self, mock_path, _):
+    def test_read_config_path_exists(self, mock_path, mock_open, _):
         fullpath = "/path/to/config"
 
         mock_path.expanduser.return_value = fullpath
         mock_path.isfile.return_value = True
 
+        mock_file = MagicMock()
+
+        mock_open.return_value.__enter__.return_value = mock_file
+
         mock_configparser = util.read_config()
 
-        mock_configparser.read.assert_called_with(fullpath)
+        mock_configparser.readfp.assert_called_with(mock_file)
 
     @patch("util.ConfigParser.RawConfigParser")
     @patch("util.os.path")
@@ -72,16 +72,17 @@ class UtilTest(unittest.TestCase):
 
         mock_configparser.read.assert_not_called()
 
+    @patch("util.codecs.open")
     @patch("util.ConfigParser.RawConfigParser")
     @patch("util.os.path")
-    def test_read_config_parsing_error(self, mock_path, mock_rawconfigparser):
+    def test_read_config_parsing_error(self, mock_path, mock_rawconfigparser, _):
         fullpath = "/path/to/config"
 
         mock_path.expanduser.return_value = fullpath
         mock_path.isfile.return_value = True
 
         mock_parser = MagicMock()
-        mock_parser.read.side_effect = ConfigParser.ParsingError("")
+        mock_parser.readfp.side_effect = ConfigParser.ParsingError("")
 
         mock_rawconfigparser.return_value = mock_parser
 
@@ -91,9 +92,10 @@ class UtilTest(unittest.TestCase):
 
     @patch("util.create_config")
     @patch("util.read_config")
-    @patch("util.open")
+    @patch("util.codecs.open")
     def test_write_config_file_exists(self, mock_open, mock_read_config, mock_create_config):
         section_name = "climesync"
+        path = "~/.climesyncrc"
         key = "key"
         value = "value"
 
@@ -105,21 +107,75 @@ class UtilTest(unittest.TestCase):
         mock_open.return_value.__enter__.return_value = mock_file
         mock_read_config.return_value = mock_config
 
-        util.write_config(key, value)
+        util.write_config(key, value, path=path)
 
         mock_create_config.assert_not_called()
         mock_config.set.assert_called_with(section_name, key, value)
         mock_config.add_section.assert_not_called()
         mock_config.write.assert_called_with(mock_file)
 
-    def test_write_config_file_not_exist(self):
-        pass
+    @patch("util.create_config")
+    @patch("util.read_config")
+    @patch("util.codecs.open")
+    def test_write_config_file_not_exist(self, mock_open, mock_read_config, mock_create_config):
+        section_name = "climesync"
+        path = "~/.climesyncrc"
+        key = "key"
+        value = "value"
 
-    def test_write_config_blank_file(self):
-        pass
+        mock_config = MagicMock()
+        mock_config.sections.return_value = []
+        mock_config.set.side_effect = [ConfigParser.NoSectionError(""), None]
 
-    def test_write_config_parsing_error(self):
-        pass
+        mock_read_config.return_value = mock_config
+
+        util.write_config(key, value, path=path)
+
+        mock_create_config.assert_called_with(path)
+        mock_config.add_section.assert_called_with(section_name)
+
+    @patch("util.create_config")
+    @patch("util.read_config")
+    def test_write_config_read_error(self, mock_read_config, mock_create_config):
+        path = "~/.climesyncrc"
+        key = "key"
+        value = "value"
+
+        mock_read_config.return_value = None
+
+        util.write_config(key, value, path=path)
+
+        mock_create_config.assert_not_called()
+
+    @patch("util.sys.stdout", new_callable=StringIO)
+    def test_print_json_list(self, mock_stdout):
+        key = "key"
+        value = "value"
+
+        test_response = [{key: value}]
+
+        util.print_json(test_response)
+
+        assert "{}: {}".format(key, value) in mock_stdout.getvalue()
+
+    @patch("util.sys.stdout", new_callable=StringIO)
+    def test_print_json_dict(self, mock_stdout):
+        key = "key"
+        value = "value"
+
+        test_response = {key: value}
+
+        util.print_json(test_response)
+
+        assert "{}: {}".format(key, value) in mock_stdout.getvalue()
+
+    @patch("util.sys.stdout", new_callable=StringIO)
+    def test_print_json_invalid(self, mock_stdout):
+        test_response = "test"
+
+        util.print_json(test_response)
+
+        assert "I don't know how to print that!" in mock_stdout.getvalue()
 
     def test_is_time(self):
         self.assertFalse(util.is_time("AhBm"))
@@ -529,7 +585,8 @@ class UtilTest(unittest.TestCase):
             "--long-opt": "[list values]",
             "UPPER_ARG": "True",
             "--duration": "300",
-            "--blank-arg": None
+            "--blank-arg": None,
+            "invalidarg": None 
         }
 
         expected_args = {
