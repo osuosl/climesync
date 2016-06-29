@@ -42,7 +42,7 @@ climesync.py <command> --help
 
 """
 
-import sys
+import sys  # NOQA flake8 ignore
 
 from docopt import docopt
 

@@ -38,7 +38,7 @@ class test_script():
 
     def __call__(self, test):
         def test_wrapped(testcase):
-            commands.connect(config_dict = self.config, test=True)
+            commands.connect(config_dict=self.config, test=True)
 
             if self.admin:
                 self.authenticate_admin()

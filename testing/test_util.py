@@ -1,4 +1,3 @@
-import os
 import stat
 import ConfigParser
 from StringIO import StringIO
@@ -6,7 +5,7 @@ from StringIO import StringIO
 import unittest
 import util
 
-from mock import call, patch, Mock, MagicMock
+from mock import patch, MagicMock
 
 
 class UtilTest(unittest.TestCase):
@@ -14,7 +13,8 @@ class UtilTest(unittest.TestCase):
     @patch("util.codecs.open")
     @patch("util.os.chmod")
     @patch("util.os.path")
-    def test_create_config_default_path(self, mock_path, mock_chmod, mock_open):
+    def test_create_config_default_path(self, mock_path, mock_chmod,
+                                        mock_open):
         default_path = "~/.climesyncrc"
         fullpath = "/path/to/config"
         open_args = ["w", "utf-8-sig"]
@@ -22,7 +22,7 @@ class UtilTest(unittest.TestCase):
 
         mock_path.expanduser.return_value = fullpath
 
-        util.create_config()
+        util.create_config(path=default_path)
 
         mock_open.assert_called_with(fullpath, *open_args)
         mock_chmod.assert_called_with(fullpath, *chmod_args)
@@ -30,7 +30,8 @@ class UtilTest(unittest.TestCase):
     @patch("util.codecs.open")
     @patch("util.os.chmod")
     @patch("util.os.path")
-    def test_create_config_provided_path(self, mock_path, mock_chmod, mock_open):
+    def test_create_config_provided_path(self, mock_path, mock_chmod,
+                                         mock_open):
         provided_path = "~/.config/climesync/config"
         fullpath = "/path/to/config"
         open_args = ["w", "utf-8-sig"]
@@ -75,7 +76,8 @@ class UtilTest(unittest.TestCase):
     @patch("util.codecs.open")
     @patch("util.ConfigParser.RawConfigParser")
     @patch("util.os.path")
-    def test_read_config_parsing_error(self, mock_path, mock_rawconfigparser, _):
+    def test_read_config_parsing_error(self, mock_path, mock_rawconfigparser,
+                                       _):
         fullpath = "/path/to/config"
 
         mock_path.expanduser.return_value = fullpath
@@ -88,12 +90,13 @@ class UtilTest(unittest.TestCase):
 
         result = util.read_config()
 
-        assert result == None
+        assert result is None
 
     @patch("util.create_config")
     @patch("util.read_config")
     @patch("util.codecs.open")
-    def test_write_config_file_exists(self, mock_open, mock_read_config, mock_create_config):
+    def test_write_config_file_exists(self, mock_open, mock_read_config,
+                                      mock_create_config):
         section_name = "climesync"
         path = "~/.climesyncrc"
         key = "key"
@@ -117,7 +120,8 @@ class UtilTest(unittest.TestCase):
     @patch("util.create_config")
     @patch("util.read_config")
     @patch("util.codecs.open")
-    def test_write_config_file_not_exist(self, mock_open, mock_read_config, mock_create_config):
+    def test_write_config_file_not_exist(self, mock_open, mock_read_config,
+                                         mock_create_config):
         section_name = "climesync"
         path = "~/.climesyncrc"
         key = "key"
@@ -136,7 +140,8 @@ class UtilTest(unittest.TestCase):
 
     @patch("util.create_config")
     @patch("util.read_config")
-    def test_write_config_read_error(self, mock_read_config, mock_create_config):
+    def test_write_config_read_error(self, mock_read_config,
+                                     mock_create_config):
         path = "~/.climesyncrc"
         key = "key"
         value = "value"
@@ -215,7 +220,6 @@ class UtilTest(unittest.TestCase):
     @patch("util.raw_input")
     def test_get_field_string_empty(self, mock_raw_input):
         prompt = "Prompt"
-        expected_formatted_prompt = "Prompt: "
 
         mocked_input = ["", "value"]
 
@@ -251,7 +255,7 @@ class UtilTest(unittest.TestCase):
 
         value = util.get_field(prompt, field_type="?")
 
-        assert value == True
+        assert value
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
     @patch("util.raw_input")
@@ -264,7 +268,7 @@ class UtilTest(unittest.TestCase):
 
         value = util.get_field(prompt, field_type="?")
 
-        assert value == False
+        assert not value
 
     @patch("util.raw_input")
     def test_get_field_bool_empty(self, mock_raw_input):
@@ -276,7 +280,7 @@ class UtilTest(unittest.TestCase):
 
         value = util.get_field(prompt, field_type="?")
 
-        assert value == True
+        assert value
         assert mock_raw_input.call_count == 2
 
     @patch("util.raw_input")
@@ -289,7 +293,7 @@ class UtilTest(unittest.TestCase):
 
         value = util.get_field(prompt, field_type="?")
 
-        assert value == True
+        assert value
         assert mock_raw_input.call_count == 2
 
     @patch("util.raw_input")
@@ -308,43 +312,44 @@ class UtilTest(unittest.TestCase):
 
     @patch("util.raw_input")
     def test_get_field_time(self, mock_raw_input):
-         prompt = "Prompt"
-         expected_formatted_prompt = "(Time input - <value>h<value>m) Prompt: "
+        prompt = "Prompt"
+        expected_formatted_prompt = "(Time input - <value>h<value>m) Prompt: "
 
-         mocked_input = "1h0m"
+        mocked_input = "1h0m"
 
-         mock_raw_input.return_value = mocked_input
+        mock_raw_input.return_value = mocked_input
 
-         value = util.get_field(prompt, field_type=":")
+        value = util.get_field(prompt, field_type=":")
 
-         assert value == "1h0m"
-         mock_raw_input.assert_called_with(expected_formatted_prompt)
+        assert value == "1h0m"
+        mock_raw_input.assert_called_with(expected_formatted_prompt)
 
     @patch("util.raw_input")
     def test_get_field_time_invalid(self, mock_raw_input):
-         prompt = "Prompt"
+        prompt = "Prompt"
 
-         mocked_input = ["1 hour", "1h0m"]
+        mocked_input = ["1 hour", "1h0m"]
 
-         mock_raw_input.side_effect = mocked_input
+        mock_raw_input.side_effect = mocked_input
 
-         value = util.get_field(prompt, field_type=":")
+        value = util.get_field(prompt, field_type=":")
 
-         assert value == "1h0m"
+        assert value == "1h0m"
 
     @patch("util.raw_input")
     def test_get_field_time_optional(self, mock_raw_input):
-         prompt = "Prompt"
-         expected_formatted_prompt = "(Optional) (Time input - <value>h<value>m) Prompt: "
+        prompt = "Prompt"
+        expected_formatted_prompt = \
+            "(Optional) (Time input - <value>h<value>m) Prompt: "
 
-         mocked_input = ""
+        mocked_input = ""
 
-         mock_raw_input.return_value = mocked_input
+        mock_raw_input.return_value = mocked_input
 
-         value = util.get_field(prompt, optional=True, field_type=":")
+        value = util.get_field(prompt, optional=True, field_type=":")
 
-         assert value == ""
-         mock_raw_input.assert_called_with(expected_formatted_prompt)
+        assert value == ""
+        mock_raw_input.assert_called_with(expected_formatted_prompt)
 
     @patch("util.raw_input")
     def test_get_field_list(self, mock_raw_input):
@@ -401,7 +406,7 @@ class UtilTest(unittest.TestCase):
     @patch("util.raw_input")
     def test_get_field_type_invalid(self, mock_raw_input):
         prompt = "Prompt"
-        
+
         value = util.get_field(prompt, field_type="invalid")
 
         assert value == ""
@@ -586,7 +591,7 @@ class UtilTest(unittest.TestCase):
             "UPPER_ARG": "True",
             "--duration": "300",
             "--blank-arg": None,
-            "invalidarg": None 
+            "invalidarg": None
         }
 
         expected_args = {

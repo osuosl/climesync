@@ -1,5 +1,6 @@
 import commands
 
+
 class TestData():
 
     def __init__(self, command=None, mocked_input=None, cli_args=None,
@@ -21,8 +22,7 @@ create_time_data = TestData(
             "https://www.github.com/osuosl/projectfoo/issues/42",  # Issue URI
             "Worked on coding"  # Notes
         ],
-        cli_args=
-            "1h0m p_foo planning code --date-worked=2016-05-04 \
+        cli_args="1h0m p_foo planning code --date-worked=2016-05-04 \
              --issue-uri=https://www.github.com/osuosl/projectfoo/issues/42 \
              --notes=\"Worked on coding\"",
         expected_response={
@@ -53,8 +53,7 @@ update_time_data = TestData(
             "https://www.github.com/osuosl/projectbar/issues/5",  # Updated URI
             "Worked on documentation"  # Updated notes
         ],
-        cli_args=
-            "838853e3-3635-4076-a26f-7efr4e60981f --duration=2h0m \
+        cli_args="838853e3-3635-4076-a26f-7efr4e60981f --duration=2h0m \
              --project=p_bar --user=usertwo --activities=docs \
              --date-worked=2016-06-20 \
              --issue-uri=https://www.github.com/osuosl/projectbar/issues/5 \

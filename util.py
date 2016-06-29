@@ -2,8 +2,8 @@ import ConfigParser
 import os
 import re
 import stat
-import sys
 import codecs
+import sys  # NOQA flake8 ignore
 
 
 def create_config(path="~/.climesyncrc"):

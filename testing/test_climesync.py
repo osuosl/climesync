@@ -6,6 +6,7 @@ import climesync
 from climesync import command_lookup
 import commands
 
+
 class ClimesyncTest(unittest.TestCase):
 
     def test_lookup_command_interactive(self):
@@ -64,7 +65,7 @@ class ClimesyncTest(unittest.TestCase):
         baseurl = "ts_url"
 
         mock_util.get_field.return_value = baseurl
-        
+
         commands.connect()
 
         mock_util.add_kv_pair.assert_called_with("timesync_url", baseurl)
@@ -83,11 +84,6 @@ class ClimesyncTest(unittest.TestCase):
         mock_timesync.assert_called_with(baseurl=baseurl, test=False)
 
         commands.ts = None
-
-    def test_connect_error(self):
-        response = commands.connect(interactive=False)
-
-        assert "climesync error" in response
 
     def test_disconnect(self):
         commands.ts = MagicMock()
@@ -211,7 +207,7 @@ class ClimesyncTest(unittest.TestCase):
     @patch("climesync.commands")
     @patch("climesync.interactive_mode")
     def test_connect_args(self, mock_interactive_mode, mock_commands,
-                                mock_util):
+                          mock_util):
         baseurl = "ts_url"
         username = "test"
         password = "password"
@@ -292,7 +288,7 @@ class ClimesyncTest(unittest.TestCase):
 
     @patch("climesync.scripting_mode")
     @patch("climesync.util.read_config")
-    def test_use_config(self, mock_read_config, mock_scripting_mode):
+    def test_main_use_config(self, mock_read_config, mock_scripting_mode):
         baseurl = "ts_url"
         username = "test"
         password = "password"
@@ -331,7 +327,7 @@ class ClimesyncTest(unittest.TestCase):
         assert mock_util.print_json.call_count == 2
 
     @patch("climesync.util")
-    def test_authenticate_error(self, mock_util):
+    def test_main_authenticate_error(self, mock_util):
         baseurl = "ts_url"
         argv = ["command"]
 
