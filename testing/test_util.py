@@ -6,7 +6,6 @@ import unittest
 import util
 
 from mock import call, patch, Mock, MagicMock
-from forbiddenfruit import curse, reverse
 
 
 class UtilTest(unittest.TestCase):

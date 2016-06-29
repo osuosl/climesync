@@ -55,7 +55,7 @@ update_time_data = TestData(
         ],
         cli_args=
             "838853e3-3635-4076-a26f-7efr4e60981f --duration=2h0m \
-             --project=2h0m --user=usertwo --activities=docs \
+             --project=p_bar --user=usertwo --activities=docs \
              --date-worked=2016-06-20 \
              --issue-uri=https://www.github.com/osuosl/projectbar/issues/5 \
              --notes=\"Worked on documentation\"",
@@ -167,6 +167,7 @@ sum_times_data = TestData(
         admin=False)
 
 delete_time_no_data = TestData(
+        command=commands.delete_time,
         mocked_input=[
             "838853e3-3635-4076-a26f-7efr4e60981f",  # UUID
             False  # Really?
@@ -195,7 +196,7 @@ create_project_data = TestData(
             ["userone", "usertwo"],  # Project users
             "code"  # Default activity
         ],
-        cli_args="projectx [projx px] userone 4 usertwo 7 \
+        cli_args="projectx \"[projx px]\" userone 4 usertwo 7 \
                   --uri=https://www.github.com/osuosl/projectx \
                   --default-activity=code",
         expected_response={
@@ -266,11 +267,13 @@ update_project_data = TestData(
         admin=True)
 
 get_projects_no_slug_data = TestData(
+        command=commands.get_projects,
         mocked_input=[
             False,  # Include revisions
             False,  # Include deleted
             ""  # Project slug
         ],
+        cli_args="",
         expected_response=[{
                 "created_at": "2014-07-17",
                 "updated_at": "2014-07-20",
@@ -360,11 +363,13 @@ get_projects_no_slug_data = TestData(
         admin=False)
 
 get_projects_slug_data = TestData(
+        command=commands.get_projects,
         mocked_input=[
             "",  # Include revisions
             "",  # Include deleted
             "gwm"  # Project slug
         ],
+        cli_args="--slug=gwm --include-revisions=False",
         expected_response=[{
             "created_at": "2014-07-17",
             "updated_at": "2014-07-20",
@@ -390,6 +395,7 @@ get_projects_slug_data = TestData(
         admin=False)
 
 delete_project_no_data = TestData(
+        command=commands.delete_project,
         mocked_input=[
             "slug",  # Project slug
             False  # Really?
@@ -398,20 +404,24 @@ delete_project_no_data = TestData(
         admin=True)
 
 delete_project_data = TestData(
+        command=commands.delete_project,
         mocked_input=[
             "slug",  # Project slug
             True  # Really?
         ],
+        cli_args="slug",
         expected_response=[{
             "status": 200
         }],
         admin=True)
 
 create_activity_data = TestData(
+        command=commands.create_activity,
         mocked_input=[
             "Coding",  # Activity name
             "code"  # Activity slug
         ],
+        cli_args="Coding code",
         expected_response={
             "created_at": "2013-07-27",
             "updated_at": None,
@@ -424,11 +434,13 @@ create_activity_data = TestData(
         admin=True)
 
 update_activity_data = TestData(
+        command=commands.update_activity,
         mocked_input=[
             "slug",  # Slug of activity to update
             "Write Documentation",  # Activity name
             "docs"  # Activity slug
         ],
+        cli_args="slug --name=\"Write Documentation\" --slug=docs",
         expected_response={
             "created_at": "2014-04-16",
             "updated_at": "2014-04-17",
@@ -441,11 +453,13 @@ update_activity_data = TestData(
         admin=True)
 
 get_activities_no_slug_data = TestData(
+        command=commands.get_activities,
         mocked_input=[
             "",  # Include revisions
             "",  # Include deleted
             "",  # Activity slug
         ],
+        cli_args="",
         expected_response=[{
                 "created_at": "2014-04-17",
                 "updated_at": None,
@@ -476,11 +490,13 @@ get_activities_no_slug_data = TestData(
         admin=False)
 
 get_activities_slug_data = TestData(
+        command=commands.get_activities,
         mocked_input=[
             "",  # Include revisions
             "",  # Include deleted
             "docs",  # Activity slug
         ],
+        cli_args="--slug=docs --include-revisions=False",
         expected_response=[{
             "created_at": "2014-04-17",
             "updated_at": None,
@@ -493,6 +509,7 @@ get_activities_slug_data = TestData(
         admin=False)
 
 delete_activity_no_data = TestData(
+        command=commands.delete_activity,
         mocked_input=[
             "slug",  # Activity slug
             False  # Really?
@@ -501,16 +518,19 @@ delete_activity_no_data = TestData(
         admin=True)
 
 delete_activity_data = TestData(
+        command=commands.delete_activity,
         mocked_input=[
             "slug",  # Activity slug
             True  # Really?
         ],
+        cli_args="slug",
         expected_response=[{
             "status": 200
         }],
         admin=True)
 
 create_user_data = TestData(
+        command=commands.create_user,
         mocked_input=[
             "newuser",  # Username
             "password",  # Password
@@ -522,6 +542,8 @@ create_user_data = TestData(
             "A new user",  # Metainfo
             True  # Active?
         ],
+        cli_args="newuser password --display-name=\"John Doe\" \
+                  --email=newuser@osuosl.org --meta=\"A new user\"",
         expected_response={
             "created_at": "2015-05-23",
             "deleted_at": None,
@@ -537,6 +559,7 @@ create_user_data = TestData(
         admin=True)
 
 update_user_data = TestData(
+        command=commands.update_user,
         mocked_input=[
             "olduser",  # Username of user to update
             "newuser",  # Updated username
@@ -549,6 +572,10 @@ update_user_data = TestData(
             "Admin user",  # Metainfo
             True,  # Active?
         ],
+        cli_args="olduser --username=newuser --password=pa$$word \
+                  --display-name=\"A. User\" --email=auser@osuosl.org \
+                  --site-admin=True --site-manager=False \
+                  --site-spectator=False --meta=\"Admin user\" --active=True ",
         expected_response={
             "created_at": "2015-02-29",
             "deleted_at": None,
@@ -563,9 +590,11 @@ update_user_data = TestData(
         admin=True)
 
 get_users_no_slug_data = TestData(
+        command=commands.get_users,
         mocked_input=[
             ""  # Username
         ],
+        cli_args="",
         expected_response=[{
                 "username": "userone",
                 "display_name": "One Is The Loneliest Number",
@@ -613,9 +642,11 @@ get_users_no_slug_data = TestData(
         admin=True)
 
 get_users_slug_data = TestData(
+        command=commands.get_users,
         mocked_input=[
             "userone"  # Username
         ],
+        cli_args="--username=userone",
         expected_response=[{
             "username": "userone",
             "display_name": "X. Ample User",
@@ -630,6 +661,7 @@ get_users_slug_data = TestData(
         admin=False)
 
 delete_user_no_data = TestData(
+        command=commands.delete_user,
         mocked_input=[
             "user",  # Username
             False  # Really?
@@ -638,10 +670,12 @@ delete_user_no_data = TestData(
         admin=True)
 
 delete_user_data = TestData(
+        command=commands.delete_user,
         mocked_input=[
             "user",  # Username
             True  # Really?
         ],
+        cli_args="user",
         expected_response=[{
             "status": 200
         }],
