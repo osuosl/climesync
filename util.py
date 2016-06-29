@@ -17,6 +17,7 @@ def create_config(path="~/.climesyncrc"):
 
     os.chmod(realpath, stat.S_IRUSR, stat.S_IWUSR)
 
+
 def read_config(path="~/.climesyncrc"):
     """Read the configuration file and return its contents"""
 
