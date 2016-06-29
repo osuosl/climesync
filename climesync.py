@@ -4,6 +4,7 @@ import pymesync
 import os
 import sys
 import stat
+import codecs
 import re
 import ConfigParser
 import argparse
@@ -47,8 +48,10 @@ def create_config(path="~/.climesyncrc"):
     realpath = os.path.expanduser(path)
 
     # Create the file if it doesn't exist then set its mode to 600 (Owner RW)
-    fd = os.open(realpath, os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
-    os.close(fd)
+    with codecs.open(realpath, "w", "utf-8-sig") as f:
+        f.write(u"# Climesync configuration file\n")
+
+    os.chmod(realpath, stat.S_IRUSR | stat.S_IWUSR)
 
 
 def read_config(path="~/.climesyncrc"):
@@ -63,7 +66,8 @@ def read_config(path="~/.climesyncrc"):
         # Try to read the config file at the given path. If the file isn't
         # formatted correctly, inform the user
         try:
-            config.read(realpath)
+            with codecs.open(realpath, "r", "utf-8") as f:
+                config.readfp(f)
         except ConfigParser.ParsingError as e:
             print e
             print "ERROR: Invalid configuration file!"
@@ -91,14 +95,16 @@ def write_config(key, value, path="~/.climesyncrc"):
     # Attempt to set the option value in the config
     # If the "climesync" section doesn't exist (NoSectionError), create it
     try:
-        config.set("climesync", key, value)
+        config.set("climesync", key, value.encode("utf-8"))
     except ConfigParser.NoSectionError:
         config.add_section("climesync")
-        config.set("climesync", key, value)
+        config.set("climesync", key, value.encode("utf-8"))
+
+    print config.get("climesync", key)
 
     # Truncate existing file before writing to it
-    with open(realpath, "w") as f:
-        f.write("# Climesync configuration file\n")
+    with codecs.open(realpath, "w", "utf-8") as f:
+        f.write(u"# Climesync configuration file\n")
 
         # Write the config values
         config.write(f)
@@ -112,12 +118,12 @@ def print_json(response):
     if isinstance(response, list):  # List of dictionaries
         for json_dict in response:
             for key, value in json_dict.iteritems():
-                print "{}: {}".format(key, value)
+                print u"{}: {}".format(key, value)
 
             print ""
     elif isinstance(response, dict):  # Plain dictionary
         for key, value in response.iteritems():
-            print "{}: {}".format(key, value)
+            print u"{}: {}".format(key, value)
 
         print ""
     else:
@@ -185,7 +191,7 @@ def get_field(prompt, optional=False, field_type=""):
     response = ""
 
     while True:
-        response = raw_input(formatted_prompt)
+        response = raw_input(formatted_prompt).decode(sys.stdin.encoding)
 
         if not response and optional:
             return ""
@@ -259,7 +265,7 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
        and config.get("climesync", key) == value:
         return
 
-    print "> {} = {}".format(key, value)
+    print u"> {} = {}".format(key, value)
     response = get_field("Add to the config file?",
                          optional=True, field_type="?")
 
@@ -276,11 +282,11 @@ def get_user_permissions(users):
     for user in users:
         user_permissions = dict()
 
-        member = get_field("Is {} a project member?".format(user),
+        member = get_field(u"Is {} a project member?".format(user),
                            field_type="?")
-        spectator = get_field("Is {} a project spectator?".format(user),
+        spectator = get_field(u"Is {} a project spectator?".format(user),
                               field_type="?")
-        manager = get_field("Is {} a project manager?".format(user),
+        manager = get_field(u"Is {} a project manager?".format(user),
                             field_type="?")
 
         user_permissions["member"] = member
@@ -307,7 +313,7 @@ def connect(arg_url="", config_dict=dict(), test=False):
     elif "timesync_url" in config_dict:
         url = config_dict["timesync_url"]
     else:
-        url = raw_input("URL of TimeSync server: ") if not test else "tst"
+        url = get_field("URL of TimeSync server") if not test else "tst"
 
     if not test:
         add_kv_pair("timesync_url", url)
@@ -347,14 +353,14 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict()):
     elif "username" in config_dict:
         username = config_dict["username"]
     else:
-        username = raw_input("Username: ")
+        username = get_field("Username")
 
     if arg_pass:
         password = arg_pass
     elif "password" in config_dict:
         password = config_dict["password"]
     else:
-        password = raw_input("Password: ")
+        password = get_field("Password")
 
     if not ts.test:
         add_kv_pair("username", username)
@@ -497,7 +503,7 @@ def delete_time():
         return {"error": "Not connected to TimeSync server"}
 
     uuid = get_field("Time UUID")
-    really = get_field("Do you really want to delete {}?".format(uuid),
+    really = get_field(u"Do you really want to delete {}?".format(uuid),
                        field_type="?")
 
     if really:  # If the user really wants to delete it
@@ -583,7 +589,7 @@ def delete_project():
         return {"error": "Not connected to TimeSync server"}
 
     slug = get_field("Project slug")
-    really = get_field("Do you really want to delete {}?".format(slug),
+    really = get_field(u"Do you really want to delete {}?".format(slug),
                        field_type="?")
 
     if really:  # If the user really wants to delete it
@@ -653,7 +659,7 @@ def delete_activity():
         return {"error": "Not connected to TimeSync server"}
 
     slug = get_field("Activity slug")
-    really = get_field("Do you really want to delete {}?".format(slug),
+    really = get_field(u"Do you really want to delete {}?".format(slug),
                        field_type="?")
 
     if really:  # If the user really wants to delete it
@@ -736,7 +742,7 @@ def delete_user():
         return {"error": "Not connected to TimeSync server"}
 
     username = get_field("Username")
-    really = get_field("Do you really want to delete {}?".format(username),
+    really = get_field(u"Do you really want to delete {}?".format(username),
                        field_type="?")
 
     if really:  # If the user really wants to delete it
