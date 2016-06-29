@@ -287,7 +287,7 @@ class ClimesyncTest(unittest.TestCase):
 
     @patch("climesync.scripting_mode")
     @patch("climesync.util.read_config")
-    def test_use_config(self, mock_read_config, mock_scripting_mode):
+    def test_main_use_config(self, mock_read_config, mock_scripting_mode):
         baseurl = "ts_url"
         username = "test"
         password = "password"
@@ -309,7 +309,7 @@ class ClimesyncTest(unittest.TestCase):
         mock_scripting_mode.assert_called_with("command", [])
 
     @patch("climesync.util")
-    def test_connect_error(self, mock_util):
+    def test_main_connect_error(self, mock_util):
         username = "test"
         password = "test"
         argv = ["command"]
@@ -323,7 +323,7 @@ class ClimesyncTest(unittest.TestCase):
 
         climesync.main(argv=argv, test=True)
 
-        assert mock_util.print_json.call_count == 2
+        assert mock_util.print_json.call_count == 1
 
     @patch("climesync.util")
     def test_main_authenticate_error(self, mock_util):
