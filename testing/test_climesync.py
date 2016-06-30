@@ -251,34 +251,34 @@ class ClimesyncTest(unittest.TestCase):
         assert result
         mock_util.print_json.assert_called_with(command_result)
 
-    @patch("climesync.util.get_field")
+    @patch("climesync.util")
     @patch("climesync.sys.stdout", new_callable=StringIO)
-    def test_menu_help(self, mock_stdout, mock_get_field):
+    def test_menu_help(self, mock_stdout, mock_util):
         command = "h"
 
-        mock_get_field.return_value = command
+        mock_util.get_field.return_value = command
 
         result = climesync.menu()
 
         assert result
         assert climesync.menu_options in mock_stdout.getvalue()
 
-    @patch("climesync.util.get_field")
-    def test_menu_quit(self, mock_get_field):
+    @patch("climesync.util")
+    def test_menu_quit(self, mock_util):
         command = "q"
 
-        mock_get_field.return_value = command
+        mock_util.get_field.return_value = command
 
         result = climesync.menu()
 
         assert not result
 
-    @patch("climesync.util.get_field")
+    @patch("climesync.util")
     @patch("climesync.sys.stdout", new_callable=StringIO)
-    def test_menu_invalid(self, mock_stdout, mock_get_field):
+    def test_menu_invalid(self, mock_stdout, mock_util):
         command = "invalid"
 
-        mock_get_field.return_value = command
+        mock_util.get_field.return_value = command
 
         result = climesync.menu()
 
