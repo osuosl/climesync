@@ -121,7 +121,7 @@ def lookup_command(name, col):
 
 def menu():
     """Provide an interactive shell for the user to execute commands"""
-    choice = raw_input("(h for help) $ ")
+    choice = util.get_field("(h for help) ")
 
     command = lookup_command(choice, 0)
 
