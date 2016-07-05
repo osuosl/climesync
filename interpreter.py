@@ -21,7 +21,7 @@ class ClimesyncInterpreter(cmd.Cmd):
 
     def do_connect(self, line):
         """Connect to a TimeSync server"""
-        self.output = commands.connect()
+        self.output = commands.connect(test=self.test)
 
     def do_disconnect(self, line):
         """Disconnect from a TimeSync server"""
@@ -108,10 +108,10 @@ class ClimesyncInterpreter(cmd.Cmd):
         return True
 
     def postcmd(self, stop, line):
-        if self.output:
+        # Only print and flush output if not in test mode
+        if self.output and not self.test:
             util.print_json(self.output)
-
-        self.output = []
+            self.output = []
 
         if commands.ts:
             self.prompt = self.connected_prompt
