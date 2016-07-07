@@ -13,6 +13,8 @@ class ClimesyncInterpreter(cmd.Cmd):
     connected_prompt = "(Connected) $ "
     disconnected_prompt = "(Disconnected) $ "
 
+    test = False
+
     def preloop(self):
         if commands.ts:
             self.prompt = self.connected_prompt

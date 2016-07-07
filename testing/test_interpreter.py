@@ -19,11 +19,47 @@ class InterpreterTest(unittest.TestCase):
         self.interpreter.postcmd(stop, command)
         self.interpreter.test = False
 
+    @patch("interpreter.util")
+    def test_postcmd_output(self, mock_util):
+        stop = False
+        line = ""
+        output = {"key": "value"}
+
+        self.interpreter.output = output
+
+        self.interpreter.postcmd(stop, line)
+
+        mock_util.print_json.assert_called_with(output)
+
+    @patch("interpreter.util")
+    def test_postcmd_no_output(self, mock_util):
+        stop = False
+        line = ""
+        output = {}
+
+        self.interpreter.output = output
+
+        self.interpreter.postcmd(stop, line)
+
+        mock_util.print_json.assert_not_called()
+
+    @patch("interpreter.util")
+    def test_postcmd_test_mode(self, mock_util):
+        stop = False
+        line = ""
+        output = {"key": "value"}
+
+        self.interpreter.output = output
+        self.interpreter.test = True
+
+        self.interpreter.postcmd(stop, line)
+
+        mock_util.print_json.assert_not_called()
+
     def test_connect_command(self):
         self.run_command("connect")
 
         assert not self.interpreter.output
-        print self.interpreter.prompt
         assert self.interpreter.prompt == self.interpreter.connected_prompt
 
     def test_disconnect_command(self):
