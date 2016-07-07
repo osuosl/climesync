@@ -168,6 +168,10 @@ def main(argv=None):
     except:
         config_dict = {}
 
+    if "autoupdate_config" in config_dict and \
+       config_dict["autoupdate_config"].upper() == "FALSE":
+        commands.autoupdate_config = False
+
     # Attempt to connect with arguments and/or config
     response = commands.connect(arg_url=url, config_dict=config_dict,
                                 interactive=interactive)

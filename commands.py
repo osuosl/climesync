@@ -7,6 +7,8 @@ import util
 
 ts = None  # pymesync.TimeSync object
 
+autoupdate_config = True
+
 
 # climesync_command decorator
 class climesync_command():
@@ -58,7 +60,7 @@ def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
         return {"climesync error": "Couldn't connect to TimeSync. Is "
                                    "timesync_url set in ~/.climesyncrc?"}
 
-    if interactive and not test:
+    if interactive and not test and autoupdate_config:
         util.add_kv_pair("timesync_url", url)
 
     # Create a new instance and attempt to connect to the provided url
@@ -110,7 +112,7 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
                                    "username and password set in "
                                    "~/.climesyncrc?"}
 
-    if interactive and not ts.test:
+    if interactive and not ts.test and autoupdate_config:
         util.add_kv_pair("username", username)
         util.add_kv_pair("password", password)
 
