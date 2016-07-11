@@ -110,7 +110,6 @@ def lookup_command(name, col):
        with a value in the specified column
     """
     names = [c[col] for c in command_lookup]
-
     if name in names:
         return command_lookup[names.index(name)][2]
     else:
