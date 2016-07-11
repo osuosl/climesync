@@ -15,7 +15,7 @@ def create_config(path="~/.climesyncrc"):
     with codecs.open(realpath, "w", "utf-8-sig") as f:
         f.write(u"# Climesync configuration file")
 
-    os.chmod(realpath, stat.S_IRUSR, stat.S_IWUSR)
+    os.chmod(realpath, stat.S_IRUSR | stat.S_IWUSR)
 
 
 def read_config(path="~/.climesyncrc"):
