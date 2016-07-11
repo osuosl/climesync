@@ -110,27 +110,6 @@ def write_config(key, value, path="~/.climesyncrc"):
         config.write(f)
 
 
-def print_json(response):
-    """Prints values returned by Pymesync nicely"""
-
-    print ""
-
-    if isinstance(response, list):  # List of dictionaries
-        for json_dict in response:
-            for key, value in json_dict.iteritems():
-                print u"{}: {}".format(key, value)
-
-            print ""
-    elif isinstance(response, dict):  # Plain dictionary
-        for key, value in response.iteritems():
-            print u"{}: {}".format(key, value)
-
-        print ""
-    else:
-        print "I don't know how to print that!"
-        print response
-
-
 def is_time(time_str):
     """Checks if the supplied string is formatted as a time value for Pymesync
 
@@ -154,7 +133,71 @@ def to_readable_time(seconds):
     return "{}h{}m".format(hours, minutes)
 
 
-def get_field(prompt, optional=False, field_type=""):
+def value_to_printable(value, **format_flags):
+    """Formats values returned by Pymesync into nice-looking strings
+
+    format_flags is a dictionary of boolean flags used to format the output in
+    different ways
+
+    Supported flags:
+    time_value - Take the integer value and make it a human-readable time
+    short_perms - Return users in a permissions dict but not permissions
+    """
+
+    if isinstance(value, list):  # List of values
+        return ", ".join(value)
+    elif isinstance(value, dict):  # Project permission dict
+        if format_flags.get("short_perms"):
+            return ", ".join(value.keys())
+
+        users_sorted = list(reversed(sorted(value.keys(), key=len)))
+        if users_sorted:
+            max_name_len = len(users_sorted[0])
+
+        user_strings = []
+        for user in value:
+            permissions = ", ".join([p for p in value[user] if value[user][p]])
+            name_len = len(user)
+            buffer_spaces = ' ' * (max_name_len - name_len)
+            user_strings.append("\t{}{} <{}>".format(user, buffer_spaces,
+                                                     permissions))
+
+        return "\n" + "\n".join(user_strings)
+    else:  # Something else (integer, string, etc.)
+        if format_flags.get("time_value"):
+            return to_readable_time(value)
+        else:
+            return "{}".format(value)
+
+
+def print_json(response):
+    """Prints JSON returned by Pymesync nicely to the terminal"""
+
+    print ""
+
+    if isinstance(response, list):  # List of dictionaries
+        for json_dict in response:
+            for key, value in json_dict.iteritems():
+                time_value = True if key == "duration" else False
+                print u"{}: {}" \
+                      .format(key, value_to_printable(value,
+                                                      time_value=time_value))
+
+            print ""
+    elif isinstance(response, dict):  # Plain dictionary
+        for key, value in response.iteritems():
+            time_value = True if key == "duration" else False
+            print u"{}: {}" \
+                  .format(key, value_to_printable(value,
+                                                  time_value=time_value))
+
+        print ""
+    else:
+        print "I don't know how to print that!"
+        print response
+
+
+def get_field(prompt, optional=False, field_type="", current=None):
     """Prompts the user for input and returns it in the specified format
 
     prompt - The prompt to display to the user
@@ -170,6 +213,7 @@ def get_field(prompt, optional=False, field_type=""):
     # If necessary, add extra prompts that inform the user
     optional_prompt = ""
     type_prompt = ""
+    current_prompt = ""
 
     if optional:
         optional_prompt = "(Optional) "
@@ -186,8 +230,17 @@ def get_field(prompt, optional=False, field_type=""):
     if field_type == "!":
         type_prompt = "(Comma delimited) "
 
+    if current is not None:
+        time_value = True if field_type == ":" else False
+        current_prompt = " [{}]" \
+                         .format(value_to_printable(current,
+                                                    time_value=time_value,
+                                                    short_perms=True))
+
     # Format the original prompt with prepended additions
-    formatted_prompt = "{}{}{}: ".format(optional_prompt, type_prompt, prompt)
+    formatted_prompt = "{}{}{}{}: ".format(optional_prompt, type_prompt,
+                                           prompt, current_prompt)
+
     response = ""
 
     while True:
@@ -213,7 +266,7 @@ def get_field(prompt, optional=False, field_type=""):
         print "Please submit a valid input"
 
 
-def get_fields(fields):
+def get_fields(fields, current_object=None):
     """Prompts for multiple fields and returns everything in a dictionary
 
     fields - A list of tuples that are ordered (field_name, prompt)
@@ -230,6 +283,7 @@ def get_fields(fields):
     for field, prompt in fields:
         optional = False
         field_type = ""
+        current = None
 
         # Deduce field type
         if "?" in field:
@@ -246,7 +300,13 @@ def get_fields(fields):
             optional = True
             field = field.replace("*", "")
 
-        response = get_field(prompt, optional, field_type)
+        if current_object and field in current_object:
+            current = current_object.get(field)
+
+            if current is None:
+                current = "None"
+
+        response = get_field(prompt, optional, field_type, current)
 
         # Only add response if it isn't empty
         if response != "":
@@ -296,31 +356,6 @@ def get_user_permissions(users):
         permissions[user] = user_permissions
 
     return permissions
-
-
-def print_current(object_type, identifier):
-    """Prints the current revision of an object or an error if it doesn't
-    exist. Throw an exception if an error was returned from the server"""
-
-    global ts
-
-    if object_type == "time":
-        current = ts.get_times({"uuid": identifier})[0]
-    elif object_type == "project":
-        current = ts.get_projects({"slug": identifier})[0]
-    elif object_type == "activity":
-        current = ts.get_activities({"slug": identifier})[0]
-    elif object_type == "user":
-        current = ts.get_users(username=identifier)[0]
-
-    if "error" in current or "pymesync error" in current:
-        print_json(current)
-        raise RuntimeError()
-
-    if object_type == "time":
-        current["duration"] = to_readable_time(current["duration"])
-
-    print_json(current)
 
 
 def connect(arg_url="", config_dict=dict(), test=False):
@@ -446,10 +481,10 @@ def update_time():
 
     uuid = get_field("UUID of time to update")
 
-    try:
-        print_current("time", uuid)
-    except RuntimeError:
-        return []
+    current_time = ts.get_times({"uuid": uuid})[0]
+
+    if "error" in current_time or "pymesync error" in current_time:
+        return current_time
 
     # The data to send to the server containing revised time information
     post_data = get_fields([("*:duration",   "Duration"),
@@ -458,7 +493,8 @@ def update_time():
                             ("*!activities", "Activity slugs"),
                             ("*date_worked", "Date worked (yyyy-mm-dd)"),
                             ("*issue_url",   "Issue URI"),
-                            ("*notes",       "Notes")])
+                            ("*notes",       "Notes")],
+                           current_object=current_time)
 
     # Attempt to update a time and return the response
     return ts.update_time(uuid=uuid, time=post_data)
@@ -484,11 +520,6 @@ def get_times():
                             ("*uuid", "By UUID")])
 
     times = ts.get_times(query_parameters=post_data)
-
-    # If the response is free of errors, make the times human-readable
-    if 'error' not in times[0] and 'pymesync error' not in times[0]:
-        for time in times:
-            time["duration"] = to_readable_time(time["duration"])
 
     # Attempt to query the server for times with filtering parameters
     return times
@@ -576,17 +607,18 @@ def update_project():
 
     slug = get_field("Slug of project to update")
 
-    try:
-        print_current("project", slug)
-    except RuntimeError:
-        return []
+    current_project = ts.get_projects({"slug": slug})[0]
+
+    if "error" in current_project or "pymesync error" in current_project:
+        return current_project
 
     # The data to send to the server containing revised project information
     post_data = get_fields([("*name", "Updated project name"),
                             ("*!slugs", "Updated project slugs"),
                             ("*uri", "Updated project URI"),
                             ("*!users", "Updated users"),
-                            ("*default_activity", "Updated default activity")])
+                            ("*default_activity", "Updated default activity")],
+                           current_object=current_project)
 
     # If user permissions are going to be updated, ask for them
     if "users" in post_data:
@@ -657,19 +689,20 @@ def update_activity():
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    slug_to_update = get_field("Slug of activity to update")
+    slug = get_field("Slug of activity to update")
 
-    try:
-        print_current("activity", slug_to_update)
-    except RuntimeError:
-        return []
+    current_activity = ts.get_activities({"slug": slug})[0]
+
+    if "error" in current_activity or "pymesync error" in current_activity:
+        return current_activity
 
     # The data to send to the server containing revised activity information
     post_data = get_fields([("*name", "Updated activity name"),
-                            ("*slug", "Updated activity slug")])
+                            ("*slug", "Updated activity slug")],
+                           current_object=current_activity)
 
     # Attempt to update the activity information and return the repsonse
-    return ts.update_activity(activity=post_data, slug=slug_to_update)
+    return ts.update_activity(activity=post_data, slug=slug)
 
 
 def get_activities():
@@ -740,12 +773,12 @@ def update_user():
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    username_to_update = get_field("Username of user to update")
+    username = get_field("Username of user to update")
 
-    try:
-        print_current("user", username_to_update)
-    except:
-        return []
+    current_user = ts.get_users(username=username)[0]
+
+    if "error" in current_user or "pymesync error" in current_user:
+        return current_user
 
     # The data to send to the server containing revised user information
     post_data = get_fields([("*username", "Updated username"),
@@ -756,10 +789,11 @@ def update_user():
                             ("*?site_manager", "Is the user a manager?"),
                             ("*?site_spectator", "Is the user a spectator?"),
                             ("*meta", "New metainformation"),
-                            ("*?active", "Is the user active?")])
+                            ("*?active", "Is the user active?")],
+                           current_object=current_user)
 
     # Attempt to update the user and return the response
-    return ts.update_user(user=post_data, username=username_to_update)
+    return ts.update_user(user=post_data, username=username)
 
 
 def get_users():
