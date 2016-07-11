@@ -298,6 +298,31 @@ def get_user_permissions(users):
     return permissions
 
 
+def print_current(object_type, identifier):
+    """Prints the current revision of an object or an error if it doesn't
+    exist. Throw an exception if an error was returned from the server"""
+
+    global ts
+
+    if object_type == "time":
+        current = ts.get_times({"uuid": identifier})[0]
+    elif object_type == "project":
+        current = ts.get_projects({"slug": identifier})[0]
+    elif object_type == "activity":
+        current = ts.get_activities({"slug": identifier})[0]
+    elif object_type == "user":
+        current = ts.get_users(username=identifier)[0]
+
+    if "error" in current or "pymesync error" in current:
+        print_json(current)
+        raise RuntimeError()
+
+    if object_type == "time":
+        current["duration"] = to_readable_time(current["duration"])
+
+    print_json(current)
+
+
 def connect(arg_url="", config_dict=dict(), test=False):
     """Creates a new pymesync.TimeSync instance with a new URL"""
 
@@ -420,6 +445,11 @@ def update_time():
         return {"error": "Not connected to TimeSync server"}
 
     uuid = get_field("UUID of time to update")
+
+    try:
+        print_current("time", uuid)
+    except RuntimeError:
+        return []
 
     # The data to send to the server containing revised time information
     post_data = get_fields([("*:duration",   "Duration"),
@@ -546,6 +576,11 @@ def update_project():
 
     slug = get_field("Slug of project to update")
 
+    try:
+        print_current("project", slug)
+    except RuntimeError:
+        return []
+
     # The data to send to the server containing revised project information
     post_data = get_fields([("*name", "Updated project name"),
                             ("*!slugs", "Updated project slugs"),
@@ -624,6 +659,11 @@ def update_activity():
 
     slug_to_update = get_field("Slug of activity to update")
 
+    try:
+        print_current("activity", slug_to_update)
+    except RuntimeError:
+        return []
+
     # The data to send to the server containing revised activity information
     post_data = get_fields([("*name", "Updated activity name"),
                             ("*slug", "Updated activity slug")])
@@ -701,6 +741,11 @@ def update_user():
         return {"error": "Not connected to TimeSync server"}
 
     username_to_update = get_field("Username of user to update")
+
+    try:
+        print_current("user", username_to_update)
+    except:
+        return []
 
     # The data to send to the server containing revised user information
     post_data = get_fields([("*username", "Updated username"),
