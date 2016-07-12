@@ -729,8 +729,21 @@ def get_users():
     print "Filtering users..."
     username = get_field("By username", optional=True)
 
+    users = ts.get_users(username=username)
+
+    if "error" in users or "pymesync error" in users:
+        return users
+
+    if not username:
+        meta_filter = get_field("By metadata", optional=True).upper()
+
+        # Filter users by metadata
+        if meta_filter:
+            users = [user for user in users
+                     if user["meta"] and meta_filter in user["meta"].upper()]
+
     # Attempt to query the server with filtering parameters
-    return ts.get_users(username=username)
+    return users
 
 
 def delete_user():
