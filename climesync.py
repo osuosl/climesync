@@ -635,7 +635,7 @@ def get_projects():
     csv_path = ask_csv()
 
     if csv_path:
-        output_csv(times, "project", csv_path)
+        output_csv(projects, "project", csv_path)
 
     # Attempt to query the server with filtering parameters
     return projects
@@ -804,7 +804,7 @@ def get_users():
     csv_path = ask_csv()
 
     if csv_path:
-        output_csv(activities, "user", "asdf.csv")
+        output_csv(users, "user", "asdf.csv")
 
     # Attempt to query the server with filtering parameters
     return users
