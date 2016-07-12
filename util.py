@@ -72,6 +72,22 @@ def write_config(key, value, path="~/.climesyncrc"):
         config.write(f)
 
 
+def check_token_expiration(ts):
+    """Checks to see if the auth token has expired. If it has, try to log the
+    user back in using the username and password in their config file"""
+
+    # If the token is expired, try to log the user back in
+    if ts and ts.token_expiration_time() >= datetime.now():
+        config = read_config()
+        if config.has_option("climesync", "username") \
+           and config.has_option("climesync", "password") \
+           and config.get("climesync", "username") == ts.user:
+            username = config.get("climesync", "username")
+            password = config.get("climesync", "password")
+
+            ts.authenticate(username, password, "password")
+
+
 def print_json(response):
     """Prints values returned by Pymesync nicely"""
 

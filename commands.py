@@ -33,6 +33,8 @@ class climesync_command():
                     return command(post_data)
 
             else:
+                util.check_token_expiration(ts)
+
                 return command()
 
         return wrapped_command
