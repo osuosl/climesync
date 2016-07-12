@@ -289,6 +289,19 @@ def get_fields(fields):
     return responses
 
 
+def ask_csv():
+    """Ask the user if they want to put data in a CSV file, and if so ask for
+    the relative path of the file"""
+
+    do_create_csv = get_field("Write data to a CSV file?", field_type="?")
+
+    if do_create_csv:
+        csv_path = get_field("Enter the path to the new CSV file")
+        return csv_path
+    else:
+        return None
+
+
 def add_kv_pair(key, value, path="~/.climesyncrc"):
     """Ask the user if they want to add a key/value pair to the config file"""
 
@@ -494,7 +507,11 @@ def get_times():
         for time in times:
             time["duration"] = to_readable_time(time["duration"])
 
-    output_csv(times, "time", "asdf.csv")
+    # Ask the user if they want to output to a CSV file
+    csv_path = ask_csv()
+
+    if csv_path:
+        output_csv(times, "time", csv_path)
 
     # Attempt to query the server for times with filtering parameters
     return times
@@ -614,7 +631,11 @@ def get_projects():
 
     projects = ts.get_projects(query_parameters=post_data)
 
-    output_csv(projects, "project", "asdf.csv")
+    # Ask the user if they want to output to a CSV file
+    csv_path = ask_csv()
+
+    if csv_path:
+        output_csv(times, "project", csv_path)
 
     # Attempt to query the server with filtering parameters
     return projects
@@ -688,7 +709,11 @@ def get_activities():
 
     activities = ts.get_activities(query_parameters=post_data)
 
-    output_csv(activities, "activity", "asdf.csv")
+    # Ask the user if they want to output to a CSV file
+    csv_path = ask_csv()
+
+    if csv_path:
+        output_csv(activities, "activity", "asdf.csv")
 
     # Attempt to query the server with filtering parameters
     return activities
@@ -775,7 +800,11 @@ def get_users():
 
     users = ts.get_users(username=username)
 
-    output_csv(users, "user", "asdf.csv")
+    # Ask the user if they want to output to a CSV file
+    csv_path = ask_csv()
+
+    if csv_path:
+        output_csv(activities, "user", "asdf.csv")
 
     # Attempt to query the server with filtering parameters
     return users
