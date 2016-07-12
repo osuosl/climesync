@@ -729,8 +729,27 @@ def get_users():
     print "Filtering users..."
     username = get_field("By username", optional=True)
 
+    users = ts.get_users(username=username)
+
+    if "error" in users[0] or "pymesync error" in users[0]:
+        return users
+
+    # If we're looking up a specific user, get all of their project roles
+    if username:
+        projects = ts.get_projects()
+
+        if "error" in projects[0] or "pymesync error" in projects[0]:
+            print_json(projects)
+        else:
+            # Create a dictionary entry for each project the user has a role in
+            user_projects = {project["name"]: project["users"][username]
+                             for project in projects
+                             if username in project.setdefault("users", [])}
+
+            users[0]["projects"] = user_projects
+
     # Attempt to query the server with filtering parameters
-    return ts.get_users(username=username)
+    return users
 
 
 def delete_user():
