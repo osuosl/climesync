@@ -8,6 +8,7 @@ import codecs
 import re
 import ConfigParser
 import argparse
+import csv
 
 menu_options = (
     "\n"
@@ -129,6 +130,39 @@ def print_json(response):
     else:
         print "I don't know how to print that!"
         print response
+
+
+def output_csv(response, data_type, path):
+    """Outputs a TimeSync response to a CSV file at the specified path"""
+
+    if response and "error" in response[0] or "pymesync error" in response[0]:
+        return
+
+    common_headers = [u"uuid", u"revision", u"created_at", u"updated_at",
+                      u"deleted_at", u"parents"]
+
+    if data_type == "time":
+        headers = [u"duration", u"user", u"project", u"activities",
+                   u"date_worked", u"issue_uri", u"notes"] + common_headers
+    elif data_type == "project":
+        headers = [u"name", u"slugs", u"uri", u"default_activity",
+                   u"users"] + common_headers
+    elif data_type == "activity":
+        headers = [u"name", u"slug"] + common_headers
+    elif data_type == "user":
+        headers = [u"username", u"display_name", u"email", u"site_spectator",
+                   u"site_manager", u"site_admin", u"active", u"meta",
+                   u"created_at", u"updated_at", u"deleted_at"]
+    else:
+        print "Unknown data type!"
+        return
+
+    with open(path, "w") as csvfile:
+        writer = csv.DictWriter(csvfile, headers, quoting=csv.QUOTE_ALL)
+
+        writer.writeheader()
+        for ts_object in response:
+            writer.writerow(ts_object)
 
 
 def is_time(time_str):
@@ -460,6 +494,8 @@ def get_times():
         for time in times:
             time["duration"] = to_readable_time(time["duration"])
 
+    output_csv(times, "time", "asdf.csv")
+
     # Attempt to query the server for times with filtering parameters
     return times
 
@@ -576,8 +612,12 @@ def get_projects():
                             ("*?include_deleted", "Include deleted?"),
                             ("*slug", "By project slug")])
 
+    projects = ts.get_projects(query_parameters=post_data)
+
+    output_csv(projects, "project", "asdf.csv")
+
     # Attempt to query the server with filtering parameters
-    return ts.get_projects(query_parameters=post_data)
+    return projects
 
 
 def delete_project():
@@ -646,8 +686,12 @@ def get_activities():
                             ("*?include_deleted", "Include deleted?"),
                             ("*slug", "By activity slug")])
 
+    activities = ts.get_activities(query_parameters=post_data)
+
+    output_csv(activities, "activity", "asdf.csv")
+
     # Attempt to query the server with filtering parameters
-    return ts.get_activities(query_parameters=post_data)
+    return activities
 
 
 def delete_activity():
@@ -729,8 +773,12 @@ def get_users():
     print "Filtering users..."
     username = get_field("By username", optional=True)
 
+    users = ts.get_users(username=username)
+
+    output_csv(users, "user", "asdf.csv")
+
     # Attempt to query the server with filtering parameters
-    return ts.get_users(username=username)
+    return users
 
 
 def delete_user():
