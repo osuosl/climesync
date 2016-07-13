@@ -13,25 +13,22 @@ class ClimesyncInterpreter(cmd.Cmd):
     connect_status = ""
     auth_status = ""
 
-    connected_prompt = "(Connected) "
-    disconnected_prompt = "(Disconnected) "
-
     test = False
 
     def update_prompt(self):
         if commands.ts:
-            self.connect_status = self.connected_prompt
+            self.connect_status = "(Connected) "
 
             if commands.ts.user:
                 self.auth_status = "({}) ".format(commands.ts.user)
             else:
                 self.auth_status = "(N/A) "
         else:
-            self.connect_status = self.disconnected_prompt
+            self.connect_status = "(Disconnected) "
             self.auth_status = ""
 
         self.prompt = "{}{}$ ".format(self.connect_status,
-                                       self.auth_status)
+                                      self.auth_status)
 
     def preloop(self):
         self.update_prompt()

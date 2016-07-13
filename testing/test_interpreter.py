@@ -60,13 +60,14 @@ class InterpreterTest(unittest.TestCase):
         self.run_command("connect")
 
         assert not self.interpreter.output
-        assert self.interpreter.prompt == self.interpreter.connected_prompt
+        print self.interpreter.prompt
+        assert self.interpreter.prompt == "(Connected) (N/A) $ "
 
     def test_disconnect_command(self):
         self.run_command("disconnect")
 
         assert not self.interpreter.output
-        assert self.interpreter.prompt == self.interpreter.disconnected_prompt
+        assert self.interpreter.prompt == "(Disconnected) $ "
 
     def test_sign_in_command(self):
         self.run_command("sign_in")
