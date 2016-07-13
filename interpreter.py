@@ -7,19 +7,34 @@ import util
 class ClimesyncInterpreter(cmd.Cmd):
     """CLI interpreter for Climesync"""
 
-    prompt = "$ "
+    prompt = ""
     output = []
 
-    connected_prompt = "(Connected) $ "
-    disconnected_prompt = "(Disconnected) $ "
+    connect_status = ""
+    auth_status = ""
+
+    connected_prompt = "(Connected) "
+    disconnected_prompt = "(Disconnected) "
 
     test = False
 
-    def preloop(self):
+    def update_prompt(self):
         if commands.ts:
-            self.prompt = self.connected_prompt
+            self.connect_status = self.connected_prompt
+
+            if commands.ts.user:
+                self.auth_status = "({}) ".format(commands.ts.user)
+            else:
+                self.auth_status = "(N/A) "
         else:
-            self.prompt = self.disconnected_prompt
+            self.connect_status = self.disconnected_prompt
+            self.auth_status = ""
+
+        self.prompt = "{}{}$ ".format(self.connect_status,
+                                       self.auth_status)
+
+    def preloop(self):
+        self.update_prompt()
 
     def do_connect(self, line):
         """Connect to a TimeSync server"""
@@ -115,9 +130,6 @@ class ClimesyncInterpreter(cmd.Cmd):
             util.print_json(self.output)
             self.output = []
 
-        if commands.ts:
-            self.prompt = self.connected_prompt
-        else:
-            self.prompt = self.disconnected_prompt
+        self.update_prompt()
 
         return cmd.Cmd.postcmd(self, stop, line)
