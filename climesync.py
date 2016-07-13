@@ -398,11 +398,28 @@ def create_time():
 
     # The data to send to the server containing the new time information
     post_data = get_fields([(":duration",   "Duration"),
-                            ("project",     "Project slug"),
-                            ("!activities", "Activity slugs"),
                             ("date_worked", "Date worked (yyyy-mm-dd)"),
-                            ("*issue_uri",  "Issue URI"),
-                            ("*notes",      "Notes")])
+                            ("project",     "Project slug")])
+
+    project_slug = post_data["project"]
+
+    project = ts.get_projects({"slug": project_slug})[0]
+
+    if "error" in project or "pymesync error" in project:
+        return project
+
+    # Determine if the "activities" field is optional or not
+    if project["default_activity"]:
+        post_data["activities"] = [project["default_activity"]]
+        activity_query = "*!activities"
+    else:
+        activity_query = "!activities"
+
+    post_data_cont = get_fields([(activity_query, "Activity slugs"),
+                                 ("*issue_uri",   "Issue URI"),
+                                 ("*notes",       "Notes")])
+
+    post_data.update(post_data_cont)
 
     # Use the currently authenticated user
     post_data["user"] = ts.user
