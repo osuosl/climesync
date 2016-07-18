@@ -587,7 +587,7 @@ def get_projects():
     for project in projects:
         proj_slug = project["slugs"][0]
         proj_times = ts.get_times(query_parameters={"project": [proj_slug]})
-        
+
         if not proj_times or \
            "error" in proj_times[0] or "pymesync error" in proj_times[0]:
             continue
