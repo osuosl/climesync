@@ -283,6 +283,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters to send to the server
     if post_data is None:
         post_data = util.get_fields([("*!user", "Submitted by users"),
@@ -315,7 +317,7 @@ Examples:
     if times and 'error' not in times[0] and 'pymesync error' not in times[0]:
         for time in times:
             time["duration"] = util.to_readable_time(time["duration"])
-    elif not times:
+    elif interactive and not times:
         return {"note": "No times were returned"}
 
     # Attempt to query the server for times with filtering parameters
@@ -583,6 +585,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
@@ -592,7 +596,7 @@ Examples:
     # Attempt to query the server with filtering parameters
     projects = ts.get_projects(query_parameters=post_data)
 
-    if not projects:
+    if interactive and not projects:
         return {"note": "No projects were returned"}
 
     return projects
@@ -728,6 +732,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
@@ -737,7 +743,7 @@ Examples:
     # Attempt to query the server with filtering parameters
     activities = ts.get_activities(query_parameters=post_data)
 
-    if not activities:
+    if interactive and not activities:
         return {"note": "No activities were returned"}
 
     return activities
@@ -912,6 +918,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*username", "Username")])
@@ -922,7 +930,7 @@ Examples:
     # Attempt to query the server with filtering parameters
     users = ts.get_users(username=username)
 
-    if not users:
+    if interactive and not users:
         return {"note": "No users were returned"}
 
     return users
