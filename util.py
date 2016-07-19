@@ -79,7 +79,7 @@ def print_json(response):
         return
 
     if isinstance(response, list):  # List of dictionaries
-        print 
+        print
 
         for json_dict in response:
             for key, value in json_dict.iteritems():
