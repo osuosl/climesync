@@ -48,7 +48,7 @@ in the following order:
 
 **User input inside program > Command line arguments > Configuration file values**
 
-Climesync Options
+Interactive Mode
 -----------------
 
 Through an interactive shell, users have the following options:
@@ -120,16 +120,50 @@ Admin-only options:
     **du**
         Delete a user
 
+Scripting Mode
+--------------
+
+In addition to providing an interactive shell, Climesync also allows commands
+to be run from the command line. This is useful when calling Climesync from
+shell scripts and makes automating repetitive tasks for admins a breeze!
+
+Scripting mode accepts arguments and options in the usual bash script format
+with one addition. To pass a list of values to a command, you format the values
+as a space-separated list enclosed within square brackets. For example:
+
+.. code-block:: none
+
+    (venv) $ ./climesync.py get-times --user="[user1 user2 user3]"
+
+This example gets all the time entries submitted either by user1, user2, or user3.
+
+When running Climesync in scripting mode, authentication can be done by
+specifying the username and password as command line arguments or by using
+the configuration file (See below)
+
+To get a list of scripting mode commands, run
+
+.. code-block:: none
+
+    (venv) $ ./climesync.py --help
+
+To get help for a specific scripting mode command, run
+
+.. code-block:: none
+
+    (venv) $ ./climesync.py <command_name> --help
+
 Climesync Configuration
 -----------------------
 
-On the first run of the program, the configuration file .climesyncrc is
-created in the user's home directory. This configuration file stores server
-information and user credentials. Editing this file manually should not be
-necessary because Climesync updates these values as necessary.
+On the first run of the program in interactive mode, the configuration file
+`.climesyncrc` is created in the user's home directory. This configuration
+file stores server information and user credentials. If Climesync is going to
+only be run in interactive mode then manually editing this file manually won't
+be necessary because Climesync will handle updating these values while it's
+being run in interactive mode,
 
-If you did feel so inclined as to manually edit this file, information on
-the structure of this file can be obtained `here`_.
+Information on the structure of this file can be obtained `here`_.
 
 The following configuration values are stored under the "climesync" header
 in .climesyncrc:
