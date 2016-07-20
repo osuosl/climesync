@@ -80,10 +80,15 @@ def check_token_expiration(ts):
     # If the token is expired, try to log the user back in
     if ts and ts.token_expiration_time() <= datetime.now():
         config = read_config()
+        username = config.get("climesync", "username")
+        baseurl = config.get("climesync", "timesync_url")
+        if baseurl[-1] == "/":
+            baseurl = baseurl[:-1]
+
         if config.has_option("climesync", "username") \
            and config.has_option("climesync", "password") \
-           and config.get("climesync", "username") == ts.user \
-           and config.get("climesync", "timesync_url") == ts.baseurl:
+           and username == ts.user \
+           and baseurl == ts.baseurl:
             username = config.get("climesync", "username")
             password = config.get("climesync", "password")
 
