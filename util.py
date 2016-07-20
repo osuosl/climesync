@@ -4,6 +4,7 @@ import re
 import stat
 import sys
 import codecs
+from datetime import datetime
 
 
 def create_config(path="~/.climesyncrc"):
@@ -77,11 +78,12 @@ def check_token_expiration(ts):
     user back in using the username and password in their config file"""
 
     # If the token is expired, try to log the user back in
-    if ts and ts.token_expiration_time() >= datetime.now():
+    if ts and ts.token_expiration_time() <= datetime.now():
         config = read_config()
         if config.has_option("climesync", "username") \
            and config.has_option("climesync", "password") \
-           and config.get("climesync", "username") == ts.user:
+           and config.get("climesync", "username") == ts.user \
+           and config.get("climesync", "timesync_url") == ts.baseurl:
             username = config.get("climesync", "username")
             password = config.get("climesync", "password")
 

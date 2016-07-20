@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-<<<<<<< ffb16828c39ab8db4f236cad682812fe1043e03f
 """Climesync - CLI TimeSync Frontend
 
 Usage: climesync.py [options] [<command> [<args>... ]]
