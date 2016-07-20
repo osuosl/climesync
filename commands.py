@@ -136,6 +136,23 @@ def sign_out():
     return list()
 
 
+def update_settings():
+    """Prompts the user to update their password, display name, and/or email
+    address"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    username = ts.user
+    post_data = util.get_fields([("*password", "Updated password"),
+                                 ("*display_name", "Updated display name"),
+                                 ("*email", "Updated email address")])
+
+    return ts.update_user(user=post_data, username=username)
+
+
 @climesync_command()
 def create_time(post_data=None):
     """create-time
