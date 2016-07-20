@@ -245,7 +245,7 @@ Examples:
                                      ("*date_worked", "Date (yyyy-mm-dd)"),
                                      ("*issue_url",   "Issue URI"),
                                      ("*notes",       "Notes")],
-                                     current_object=current_time)
+                                    current_object=current_time)
 
     # Attempt to update a time and return the response
     return ts.update_time(uuid=uuid, time=post_data)
@@ -550,7 +550,7 @@ Examples:
                                      ("*!users", "Updated users"),
                                      ("*default_activity",
                                       "Updated default activity")],
-                                     current_object=current_project)
+                                    current_object=current_project)
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
                                     post_data.pop("access_mode")))
@@ -713,7 +713,7 @@ Examples:
 
         post_data = util.get_fields([("*name", "Updated activity name"),
                                      ("*slug", "Updated activity slug")],
-                                     current_object=current_activity)
+                                    current_object=current_activity)
 
     # Attempt to update the activity information and return the repsonse
     return ts.update_activity(activity=post_data, slug=old_slug)
@@ -911,7 +911,7 @@ Examples:
                                      ("*?site_spectator", "Site spectator?"),
                                      ("*meta", "New metainformation"),
                                      ("*?active", "Is the user active?")],
-                                     current_object=current_user)
+                                    current_object=current_user)
 
     # Attempt to update the user and return the response
     return ts.update_user(user=post_data, username=old_username)

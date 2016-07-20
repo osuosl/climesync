@@ -266,7 +266,7 @@ def get_fields(fields, current_object=None):
 
             if current is None:
                 current = "None"
-        
+
         response = get_field(prompt, optional, field_type, current)
 
         # Only add response if it isn't empty
