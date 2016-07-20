@@ -198,7 +198,7 @@ Examples:
         post_data["date_worked"] = date.today().isoformat()
 
     # If activities was sent as a single item
-    if isinstance(post_data["activities"], str):
+    if "activities" in post_data and isinstance(post_data["activities"], str):
         post_data["activities"] = [post_data["activities"]]
 
     # Use the currently authenticated user
