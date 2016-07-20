@@ -590,7 +590,7 @@ Examples:
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
-                                     ("*?include_deleted", "Allow revised?"),
+                                     ("*?include_deleted", "Allow deleted?"),
                                      ("*slug", "By project slug")])
 
     # Attempt to query the server with filtering parameters
