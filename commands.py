@@ -940,7 +940,7 @@ Examples:
         projects = ts.get_projects()
 
         if "error" in projects[0] or "pymesync error" in projects[0]:
-            print_json(projects)
+            util.print_json(projects)
         else:
             # Create a dictionary of projects that the user has a role in
             user_projects = {project["name"]: project["users"][username]
