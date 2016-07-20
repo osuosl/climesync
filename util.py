@@ -88,6 +88,8 @@ def check_token_expiration(ts):
             password = config.get("climesync", "password")
 
             ts.authenticate(username, password, "password")
+        else:
+            return True
 
 
 def print_json(response):
