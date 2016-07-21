@@ -901,7 +901,7 @@ Examples:
 def get_users(post_data=None):
     """get-users
 
-Usage: get-users [-h] [--username=<username>]
+Usage: get-users [-h] [--username=<username>] [--project=<project>]
 
 Options:
     -h --help              Show this help message and exit
@@ -918,17 +918,36 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    interactive = False if post_data else True
+    interactive = post_data is None
 
     # Optional filtering parameters
-    if post_data is None:
+    if interactive:
         post_data = util.get_fields([("*username", "Username")])
 
     # Using dict.get so that None is returned if the key doesn't exist
     username = post_data.get("username")
 
-    # Attempt to query the server with filtering parameters
-    users = ts.get_users(username=username)
+    if interactive and not username:
+        post_data = util.get_fields([("*project", "By project slug")])
+
+    project = post_data.get("project")
+
+    if project:
+        project_users = ts.project_users(project=project)
+
+        if "error" in project_users or "pymesync error" in project_users:
+            return project_users
+
+        users = []
+        for username in project_users:
+            user_object = ts.get_users(username=username)[0]
+
+            if "error" in user_object or "pymesync error" in user_object:
+                return user_object
+
+            users.append(user_object)
+    else:
+        users = ts.get_users(username=username)
 
     if interactive and not users:
         return {"note": "No users were returned"}
