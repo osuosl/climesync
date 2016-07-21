@@ -901,14 +901,16 @@ Examples:
                                      ("*?active", "Is the user active?")])
 
     # Attempt to update the user and return the response
-    return ts.update_user(user=post_data, username=old_username) 
+    return ts.update_user(user=post_data, username=old_username)
+
 
 @climesync_command(optional_args=True)
 def get_users(post_data=None, role=None):
     """get-users
 
 Usage: get-users [-h] [--username=<username>] |
-                     ([--project=<project> [--members|--managers|--spectators]])
+                     ([--project=<project>
+                      [--members|--managers|--spectators]])
 
 Options:
     -h --help              Show this help message and exit
