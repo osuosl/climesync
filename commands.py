@@ -919,7 +919,9 @@ Options:
 Examples:
     climesync.py get-users
 
-    climesync.py get-users userfour
+    climesync.py get-users --username=userfour
+
+    climesync.py get-users --project=p_foo --managers
     """
 
     global ts
