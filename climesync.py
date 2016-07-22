@@ -12,26 +12,27 @@ Options:
 
 Commands:
 
-    create-time      Submit a new time
-    update-time      Update the fields of an existing time
-    get-times        List and optionally filter all times on the server
-    sum-times        Sum all the times worked on a project
-    delete-time      Delete a time
+    create-time           Submit a new time
+    update-time           Update the fields of an existing time
+    get-times             List and optionally filter times on the server
+    sum-times             Sum all the times worked on a project
+    delete-time           Delete a time
 
-    create-project   Create a new project
-    update-project   Update the fields of an existing project
-    get-projects     List and optionally filter all projects on the server
-    delete-project   Delete a project
+    create-project        Create a new project
+    update-project        Update the fields of an existing project
+    update-project-users  Update a project's users/add new users to a project
+    get-projects          List and optionally filter projects on the server
+    delete-project        Delete a project
 
-    create-activity  Create a new activity
-    update-activity  Update the fields of an existing activity
-    get-activities   List and optionally filter all activities on the server
-    delete-activity  Delete an activity
+    create-activity       Create a new activity
+    update-activity       Update the fields of an existing activity
+    get-activities        List and optionally filter activities on the server
+    delete-activity       Delete an activity
 
-    create-user      Create a new user
-    update-user      Update the information of an existing user
-    get-users        List all users or get information on a specific user
-    delete-user      Delete a user
+    create-user           Create a new user
+    update-user           Update the information of an existing user
+    get-users             List all users or get information on a specific user
+    delete-user           Delete a user
 
 By default, Climesync starts in interactive mode and allows the user to enter
 commands into a shell. However, you can access certain Climesync functionality
@@ -64,6 +65,7 @@ menu_options = (
     "dt - delete time\n\n"
     "cp - create project\n"
     "up - update project\n"
+    "upu - update project users\n"
     "gp - get projects\n"
     "dp - delete project\n\n"
     "ca - create activity\n"
@@ -81,27 +83,28 @@ menu_options = (
 # scripting mode. Table entries are represented as a tuple in the form
 # (interactive_name, scripting_name, command)
 command_lookup = [
-    ("c",  None,              commands.connect),
-    ("dc", None,              commands.disconnect),
-    ("s",  None,              commands.sign_in),
-    ("so", None,              commands.sign_out),
-    ("ct", "create-time",     commands.create_time),
-    ("ut", "update-time",     commands.update_time),
-    ("gt", "get-times",       commands.get_times),
-    ("st", "sum-times",       commands.sum_times),
-    ("dt", "delete-time",     commands.delete_time),
-    ("cp", "create-project",  commands.create_project),
-    ("up", "update-project",  commands.update_project),
-    ("gp", "get-projects",    commands.get_projects),
-    ("dp", "delete-project",  commands.delete_project),
-    ("ca", "create-activity", commands.create_activity),
-    ("ua", "update-activity", commands.update_activity),
-    ("ga", "get-activities",  commands.get_activities),
-    ("da", "delete-activity", commands.delete_activity),
-    ("cu", "create-user",     commands.create_user),
-    ("uu", "update-user",     commands.update_user),
-    ("gu", "get-users",       commands.get_users),
-    ("du", "delete-user",     commands.delete_user),
+    ("c",   None,                   commands.connect),
+    ("dc",  None,                   commands.disconnect),
+    ("s",   None,                   commands.sign_in),
+    ("so",  None,                   commands.sign_out),
+    ("ct",  "create-time",          commands.create_time),
+    ("ut",  "update-time",          commands.update_time),
+    ("gt",  "get-times",            commands.get_times),
+    ("st",  "sum-times",            commands.sum_times),
+    ("dt",  "delete-time",          commands.delete_time),
+    ("cp",  "create-project",       commands.create_project),
+    ("up",  "update-project",       commands.update_project),
+    ("upu", "update-project-users", commands.update_project_users),
+    ("gp",  "get-projects",         commands.get_projects),
+    ("dp",  "delete-project",       commands.delete_project),
+    ("ca",  "create-activity",      commands.create_activity),
+    ("ua",  "update-activity",      commands.update_activity),
+    ("ga",  "get-activities",       commands.get_activities),
+    ("da",  "delete-activity",      commands.delete_activity),
+    ("cu",  "create-user",          commands.create_user),
+    ("uu",  "update-user",          commands.update_user),
+    ("gu",  "get-users",            commands.get_users),
+    ("du",  "delete-user",          commands.delete_user),
 ]
 
 
