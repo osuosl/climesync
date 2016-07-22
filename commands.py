@@ -597,6 +597,50 @@ Examples:
     return ts.update_project(project={"users": users}, slug=slug)
 
 
+@climesync_command(select_arg="slug")
+def remove_project_users(post_data=None, slug=None):
+    """remove-project-users (Site admins/Site managers/Project managers only)
+
+Usage: remove-project-users [-h] <slug> <users> ...
+
+Arguments:
+    <slug>      The slug of the project
+    <username>  The username of the user to remove
+
+Examples:
+    climesync.py remove-project-users proj_foo user1 user2
+    
+    climesync.py remove-project-users proj_bar user1
+    """
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    if slug is None:
+        slug = util.get_field("Slug of project to update")
+
+    if post_data is None:
+        post_data = util.get_fields([("*!users", "Users to remove")])
+
+    old_project = ts.get_projects(query_parameters={"slug": slug})[0]
+
+    if "error" in old_project or "pymesync error" in old_project:
+        return old_project
+
+    to_remove = post_data["users"] if "users" in post_data else []
+    users = old_project.setdefault("users", {})
+
+    if any(user not in users for user in to_remove):
+        return {"error": "User doesn't exist in project"}
+
+    users = {user: perms for user, perms in users.iteritems()
+             if user not in to_remove}
+
+    return ts.update_project(project={"users": users}, slug=slug)
+
+
 @climesync_command(optional_args=True)
 def get_projects(post_data=None):
     """get-projects

@@ -21,6 +21,7 @@ Commands:
     create-project        Create a new project
     update-project        Update the fields of an existing project
     update-project-users  Update a project's users/add new users to a project
+    remove-project-users  Remove users from a project
     get-projects          List and optionally filter projects on the server
     delete-project        Delete a project
 
@@ -66,6 +67,7 @@ menu_options = (
     "cp - create project\n"
     "up - update project\n"
     "upu - update project users\n"
+    "rpu - remove project users\n"
     "gp - get projects\n"
     "dp - delete project\n\n"
     "ca - create activity\n"
@@ -95,6 +97,7 @@ command_lookup = [
     ("cp",  "create-project",       commands.create_project),
     ("up",  "update-project",       commands.update_project),
     ("upu", "update-project-users", commands.update_project_users),
+    ("rpu", "remove-project-users", commands.remove_project_users),
     ("gp",  "get-projects",         commands.get_projects),
     ("dp",  "delete-project",       commands.delete_project),
     ("ca",  "create-activity",      commands.create_activity),
