@@ -464,9 +464,9 @@ Examples:
         post_data = util.get_fields([("name", "Project name"),
                                      ("!slugs", "Project slugs"),
                                      ("*uri", "Project URI"),
-                                     ("*!users", "Users"),
                                      ("*default_activity",
-                                      "Default activity")])
+                                      "Default activity"),
+                                     ("*!users", "Users")])
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
                                     post_data.pop("access_mode")))
@@ -520,11 +520,17 @@ Examples:
 
     # The data to send to the server containing revised project information
     if post_data is None:
+        current_project = ts.get_projects({"slug": slug})[0]
+
+        if "error" in current_project or "pymesync error" in current_project:
+            return current_project
+
         post_data = util.get_fields([("*name", "Updated project name"),
                                      ("*!slugs", "Updated project slugs"),
                                      ("*uri", "Updated project URI"),
                                      ("*default_activity",
-                                      "Updated default activity")])
+                                      "Updated default activity")],
+                                    current_object=current_project)
 
     if "slugs" in post_data and isinstance(post_data["slugs"], str):
         post_data["slugs"] = [post_data["slugs"]]
@@ -576,7 +582,13 @@ Examples:
         slug = util.get_field("Slug of project to update")
 
     if post_data is None:
-        post_data = util.get_fields([("*!users", "Users to add/update")])
+        current_project = ts.get_projects({"slug": slug})[0]
+
+        if "error" in current_project or "pymesync error" in current_project:
+            return current_project
+
+        post_data = util.get_fields([("*!users", "Users to add/update")],
+                                    current_object=current_project)
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
                                     post_data.pop("access_mode")))
@@ -584,7 +596,9 @@ Examples:
 
     if "users" in post_data and not isinstance(post_data["users"], dict):
         users_list = post_data["users"]
-        post_data["users"] = util.get_user_permissions(users_list)
+        current_users = current_project["users"]
+        post_data["users"] = util.get_user_permissions(users_list,
+                                                       current_users)
 
     old_project = ts.get_projects(query_parameters={"slug": slug})[0]
 
@@ -622,7 +636,13 @@ Examples:
         slug = util.get_field("Slug of project to update")
 
     if post_data is None:
-        post_data = util.get_fields([("*!users", "Users to remove")])
+        current_project = ts.get_projects({"slug": slug})[0]
+
+        if "error" in current_project or "pymesync error" in current_project:
+            return current_project
+
+        post_data = util.get_fields([("*!users", "Users to remove")],
+                                    current_object=current_project)
 
     old_project = ts.get_projects(query_parameters={"slug": slug})[0]
 
