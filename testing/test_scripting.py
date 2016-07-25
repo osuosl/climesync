@@ -118,22 +118,44 @@ class ScriptingTest(unittest.TestCase):
     def test_update_project(self):
         self.auth_admin()
         response = self.run_command(commands.update_project,
-                                    "slug userone 6 usertwo 4 --name=newname")
+                                    "slug --name=newname")
 
         self.assertEqual(response["name"], "newname")
-        # Commented out for now because of a Pymesync bug
-#        self.assertEqual(response["users"], {
-#            "userone": {
-#                "member": True,
-#                "spectator": True,
-#                "manager": False
-#            },
-#            "usertwo": {
-#                "member": True,
-#                "spectator": False,
-#                "manager": False
-#            }
-#        })
+
+    def test_update_project_users(self):
+        self.auth_admin()
+        response = self.run_command(commands.update_project_users,
+                                    "slug userone 4 usertwo 7 patcht 6")
+
+        self.assertEqual(response["users"], {
+            "userone": {
+                "member": True,
+                "spectator": False,
+                "manager": False
+            },
+            "usertwo": {
+                "member": True,
+                "spectator": True,
+                "manager": True
+            },
+            "patcht": {
+                "member": True,
+                "spectator": True,
+                "manager": False
+            },
+            "tschuy": {
+                "member": True,
+                "spectator": True,
+                "manager": True
+            }
+        })
+
+    def test_remove_project_users(self):
+        self.auth_admin()
+        response = self.run_command(commands.remove_project_users,
+                                    "slug tschuy")
+
+        self.assertNotIn("tschuy", response["users"])
 
     def test_get_projects(self):
         self.auth_nonadmin()

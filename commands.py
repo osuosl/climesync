@@ -623,7 +623,7 @@ Arguments:
 
 Examples:
     climesync.py remove-project-users proj_foo user1 user2
-    
+
     climesync.py remove-project-users proj_bar user1
     """
 
