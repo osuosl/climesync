@@ -1,5 +1,6 @@
 import unittest
-import util
+
+from climesync import util
 
 
 class UtilTest(unittest.TestCase):
