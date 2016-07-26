@@ -230,11 +230,11 @@ def print_pretty_time(response):
                                     for t in project_times)]
 
             leading_whitespace = max([min_leading_whitespace] +
-                                      [len(u) + 1 for u in project_users])
+                                     [len(u) + 1 for u in project_users])
 
             activity_time_whitespace = max([min_activity_whitespace] +
-                                            [len(a) + 2
-                                             for a in project_activities])
+                                           [len(a) + 2
+                                            for a in project_activities])
 
             activity_whitespaces = [" " * (activity_time_whitespace - len(a))
                                     for a in project_activities]
@@ -278,7 +278,7 @@ def print_pretty_time(response):
                     sorted_times[project][user][activity] = activity_time_sum
 
                 activity_time_sums = [s for s in sorted_times[project][user]
-                                                 .itervalues()]
+                                      .itervalues()]
 
                 activity_times = [to_readable_time(s)
                                   for s in activity_time_sums]
@@ -302,7 +302,7 @@ def print_pretty_time(response):
                 sorted_times[project][user] = user_time_sum
 
             total_activity_time_sums = [s for s in sorted_activity_time_sums
-                                                   .itervalues()]
+                                        .itervalues()]
 
             total_activity_times = [to_readable_time(s)
                                     for s in total_activity_time_sums]
@@ -325,8 +325,6 @@ def print_pretty_time(response):
             sorted_times[project] = project_time_sum
 
             print
-
-        total_time_sum = sum(s for p, s in sorted_times.iteritems())
     else:
         print_json(response)
 
@@ -364,7 +362,7 @@ def print_pretty_activity(response):
         activity_data.append({k: v for k, v in activity.iteritems()
                               if k in ["name", "slug"]})
 
-    print_json(user_data)
+    print_json(activity_data)
 
 
 def print_pretty_user(response):
