@@ -22,14 +22,16 @@ setup(
     ],
 
     packages=find_packages(),
-    install_requires = [
-        "pymesync"
+    install_requires=[
+        "pymesync",
+        "docopt",
     ],
-    scripts=["climesync.py"],
+    scripts=["climesync/climesync.py",
+             "climesync/util.py",
+             "climesync/commands.py"],
     entry_points={
         "console_scripts": [
             "climesync = climesync:main"
         ]
     },
-    test_suite="testing"
 )
