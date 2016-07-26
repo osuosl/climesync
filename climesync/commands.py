@@ -288,6 +288,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters to send to the server
     if post_data is None:
         post_data = util.get_fields([("*!user", "Submitted by users"),
@@ -320,6 +322,8 @@ Examples:
     if times and 'error' not in times[0] and 'pymesync error' not in times[0]:
         for time in times:
             time["duration"] = util.to_readable_time(time["duration"])
+    elif interactive and not times:
+        return {"note": "No times were returned"}
 
     # Attempt to query the server for times with filtering parameters
     return times
@@ -586,6 +590,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
@@ -593,7 +599,12 @@ Examples:
                                      ("*slug", "By project slug")])
 
     # Attempt to query the server with filtering parameters
-    return ts.get_projects(query_parameters=post_data)
+    projects = ts.get_projects(query_parameters=post_data)
+
+    if interactive and not projects:
+        return {"note": "No projects were returned"}
+
+    return projects
 
 
 @climesync_command(select_arg="slug")
@@ -726,6 +737,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
@@ -733,7 +746,12 @@ Examples:
                                      ("*slug", "By activity slug")])
 
     # Attempt to query the server with filtering parameters
-    return ts.get_activities(query_parameters=post_data)
+    activities = ts.get_activities(query_parameters=post_data)
+
+    if interactive and not activities:
+        return {"note": "No activities were returned"}
+
+    return activities
 
 
 @climesync_command(select_arg="slug")
@@ -905,6 +923,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*username", "Username")])
@@ -913,7 +933,12 @@ Examples:
     username = post_data.get("username")
 
     # Attempt to query the server with filtering parameters
-    return ts.get_users(username=username)
+    users = ts.get_users(username=username)
+
+    if interactive and not users:
+        return {"note": "No users were returned"}
+
+    return users
 
 
 @climesync_command(select_arg="username")

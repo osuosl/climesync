@@ -1,7 +1,7 @@
 import unittest
 from mock import patch
 
-import commands
+from climesync import commands
 
 import test_data
 

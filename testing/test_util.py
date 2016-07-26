@@ -3,7 +3,8 @@ import ConfigParser
 from StringIO import StringIO
 
 import unittest
-import util
+
+from climesync import util
 
 from mock import patch, MagicMock
 
