@@ -103,7 +103,7 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
     elif "password" in config_dict:
         password = config_dict["password"]
     elif interactive:
-        password = util.get_field("Password")
+        password = util.get_field("Password", field_type="$")
 
     if not username or not password:
         return {"climesync error": "Couldn't authenticate with TimeSync. Are "
@@ -831,7 +831,7 @@ Examples:
     # The data to send to the server containing new user information
     if post_data is None:
         post_data = util.get_fields([("username", "New user username"),
-                                     ("password", "New user password"),
+                                     ("$password", "New user password"),
                                      ("*display_name", "New display name"),
                                      ("*email", "New user email"),
                                      ("*?site_admin", "Site admin?"),
@@ -889,7 +889,7 @@ Examples:
     # The data to send to the server containing revised user information
     if post_data is None:
         post_data = util.get_fields([("*username", "Updated username"),
-                                     ("*password", "Updated password"),
+                                     ("*$password", "Updated password"),
                                      ("*display_name", "Updated display name"),
                                      ("*email", "Updated email"),
                                      ("*?site_admin", "Site admin?"),
