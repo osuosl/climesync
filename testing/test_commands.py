@@ -35,8 +35,8 @@ class test_command():
         return res
 
     def __call__(self, test):
-        @patch("util.get_user_permissions")
-        @patch("util.get_field")
+        @patch("climesync.util.get_user_permissions")
+        @patch("climesync.util.get_field")
         def test_wrapped(testcase, mock_get_field, mock_get_user_permissions):
             commands.connect(config_dict=self.config, test=True)
 

@@ -11,9 +11,9 @@ from mock import patch, MagicMock
 
 class UtilTest(unittest.TestCase):
 
-    @patch("util.codecs.open")
-    @patch("util.os.chmod")
-    @patch("util.os.path")
+    @patch("climesync.util.codecs.open")
+    @patch("climesync.util.os.chmod")
+    @patch("climesync.util.os.path")
     def test_create_config_default_path(self, mock_path, mock_chmod,
                                         mock_open):
         default_path = "~/.climesyncrc"
@@ -28,9 +28,9 @@ class UtilTest(unittest.TestCase):
         mock_open.assert_called_with(fullpath, *open_args)
         mock_chmod.assert_called_with(fullpath, *chmod_args)
 
-    @patch("util.codecs.open")
-    @patch("util.os.chmod")
-    @patch("util.os.path")
+    @patch("climesync.util.codecs.open")
+    @patch("climesync.util.os.chmod")
+    @patch("climesync.util.os.path")
     def test_create_config_provided_path(self, mock_path, mock_chmod,
                                          mock_open):
         provided_path = "~/.config/climesync/config"
@@ -45,9 +45,9 @@ class UtilTest(unittest.TestCase):
         mock_open.assert_called_with(fullpath, *open_args)
         mock_chmod.assert_called_with(fullpath, *chmod_args)
 
-    @patch("util.ConfigParser.RawConfigParser")
-    @patch("util.codecs.open")
-    @patch("util.os.path")
+    @patch("climesync.util.ConfigParser.RawConfigParser")
+    @patch("climesync.util.codecs.open")
+    @patch("climesync.util.os.path")
     def test_read_config_path_exists(self, mock_path, mock_open, _):
         fullpath = "/path/to/config"
 
@@ -62,8 +62,8 @@ class UtilTest(unittest.TestCase):
 
         mock_configparser.readfp.assert_called_with(mock_file)
 
-    @patch("util.ConfigParser.RawConfigParser")
-    @patch("util.os.path")
+    @patch("climesync.util.ConfigParser.RawConfigParser")
+    @patch("climesync.util.os.path")
     def test_read_config_path_not_exist(self, mock_path, _):
         fullpath = "/path/to/config"
 
@@ -74,9 +74,9 @@ class UtilTest(unittest.TestCase):
 
         mock_configparser.read.assert_not_called()
 
-    @patch("util.codecs.open")
-    @patch("util.ConfigParser.RawConfigParser")
-    @patch("util.os.path")
+    @patch("climesync.util.codecs.open")
+    @patch("climesync.util.ConfigParser.RawConfigParser")
+    @patch("climesync.util.os.path")
     def test_read_config_parsing_error(self, mock_path, mock_rawconfigparser,
                                        _):
         fullpath = "/path/to/config"
@@ -93,9 +93,9 @@ class UtilTest(unittest.TestCase):
 
         assert result is None
 
-    @patch("util.create_config")
-    @patch("util.read_config")
-    @patch("util.codecs.open")
+    @patch("climesync.util.create_config")
+    @patch("climesync.util.read_config")
+    @patch("climesync.util.codecs.open")
     def test_write_config_file_exists(self, mock_open, mock_read_config,
                                       mock_create_config):
         section_name = "climesync"
@@ -118,9 +118,9 @@ class UtilTest(unittest.TestCase):
         mock_config.add_section.assert_not_called()
         mock_config.write.assert_called_with(mock_file)
 
-    @patch("util.create_config")
-    @patch("util.read_config")
-    @patch("util.codecs.open")
+    @patch("climesync.util.create_config")
+    @patch("climesync.util.read_config")
+    @patch("climesync.util.codecs.open")
     def test_write_config_file_not_exist(self, mock_open, mock_read_config,
                                          mock_create_config):
         section_name = "climesync"
@@ -139,8 +139,8 @@ class UtilTest(unittest.TestCase):
         mock_create_config.assert_called_with(path)
         mock_config.add_section.assert_called_with(section_name)
 
-    @patch("util.create_config")
-    @patch("util.read_config")
+    @patch("climesync.util.create_config")
+    @patch("climesync.util.read_config")
     def test_write_config_read_error(self, mock_read_config,
                                      mock_create_config):
         path = "~/.climesyncrc"
@@ -153,7 +153,7 @@ class UtilTest(unittest.TestCase):
 
         mock_create_config.assert_not_called()
 
-    @patch("util.sys.stdout", new_callable=StringIO)
+    @patch("climesync.util.sys.stdout", new_callable=StringIO)
     def test_print_json_list(self, mock_stdout):
         key = "key"
         value = "value"
@@ -164,7 +164,7 @@ class UtilTest(unittest.TestCase):
 
         assert "{}: {}".format(key, value) in mock_stdout.getvalue()
 
-    @patch("util.sys.stdout", new_callable=StringIO)
+    @patch("climesync.util.sys.stdout", new_callable=StringIO)
     def test_print_json_dict(self, mock_stdout):
         key = "key"
         value = "value"
@@ -175,7 +175,7 @@ class UtilTest(unittest.TestCase):
 
         assert "{}: {}".format(key, value) in mock_stdout.getvalue()
 
-    @patch("util.sys.stdout", new_callable=StringIO)
+    @patch("climesync.util.sys.stdout", new_callable=StringIO)
     def test_print_json_invalid(self, mock_stdout):
         test_response = "test"
 
@@ -204,7 +204,7 @@ class UtilTest(unittest.TestCase):
         self.assertEqual(util.to_readable_time(3600), "1h0m")
         self.assertEqual(util.to_readable_time(1000), "0h16m")
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_string(self, mock_raw_input):
         prompt = "Prompt"
         expected_formatted_prompt = "Prompt: "
@@ -218,7 +218,7 @@ class UtilTest(unittest.TestCase):
         assert value == mocked_input
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_string_empty(self, mock_raw_input):
         prompt = "Prompt"
 
@@ -231,7 +231,7 @@ class UtilTest(unittest.TestCase):
         assert value == mocked_input[1]
         assert mock_raw_input.call_count == 2
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_string_optional(self, mock_raw_input):
         prompt = "Prompt"
         expected_formatted_prompt = "(Optional) Prompt: "
@@ -245,7 +245,7 @@ class UtilTest(unittest.TestCase):
         assert value == ""
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_bool_yes(self, mock_raw_input):
         prompt = "Prompt"
         expected_formatted_prompt = "(y/n) Prompt: "
@@ -259,7 +259,7 @@ class UtilTest(unittest.TestCase):
         assert value
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_bool_no(self, mock_raw_input):
         prompt = "Prompt"
 
@@ -271,7 +271,7 @@ class UtilTest(unittest.TestCase):
 
         assert not value
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_bool_empty(self, mock_raw_input):
         prompt = "Prompt"
 
@@ -284,7 +284,7 @@ class UtilTest(unittest.TestCase):
         assert value
         assert mock_raw_input.call_count == 2
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_bool_invalid(self, mock_raw_input):
         prompt = "Prompt"
 
@@ -297,7 +297,7 @@ class UtilTest(unittest.TestCase):
         assert value
         assert mock_raw_input.call_count == 2
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_bool_optional(self, mock_raw_input):
         prompt = "Prompt"
         expected_formatted_prompt = "(Optional) (y/N) Prompt: "
@@ -311,7 +311,7 @@ class UtilTest(unittest.TestCase):
         assert value == ""
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_time(self, mock_raw_input):
         prompt = "Prompt"
         expected_formatted_prompt = "(Time input - <value>h<value>m) Prompt: "
@@ -325,7 +325,7 @@ class UtilTest(unittest.TestCase):
         assert value == "1h0m"
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_time_invalid(self, mock_raw_input):
         prompt = "Prompt"
 
@@ -337,7 +337,7 @@ class UtilTest(unittest.TestCase):
 
         assert value == "1h0m"
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_time_optional(self, mock_raw_input):
         prompt = "Prompt"
         expected_formatted_prompt = \
@@ -352,7 +352,7 @@ class UtilTest(unittest.TestCase):
         assert value == ""
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_list(self, mock_raw_input):
         prompt = "Prompt"
         expected_formatted_prompt = "(Comma delimited) Prompt: "
@@ -366,7 +366,7 @@ class UtilTest(unittest.TestCase):
         assert value == ["v1", "v2", "v3", "v4"]
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_list_single_value(self, mock_raw_input):
         prompt = "Prompt"
 
@@ -378,7 +378,7 @@ class UtilTest(unittest.TestCase):
 
         assert value == ["v1"]
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_list_empty(self, mock_raw_input):
         prompt = "Prompt"
 
@@ -390,7 +390,7 @@ class UtilTest(unittest.TestCase):
 
         assert value == ["v1", "v2"]
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_list_optional(self, mock_raw_input):
         prompt = "Prompt"
         expected_formatted_prompt = "(Optional) (Comma delimited) Prompt: "
@@ -404,7 +404,7 @@ class UtilTest(unittest.TestCase):
         assert value == ""
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
-    @patch("util.raw_input")
+    @patch("climesync.util.raw_input")
     def test_get_field_type_invalid(self, mock_raw_input):
         prompt = "Prompt"
 
@@ -412,7 +412,7 @@ class UtilTest(unittest.TestCase):
 
         assert value == ""
 
-    @patch("util.get_field")
+    @patch("climesync.util.get_field")
     def test_get_fields(self, mock_get_field):
         fields = [
             ("strval",       "String value"),
@@ -444,8 +444,8 @@ class UtilTest(unittest.TestCase):
 
         assert values == expected_values
 
-    @patch("util.get_field")
-    @patch("util.read_config")
+    @patch("climesync.util.get_field")
+    @patch("climesync.util.read_config")
     def test_add_kv_pair_redundant(self, mock_read_config, mock_get_field):
         key = "redundant"
         value = "value"
@@ -460,9 +460,9 @@ class UtilTest(unittest.TestCase):
 
         mock_get_field.assert_not_called()
 
-    @patch("util.get_field")
-    @patch("util.write_config")
-    @patch("util.read_config")
+    @patch("climesync.util.get_field")
+    @patch("climesync.util.write_config")
+    @patch("climesync.util.read_config")
     def test_add_kv_pair_no(self, mock_read_config, mock_write_config,
                             mock_get_field):
         key = "key"
@@ -481,9 +481,9 @@ class UtilTest(unittest.TestCase):
 
         mock_write_config.assert_not_called()
 
-    @patch("util.get_field")
-    @patch("util.write_config")
-    @patch("util.read_config")
+    @patch("climesync.util.get_field")
+    @patch("climesync.util.write_config")
+    @patch("climesync.util.read_config")
     def test_add_kv_pair(self, mock_read_config, mock_write_config,
                          mock_get_field):
         key = "key"
@@ -502,7 +502,7 @@ class UtilTest(unittest.TestCase):
 
         mock_write_config.assert_called_with(key, value, path)
 
-    @patch("util.get_field")
+    @patch("climesync.util.get_field")
     def test_get_user_permissions(self, mock_get_field):
         users = ["userone", "usertwo"]
 

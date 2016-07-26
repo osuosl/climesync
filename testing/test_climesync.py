@@ -2,9 +2,9 @@ from StringIO import StringIO
 import unittest
 from mock import call, patch, MagicMock
 
-import climesync
-from climesync import command_lookup
-import commands
+from climesync import climesync
+from climesync.climesync import command_lookup
+from climesync import commands
 
 
 class ClimesyncTest(unittest.TestCase):
@@ -34,8 +34,8 @@ class ClimesyncTest(unittest.TestCase):
 
         assert not climesync.lookup_command(query, 0)
 
-    @patch("commands.util")
-    @patch("commands.pymesync.TimeSync")
+    @patch("climesync.commands.util")
+    @patch("climesync.commands.pymesync.TimeSync")
     def test_connect_arg_url(self, mock_timesync, mock_util):
         baseurl = "ts_url"
 
@@ -46,8 +46,8 @@ class ClimesyncTest(unittest.TestCase):
 
         commands.ts = None
 
-    @patch("commands.util")
-    @patch("commands.pymesync.TimeSync")
+    @patch("climesync.commands.util")
+    @patch("climesync.commands.pymesync.TimeSync")
     def test_connect_config_dict(self, mock_timesync, mock_util):
         baseurl = "ts_url"
         config_dict = {"timesync_url": baseurl}
@@ -59,8 +59,8 @@ class ClimesyncTest(unittest.TestCase):
 
         commands.ts = None
 
-    @patch("commands.util")
-    @patch("commands.pymesync.TimeSync")
+    @patch("climesync.commands.util")
+    @patch("climesync.commands.pymesync.TimeSync")
     def test_connect_interactive(self, mock_timesync, mock_util):
         baseurl = "ts_url"
 
@@ -73,8 +73,8 @@ class ClimesyncTest(unittest.TestCase):
 
         commands.ts = None
 
-    @patch("commands.util")
-    @patch("commands.pymesync.TimeSync")
+    @patch("climesync.commands.util")
+    @patch("climesync.commands.pymesync.TimeSync")
     def test_connect_noninteractive(self, mock_timesync, mock_util):
         baseurl = "ts_url"
 
@@ -92,8 +92,8 @@ class ClimesyncTest(unittest.TestCase):
 
         assert not commands.ts
 
-    @patch("commands.util")
-    @patch("commands.ts")
+    @patch("climesync.commands.util")
+    @patch("climesync.commands.ts")
     def test_sign_in_args(self, mock_ts, mock_util):
         username = "test"
         password = "password"
@@ -106,8 +106,8 @@ class ClimesyncTest(unittest.TestCase):
                                                 call("password", password)])
         mock_ts.authenticate.assert_called_with(username, password, "password")
 
-    @patch("commands.util")
-    @patch("commands.ts")
+    @patch("climesync.commands.util")
+    @patch("climesync.commands.ts")
     def test_sign_in_config_dict(self, mock_ts, mock_util):
         username = "test"
         password = "password"
@@ -121,8 +121,8 @@ class ClimesyncTest(unittest.TestCase):
                                                 call("password", password)])
         mock_ts.authenticate.assert_called_with(username, password, "password")
 
-    @patch("commands.util")
-    @patch("commands.ts")
+    @patch("climesync.commands.util")
+    @patch("climesync.commands.ts")
     def test_sign_in_interactive(self, mock_ts, mock_util):
         username = "test"
         password = "test"
@@ -137,8 +137,8 @@ class ClimesyncTest(unittest.TestCase):
                                                 call("password", password)])
         mock_ts.authenticate.assert_called_with(username, password, "password")
 
-    @patch("commands.util")
-    @patch("commands.ts")
+    @patch("climesync.commands.util")
+    @patch("climesync.commands.ts")
     def test_sign_in_noninteractive(self, mock_ts, mock_util):
         username = "test"
         password = "test"
@@ -158,14 +158,14 @@ class ClimesyncTest(unittest.TestCase):
 
         assert "error" in response
 
-    @patch("commands.ts")
+    @patch("climesync.commands.ts")
     def test_sign_in_error(self, mock_ts):
         response = commands.sign_in(interactive=False)
 
         assert "climesync error" in response
 
-    @patch("commands.ts")
-    @patch("commands.pymesync.TimeSync")
+    @patch("climesync.commands.ts")
+    @patch("climesync.commands.pymesync.TimeSync")
     def test_sign_out(self, mock_timesync, mock_ts):
         url = "ts_url"
         test = False
@@ -184,8 +184,8 @@ class ClimesyncTest(unittest.TestCase):
 
         assert "error" in response
 
-    @patch("climesync.commands")
-    @patch("climesync.interactive_mode")
+    @patch("climesync.climesync.commands")
+    @patch("climesync.climesync.interactive_mode")
     def test_start_interactive(self, mock_interactive_mode, mock_commands):
         argv = []
 
@@ -193,8 +193,8 @@ class ClimesyncTest(unittest.TestCase):
 
         mock_interactive_mode.assert_called_with()
 
-    @patch("climesync.commands")
-    @patch("climesync.scripting_mode")
+    @patch("climesync.climesync.commands")
+    @patch("climesync.climesync.scripting_mode")
     def test_start_scripting(self, mock_scripting_mode, mock_commands):
         command = "create-time"
         argv = [command]
@@ -203,9 +203,9 @@ class ClimesyncTest(unittest.TestCase):
 
         mock_scripting_mode.assert_called_with("create-time", [])
 
-    @patch("climesync.util")
-    @patch("climesync.commands")
-    @patch("climesync.interactive_mode")
+    @patch("climesync.climesync.util")
+    @patch("climesync.climesync.commands")
+    @patch("climesync.climesync.interactive_mode")
     def test_connect_args(self, mock_interactive_mode, mock_commands,
                           mock_util):
         baseurl = "ts_url"
@@ -232,8 +232,8 @@ class ClimesyncTest(unittest.TestCase):
                                                  interactive=True)
         mock_interactive_mode.assert_called_with()
 
-    @patch("climesync.util")
-    @patch("climesync.lookup_command")
+    @patch("climesync.climesync.util")
+    @patch("climesync.climesync.lookup_command")
     def test_menu_command(self, mock_lookup_command, mock_util):
         command = "ct"
         command_result = {}
@@ -250,8 +250,8 @@ class ClimesyncTest(unittest.TestCase):
         assert result
         mock_util.print_json.assert_called_with(command_result)
 
-    @patch("climesync.util")
-    @patch("climesync.sys.stdout", new_callable=StringIO)
+    @patch("climesync.climesync.util")
+    @patch("climesync.climesync.sys.stdout", new_callable=StringIO)
     def test_menu_help(self, mock_stdout, mock_util):
         command = "h"
 
@@ -262,7 +262,7 @@ class ClimesyncTest(unittest.TestCase):
         assert result
         assert climesync.menu_options in mock_stdout.getvalue()
 
-    @patch("climesync.util")
+    @patch("climesync.climesync.util")
     def test_menu_quit(self, mock_util):
         command = "q"
 
@@ -272,8 +272,8 @@ class ClimesyncTest(unittest.TestCase):
 
         assert not result
 
-    @patch("climesync.util")
-    @patch("climesync.sys.stdout", new_callable=StringIO)
+    @patch("climesync.climesync.util")
+    @patch("climesync.climesync.sys.stdout", new_callable=StringIO)
     def test_menu_invalid(self, mock_stdout, mock_util):
         command = "invalid"
 
@@ -284,8 +284,8 @@ class ClimesyncTest(unittest.TestCase):
         assert result
         assert "Invalid choice!" in mock_stdout.getvalue()
 
-    @patch("climesync.scripting_mode")
-    @patch("climesync.util.read_config")
+    @patch("climesync.climesync.scripting_mode")
+    @patch("climesync.climesync.util.read_config")
     def test_main_use_config(self, mock_read_config, mock_scripting_mode):
         baseurl = "ts_url"
         username = "test"
@@ -307,7 +307,7 @@ class ClimesyncTest(unittest.TestCase):
 
         mock_scripting_mode.assert_called_with("command", [])
 
-    @patch("climesync.util")
+    @patch("climesync.climesync.util")
     def test_connect_error(self, mock_util):
         username = "test"
         password = "test"
@@ -324,7 +324,7 @@ class ClimesyncTest(unittest.TestCase):
 
         assert mock_util.print_json.call_count == 2
 
-    @patch("climesync.util")
+    @patch("climesync.climesync.util")
     def test_main_authenticate_error(self, mock_util):
         baseurl = "ts_url"
         argv = ["command"]
