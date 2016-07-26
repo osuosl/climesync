@@ -1,6 +1,6 @@
 import unittest
 
-import commands
+from climesync import commands
 
 
 class CommandsTest(unittest.TestCase):

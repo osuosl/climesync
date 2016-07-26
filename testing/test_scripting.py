@@ -1,7 +1,7 @@
 import unittest
 import shlex
 
-import commands
+from climesync import commands
 
 
 class ScriptingTest(unittest.TestCase):
