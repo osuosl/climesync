@@ -76,22 +76,29 @@ def write_config(key, value, path="~/.climesyncrc"):
 def print_json(response):
     """Prints values returned by Pymesync nicely"""
 
-    print ""
+    if not response:
+        return
 
     if isinstance(response, list):  # List of dictionaries
+        print
+
         for json_dict in response:
             for key, value in json_dict.iteritems():
                 print u"{}: {}".format(key, value)
 
-            print ""
+            print
     elif isinstance(response, dict):  # Plain dictionary
+        print
+
         for key, value in response.iteritems():
             print u"{}: {}".format(key, value)
 
-        print ""
+        print
     else:
+        print
         print "I don't know how to print that!"
         print response
+        print
 
 
 def is_time(time_str):
