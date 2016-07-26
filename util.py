@@ -194,7 +194,7 @@ def determine_data_type(data):
 
 
 def print_pretty_time(response):
-    """"""
+    """Abandon all hope ye who enter here"""
 
     if isinstance(response, dict):
         time_data = {k: v for k, v in response.iteritems()
@@ -211,6 +211,11 @@ def print_pretty_time(response):
 
         sorted_times = OrderedDict((p, 0) for p in projects)
 
+        min_leading_whitespace = 8
+
+        # I sure hope no one submits a time over 999h59m
+        min_activity_whitespace = 7
+
         for project in projects:
             project_times = [t for t in times
                              if project in t["project"]]
@@ -221,12 +226,18 @@ def print_pretty_time(response):
                              if any(u == t["user"]
                                     for t in project_times)]
 
+            leading_whitespace = max([min_leading_whitespace] + [len(u) + 1 for u in project_users])
+            activity_time_whitespace = max([min_activity_whitespace] + [len(a) + 2 for a in project_activities])
+            activity_whitespaces = [activity_time_whitespace - len(a) for a in project_activities]
+
+            activity_row = "".join("{}{}".format(a, " " * w) for a, w in zip(project_activities, activity_whitespaces))
+
             sorted_activity_time_sums = OrderedDict((a, 0) for a in project_activities)
             sorted_times[project] = OrderedDict((u, 0) for u in users)
 
             print u"{} ({} - {})".format(project, project_times[0]["date_worked"],
                                          project_times[-1]["date_worked"])
-            print u"    {}".format(" ".join(project_activities))
+            print u"{}{}".format(" " * leading_whitespace, activity_row)
 
             for user in project_users:
                 user_times = [t for t in project_times
@@ -250,7 +261,13 @@ def print_pretty_time(response):
                                   for s in activity_time_sums]
                 user_time_sum = sum(s for s in activity_time_sums)
 
-                print u"{} {} User total: {}".format(user, " ".join(activity_times),
+                user_time_whitespace = leading_whitespace - len(user)
+
+                time_whitespaces = [activity_time_whitespace - len(t) for t in activity_times]
+
+                time_row = "".join("{}{}".format(t, " " * w) for t, w in zip(activity_times, time_whitespaces))
+
+                print u"{}{}{} Total: {}".format(user, " " * user_time_whitespace, time_row,
                                                 value_to_printable(user_time_sum, time_value=True))
 
                 sorted_times[project][user] = user_time_sum
@@ -260,7 +277,13 @@ def print_pretty_time(response):
                                     for s in total_activity_time_sums]
             project_time_sum = sum(s for s in total_activity_time_sums)
 
-            print u"Totals: {} {}".format(" ".join(total_activity_times), value_to_printable(project_time_sum, time_value=True))
+            project_total_whitespace = leading_whitespace - 7
+            time_total_whitespaces = [activity_time_whitespace - len(t) for t in total_activity_times]
+
+            time_total_row = "".join("{}{}".format(t, " " * w) for t, w in zip(total_activity_times, time_total_whitespaces))
+
+            print u"Totals:{}{}        {}".format(" " * project_total_whitespace, time_total_row,
+                                           value_to_printable(project_time_sum, time_value=True))
 
             sorted_times[project] = project_time_sum
 
