@@ -4,6 +4,8 @@ import re
 import stat
 import sys
 import codecs
+from collections import OrderedDict
+from datetime import datetime
 
 
 def create_config(path="~/.climesyncrc"):
@@ -133,7 +135,7 @@ def value_to_printable(value, **format_flags):
 
 
 def print_json(response):
-    """Prints JSON returned by Pymesync nicely to the terminal"""
+    """Prints raw JSON returned by Pymesync"""
 
     print ""
 
@@ -157,6 +159,185 @@ def print_json(response):
     else:
         print "I don't know how to print that!"
         print response
+
+
+def compare_date_worked(time_a, time_b):
+    """"""
+
+    date_format = "%Y-%m-%d"
+
+    date_a = datetime.strptime(time_a["date_worked"], date_format)
+    date_b = datetime.strptime(time_b["date_worked"], date_format)
+
+    return date_a < date_b
+
+
+def determine_data_type(data):
+    """"""
+
+    if not data:
+        return ""
+
+    if isinstance(data, list):
+        data = data[0]
+
+    if "duration" in data:
+        return "time"
+    elif "username" in data:
+        return "user"
+    elif "slugs" in data:
+        return "project"
+    elif "slug" in data:
+        return "activity"
+    else:
+        return ""
+
+
+def print_pretty_time(response):
+    """"""
+
+    if isinstance(response, dict):
+        time_data = {k: v for k, v in response.iteritems()
+                     if k in ["uuid", "duration", "project", "activity", "user", "date_worked"]}
+
+        print_json(time_data)
+    elif isinstance(response, list):
+        times = sorted(response, cmp=compare_date_worked)
+        projects = list({time["project"][0] for time in times})
+        activities = list({a for time in times for a in time["activities"]})
+        users = list({time["user"] for time in times})
+
+        print
+
+        sorted_times = OrderedDict((p, 0) for p in projects)
+
+        for project in projects:
+            project_times = [t for t in times
+                             if project in t["project"]]
+            project_activities = [a for a in activities
+                                  if any(a in t["activities"]
+                                  for t in project_times)]
+            project_users = [u for u in users
+                             if any(u == t["user"]
+                                    for t in project_times)]
+
+            sorted_activity_time_sums = OrderedDict((a, 0) for a in project_activities)
+            sorted_times[project] = OrderedDict((u, 0) for u in users)
+
+            print u"{} ({} - {})".format(project, project_times[0]["date_worked"],
+                                         project_times[-1]["date_worked"])
+            print u"    {}".format(" ".join(project_activities))
+
+            for user in project_users:
+                user_times = [t for t in project_times
+                              if user == t["user"]]
+                user_activities = [a for a in project_activities
+                                   if any(a in t["activities"]
+                                          for t in user_times)]
+
+                sorted_times[project][user] = OrderedDict((a, 0) for a in project_activities)
+
+                for activity in user_activities:
+                    activity_times = [t for t in user_times
+                                      if activity in t["activities"]]
+
+                    activity_time_sum = sum(t["duration"] for t in activity_times)
+                    sorted_activity_time_sums[activity] += activity_time_sum
+                    sorted_times[project][user][activity] = activity_time_sum
+
+                activity_time_sums = [s for s in sorted_times[project][user].itervalues()]
+                activity_times = [value_to_printable(s, time_value=True)
+                                  for s in activity_time_sums]
+                user_time_sum = sum(s for s in activity_time_sums)
+
+                print u"{} {} User total: {}".format(user, " ".join(activity_times),
+                                                value_to_printable(user_time_sum, time_value=True))
+
+                sorted_times[project][user] = user_time_sum
+
+            total_activity_time_sums = [s for s in sorted_activity_time_sums.itervalues()]
+            total_activity_times = [value_to_printable(s, time_value=True)
+                                    for s in total_activity_time_sums]
+            project_time_sum = sum(s for s in total_activity_time_sums)
+
+            print u"Totals: {} {}".format(" ".join(total_activity_times), value_to_printable(project_time_sum, time_value=True))
+
+            sorted_times[project] = project_time_sum
+
+            print
+
+        total_time_sum = sum(s for p, s in sorted_times.iteritems())
+    else:
+        print_json(response)
+
+
+def print_pretty_project(response):
+    """"""
+
+    if isinstance(response, dict):
+        response = [response]
+
+    project_data = []
+
+    for project in response:
+        project = OrderedDict()
+        project = {k: v for k, v in project.iteritems()
+                   if k in ["name", "slugs", "users"]}
+
+        if "users" not in project:
+            project["users"] = {}
+
+        project_data.append(project)
+
+    print_json(project_data)
+
+
+def print_pretty_activity(response):
+    """"""
+
+    if isinstance(response, dict):
+        response = [response]
+
+    activity_data = []
+
+    for activity in response:
+        activity_data.append({k: v for k, v in activity.iteritems()
+                              if k in ["name", "slug"]})
+
+    print_json(user_data)
+
+
+def print_pretty_user(response):
+    """"""
+
+    if isinstance(response, dict):
+        response = [response]
+
+    user_data = []
+
+    for user in response:
+        user_data.append({k: v for k, v in user.iteritems()
+                          if k in ["username", "display_name", "email",
+                                   "active"]})
+
+    print_json(user_data)
+
+
+def print_pretty(response):
+    """Attempts to print data returned by Pymesync nicely"""
+
+    data_type = determine_data_type(response)
+
+    if data_type == "time":
+        print_pretty_time(response)
+    elif data_type == "project":
+        print_pretty_project(response)
+    elif data_type == "activity":
+        print_pretty_activity(response)
+    elif data_type == "user":
+        print_pretty_user(response)
+    else:
+        print_json(response)
 
 
 def get_field(prompt, optional=False, field_type="", current=None):
