@@ -5,6 +5,7 @@ import stat
 import sys
 import codecs
 from datetime import datetime
+from getpass import getpass
 
 
 def create_config(path="~/.climesyncrc"):
@@ -159,6 +160,7 @@ def get_field(prompt, optional=False, field_type=""):
     ? - Yes/No input
     : - Time input
     ! - Multiple inputs delimited by commas returned as a list
+    $ - Password input
     """
 
     # If necessary, add extra prompts that inform the user
@@ -180,12 +182,18 @@ def get_field(prompt, optional=False, field_type=""):
     if field_type == "!":
         type_prompt = "(Comma delimited) "
 
+    if field_type == "$":
+        type_prompt = "(Hidden) "
+
     # Format the original prompt with prepended additions
     formatted_prompt = "{}{}{}: ".format(optional_prompt, type_prompt, prompt)
     response = ""
 
     while True:
-        response = raw_input(formatted_prompt).decode(sys.stdin.encoding)
+        if field_type == "$":
+            response = getpass(formatted_prompt).decode(sys.stdin.encoding)
+        else:
+            response = raw_input(formatted_prompt).decode(sys.stdin.encoding)
 
         if not response and optional:
             return ""
@@ -198,7 +206,7 @@ def get_field(prompt, optional=False, field_type=""):
                     return response
             elif field_type == "!":
                 return [r.strip() for r in response.split(",")]
-            elif field_type == "":
+            elif field_type == "" or field_type == "$":
                 return response
             else:
                 # If the provided field_type isn't valid, return empty string
@@ -216,6 +224,7 @@ def get_fields(fields):
     ? - Yes/No field
     : - Time field
     ! - List field
+    $ - Password field
 
     In addition to those, field_name can contain a * for an optional field
     """
@@ -235,6 +244,9 @@ def get_fields(fields):
         elif "!" in field:
             field_type = "!"  # Comma-delimited list
             field = field.replace("!", "")
+        elif "$" in field:
+            field_type = "$"  # Password entry
+            field = field.replace("$", "")
 
         if "*" in field:
             optional = True
@@ -259,7 +271,11 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
        and config.get("climesync", key) == value:
         return
 
-    print u"> {} = {}".format(key, value)
+    if key == "password":
+        print "> password = [PASSWORD HIDDEN]"
+    else:
+        print u"> {} = {}".format(key, value)
+
     response = get_field("Add to the config file?",
                          optional=True, field_type="?")
 
