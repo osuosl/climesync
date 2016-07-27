@@ -145,6 +145,23 @@ def sign_out():
     return list()
 
 
+def update_settings():
+    """Prompts the user to update their password, display name, and/or email
+    address"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    username = ts.user
+    post_data = util.get_fields([("*password", "Updated password"),
+                                 ("*display_name", "Updated display name"),
+                                 ("*email", "Updated email address")])
+
+    return ts.update_user(user=post_data, username=username)
+
+
 @climesync_command()
 def create_time(post_data=None):
     """create-time
@@ -989,6 +1006,22 @@ Examples:
 
     if interactive and not users:
         return {"note": "No users were returned"}
+
+    if "error" in users[0] or "pymesync error" in users[0]:
+        return users
+
+    if username:
+        projects = ts.get_projects()
+
+        if "error" in projects[0] or "pymesync error" in projects[0]:
+            util.print_json(projects)
+        else:
+            # Create a dictionary of projects that the user has a role in
+            user_projects = {project["name"]: project["users"][username]
+                             for project in projects
+                             if username in project.setdefault("users", [])}
+
+            users[0]["projects"] = user_projects
 
     if interactive:
         csv_path = util.ask_csv()

@@ -661,6 +661,7 @@ get_users_slug_data = TestData(
             "site_admin": False,
             "site_spectator": False,
             "site_manager": False,
+            "projects": {},
             "created_at": "2015-02-29",
             "deleted_at": None
         }],
