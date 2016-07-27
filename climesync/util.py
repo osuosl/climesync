@@ -249,9 +249,15 @@ def print_pretty_time(response):
 
             sorted_times[project] = OrderedDict((u, 0) for u in users)
 
-            print u"{} ({} - {})".format(project,
-                                         project_times[0]["date_worked"],
-                                         project_times[-1]["date_worked"])
+            entry_text = "entry" if len(project_times) == 1 else "entries"
+
+            print u"{} - {} {} ({} - {})".format(project,
+                                                 len(project_times),
+                                                 entry_text,
+                                                 project_times[0]
+                                                              ["date_worked"],
+                                                 project_times[-1]
+                                                              ["date_worked"])
 
             print u"{}{}".format(" "*leading_whitespace, activity_row)
 
@@ -283,7 +289,7 @@ def print_pretty_time(response):
                 activity_times = [to_readable_time(s)
                                   for s in activity_time_sums]
 
-                user_time_sum = sum(s for s in activity_time_sums)
+                user_time_sum = sum(t["duration"] for t in user_times)
 
                 user_time_whitespace = " "*(leading_whitespace - len(user))
 
@@ -307,7 +313,7 @@ def print_pretty_time(response):
             total_activity_times = [to_readable_time(s)
                                     for s in total_activity_time_sums]
 
-            project_time_sum = sum(s for s in total_activity_time_sums)
+            project_time_sum = sum(t["duration"] for t in project_times)
 
             project_total_whitespace = " "*(leading_whitespace - 7)
             time_total_whitespaces = [" "*(activity_time_whitespace[i]
