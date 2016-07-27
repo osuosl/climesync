@@ -1,8 +1,8 @@
 import unittest
 from mock import patch
 
-import commands
-from interpreter import ClimesyncInterpreter
+from climesync import commands
+from climesync.interpreter import ClimesyncInterpreter
 
 
 class InterpreterTest(unittest.TestCase):
@@ -19,7 +19,7 @@ class InterpreterTest(unittest.TestCase):
         self.interpreter.postcmd(stop, command)
         self.interpreter.test = False
 
-    @patch("interpreter.util")
+    @patch("climesync.interpreter.util")
     def test_postcmd_output(self, mock_util):
         stop = False
         line = ""
@@ -31,7 +31,7 @@ class InterpreterTest(unittest.TestCase):
 
         mock_util.print_json.assert_called_with(output)
 
-    @patch("interpreter.util")
+    @patch("climesync.interpreter.util")
     def test_postcmd_no_output(self, mock_util):
         stop = False
         line = ""
@@ -43,7 +43,7 @@ class InterpreterTest(unittest.TestCase):
 
         mock_util.print_json.assert_not_called()
 
-    @patch("interpreter.util")
+    @patch("climesync.interpreter.util")
     def test_postcmd_test_mode(self, mock_util):
         stop = False
         line = ""

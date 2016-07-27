@@ -33,6 +33,10 @@ class climesync_command():
                     return command(post_data)
 
             else:
+                if util.check_token_expiration(ts):
+                    return {"error": "Your token has expired. Please sign in "
+                                     "again"}
+
                 return command()
 
         return wrapped_command
@@ -103,7 +107,8 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
     elif "password" in config_dict:
         password = config_dict["password"]
     elif interactive:
-        password = util.get_field("Password") if not ts.test else "test"
+        password = util.get_field("Password", field_type="$") if not ts.test \
+                                                              else "test"
 
     if not username or not password:
         return {"climesync error": "Couldn't authenticate with TimeSync. Are "
@@ -288,6 +293,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters to send to the server
     if post_data is None:
         post_data = util.get_fields([("*!user", "Submitted by users"),
@@ -320,6 +327,8 @@ Examples:
     if times and 'error' not in times[0] and 'pymesync error' not in times[0]:
         for time in times:
             time["duration"] = util.to_readable_time(time["duration"])
+    elif interactive and not times:
+        return {"note": "No times were returned"}
 
     # Attempt to query the server for times with filtering parameters
     return times
@@ -586,14 +595,21 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
-                                     ("*?include_deleted", "Allow revised?"),
+                                     ("*?include_deleted", "Allow deleted?"),
                                      ("*slug", "By project slug")])
 
     # Attempt to query the server with filtering parameters
-    return ts.get_projects(query_parameters=post_data)
+    projects = ts.get_projects(query_parameters=post_data)
+
+    if interactive and not projects:
+        return {"note": "No projects were returned"}
+
+    return projects
 
 
 @climesync_command(select_arg="slug")
@@ -726,6 +742,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
@@ -733,7 +751,12 @@ Examples:
                                      ("*slug", "By activity slug")])
 
     # Attempt to query the server with filtering parameters
-    return ts.get_activities(query_parameters=post_data)
+    activities = ts.get_activities(query_parameters=post_data)
+
+    if interactive and not activities:
+        return {"note": "No activities were returned"}
+
+    return activities
 
 
 @climesync_command(select_arg="slug")
@@ -813,7 +836,7 @@ Examples:
     # The data to send to the server containing new user information
     if post_data is None:
         post_data = util.get_fields([("username", "New user username"),
-                                     ("password", "New user password"),
+                                     ("$password", "New user password"),
                                      ("*display_name", "New display name"),
                                      ("*email", "New user email"),
                                      ("*?site_admin", "Site admin?"),
@@ -871,7 +894,7 @@ Examples:
     # The data to send to the server containing revised user information
     if post_data is None:
         post_data = util.get_fields([("*username", "Updated username"),
-                                     ("*password", "Updated password"),
+                                     ("*$password", "Updated password"),
                                      ("*display_name", "Updated display name"),
                                      ("*email", "Updated email"),
                                      ("*?site_admin", "Site admin?"),
@@ -905,6 +928,8 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
+    interactive = False if post_data else True
+
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*username", "Username")])
@@ -913,7 +938,12 @@ Examples:
     username = post_data.get("username")
 
     # Attempt to query the server with filtering parameters
-    return ts.get_users(username=username)
+    users = ts.get_users(username=username)
+
+    if interactive and not users:
+        return {"note": "No users were returned"}
+
+    return users
 
 
 @climesync_command(select_arg="username")

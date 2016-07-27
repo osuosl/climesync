@@ -1,4 +1,4 @@
-import commands
+from climesync import commands
 
 
 class TestData():
