@@ -232,12 +232,12 @@ def print_pretty_time(response):
             leading_whitespace = max([min_leading_whitespace] +
                                      [len(u) + 1 for u in project_users])
 
-            activity_time_whitespace = max([min_activity_whitespace] +
-                                           [len(a) + 2
-                                            for a in project_activities])
+            activity_time_whitespace = [max(min_activity_whitespace,
+                                            len(a) + 2)
+                                        for a in project_activities]
 
-            activity_whitespaces = [" " * (activity_time_whitespace - len(a))
-                                    for a in project_activities]
+            activity_whitespaces = [" "*(activity_time_whitespace[i] - len(a))
+                                    for i, a in enumerate(project_activities)]
 
             activity_row = "".join("{}{}".format(a, w)
                                    for a, w in zip(project_activities,
@@ -253,7 +253,7 @@ def print_pretty_time(response):
                                          project_times[0]["date_worked"],
                                          project_times[-1]["date_worked"])
 
-            print u"{}{}".format(" " * leading_whitespace, activity_row)
+            print u"{}{}".format(" "*leading_whitespace, activity_row)
 
             for user in project_users:
                 user_times = [t for t in project_times
@@ -285,10 +285,10 @@ def print_pretty_time(response):
 
                 user_time_sum = sum(s for s in activity_time_sums)
 
-                user_time_whitespace = " " * (leading_whitespace - len(user))
+                user_time_whitespace = " "*(leading_whitespace - len(user))
 
-                time_whitespaces = [" " * (activity_time_whitespace - len(t))
-                                    for t in activity_times]
+                time_whitespaces = [" "*(activity_time_whitespace[i] - len(t))
+                                    for i, t in enumerate(activity_times)]
 
                 time_row = "".join("{}{}".format(t, w)
                                    for t, w in zip(activity_times,
@@ -309,15 +309,17 @@ def print_pretty_time(response):
 
             project_time_sum = sum(s for s in total_activity_time_sums)
 
-            project_total_whitespace = " " * (leading_whitespace - 7)
-            time_total_whitespaces = [" " * (activity_time_whitespace - len(t))
-                                      for t in total_activity_times]
+            project_total_whitespace = " "*(leading_whitespace - 7)
+            time_total_whitespaces = [" "*(activity_time_whitespace[i]
+                                           - len(t))
+                                      for i, t in enumerate(
+                                                      total_activity_times)]
 
             time_total_row = "".join("{}{}".format(t, w)
                                      for t, w in zip(total_activity_times,
                                                      time_total_whitespaces))
 
-            print u"Totals:{}{}       {}".format(project_total_whitespace,
+            print u"Totals:{}{}Total: {}".format(project_total_whitespace,
                                                  time_total_row,
                                                  to_readable_time(
                                                      project_time_sum))
