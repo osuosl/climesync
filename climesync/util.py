@@ -4,6 +4,7 @@ import re
 import stat
 import codecs
 import sys  # NOQA flake8 ignore
+from datetime import datetime
 from getpass import getpass
 
 
@@ -71,6 +72,30 @@ def write_config(key, value, path="~/.climesyncrc"):
 
         # Write the config values
         config.write(f)
+
+
+def check_token_expiration(ts):
+    """Checks to see if the auth token has expired. If it has, try to log the
+    user back in using the username and password in their config file"""
+
+    # If the token is expired, try to log the user back in
+    if ts and not ts.test and ts.token_expiration_time() <= datetime.now():
+        config = read_config()
+        username = config.get("climesync", "username")
+        baseurl = config.get("climesync", "timesync_url")
+        if baseurl[-1] == "/":
+            baseurl = baseurl[:-1]
+
+        if config.has_option("climesync", "username") \
+           and config.has_option("climesync", "password") \
+           and username == ts.user \
+           and baseurl == ts.baseurl:
+            username = config.get("climesync", "username")
+            password = config.get("climesync", "password")
+
+            ts.authenticate(username, password, "password")
+        else:
+            return True
 
 
 def print_json(response):
