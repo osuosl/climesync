@@ -2,8 +2,8 @@ import ConfigParser
 import os
 import re
 import stat
-import sys
 import codecs
+import sys  # NOQA flake8 ignore
 from datetime import datetime
 from getpass import getpass
 
@@ -79,7 +79,7 @@ def check_token_expiration(ts):
     user back in using the username and password in their config file"""
 
     # If the token is expired, try to log the user back in
-    if ts and ts.token_expiration_time() <= datetime.now():
+    if ts and not ts.test and ts.token_expiration_time() <= datetime.now():
         config = read_config()
         username = config.get("climesync", "username")
         baseurl = config.get("climesync", "timesync_url")
@@ -175,12 +175,13 @@ def get_field(prompt, optional=False, field_type=""):
             type_prompt = "(y/N) "
         else:
             type_prompt = "(y/n) "
-
-    if field_type == ":":
+    elif field_type == ":":
         type_prompt = "(Time input - <value>h<value>m) "
-
-    if field_type == "!":
+    elif field_type == "!":
         type_prompt = "(Comma delimited) "
+    elif field_type != "":
+        # If the field type isn't valid, return an empty string
+        return ""
 
     if field_type == "$":
         type_prompt = "(Hidden) "
@@ -208,9 +209,6 @@ def get_field(prompt, optional=False, field_type=""):
                 return [r.strip() for r in response.split(",")]
             elif field_type == "" or field_type == "$":
                 return response
-            else:
-                # If the provided field_type isn't valid, return empty string
-                return ""
 
         print "Please submit a valid input"
 
@@ -347,6 +345,7 @@ def fix_args(args, optional_args):
             fixed_arg = arg[2:].replace('-', '_')
         # If it's the help option or we don't know
         else:
+            print "Invalid arg: {}".format(arg)
             continue
 
         value = args[arg]
