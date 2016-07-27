@@ -33,6 +33,10 @@ class climesync_command():
                     return command(post_data)
 
             else:
+                if util.check_token_expiration(ts):
+                    return {"error": "Your token has expired. Please sign in "
+                                     "again"}
+
                 return command()
 
         return wrapped_command
@@ -198,6 +202,7 @@ def update_time(post_data=None, uuid=None):
 
 Usage: update-time [-h] <uuid> [--duration=<duration>]
                         [--project=<project>]
+                        [--user=<user>]
                         [--activities=<activities>]
                         [--date-worked=<date worked>]
                         [--issue-uri=<issue uri>]
@@ -210,6 +215,7 @@ Options:
     -h --help                    Show this help message and exit
     --duration=<duration>        Duration of time entry
     --project=<project>          Slug of project worked on
+    --user=<user>                New time owner
     --activities=<activities>    Slugs of activities worked on
     --date-worked=<date worked>  The date of the entry
     --issue-uri=<issue uri>      The URI of the issue on an issue tracker
@@ -243,9 +249,12 @@ Examples:
                                      ("*user",        "New user"),
                                      ("*!activities", "Activity slugs"),
                                      ("*date_worked", "Date (yyyy-mm-dd)"),
-                                     ("*issue_url",   "Issue URI"),
+                                     ("*issue_uri",   "Issue URI"),
                                      ("*notes",       "Notes")],
                                     current_object=current_time)
+
+    if "activities" in post_data and isinstance(post_data["activities"], str):
+        post_data["activities"] = [post_data["activities"]]
 
     # Attempt to update a time and return the response
     return ts.update_time(uuid=uuid, time=post_data)
@@ -598,7 +607,7 @@ Examples:
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
-                                     ("*?include_deleted", "Allow revised?"),
+                                     ("*?include_deleted", "Allow deleted?"),
                                      ("*slug", "By project slug")])
 
     # Attempt to query the server with filtering parameters
