@@ -179,12 +179,11 @@ def get_field(prompt, optional=False, field_type=""):
         type_prompt = "(Time input - <value>h<value>m) "
     elif field_type == "!":
         type_prompt = "(Comma delimited) "
+    elif field_type == "$":
+        type_prompt = "(Hidden) "
     elif field_type != "":
         # If the field type isn't valid, return an empty string
         return ""
-
-    if field_type == "$":
-        type_prompt = "(Hidden) "
 
     # Format the original prompt with prepended additions
     formatted_prompt = "{}{}{}: ".format(optional_prompt, type_prompt, prompt)
