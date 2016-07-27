@@ -216,12 +216,11 @@ def get_field(prompt, optional=False, field_type="", current=None):
         type_prompt = "(Time input - <value>h<value>m) "
     elif field_type == "!":
         type_prompt = "(Comma delimited) "
+    elif field_type == "$":
+        type_prompt = "(Hidden) "
     elif field_type != "":
         # If the field type isn't valid, return an empty string
         return ""
-
-    if field_type == "$":
-        type_prompt = "(Hidden) "
 
     if current is not None:
         time_value = True if field_type == ":" else False

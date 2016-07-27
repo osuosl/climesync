@@ -7,6 +7,8 @@ import util
 
 ts = None  # pymesync.TimeSync object
 
+autoupdate_config = True
+
 
 # climesync_command decorator
 class climesync_command():
@@ -62,7 +64,7 @@ def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
         return {"climesync error": "Couldn't connect to TimeSync. Is "
                                    "timesync_url set in ~/.climesyncrc?"}
 
-    if interactive and not test:
+    if interactive and not test and autoupdate_config:
         util.add_kv_pair("timesync_url", url)
 
     # Create a new instance and attempt to connect to the provided url
@@ -114,7 +116,7 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
                                    "username and password set in "
                                    "~/.climesyncrc?"}
 
-    if interactive and not ts.test:
+    if interactive and not ts.test and autoupdate_config:
         util.add_kv_pair("username", username)
         util.add_kv_pair("password", password)
 
@@ -138,6 +140,23 @@ def sign_out():
 
     # No response from server
     return list()
+
+
+def update_settings():
+    """Prompts the user to update their password, display name, and/or email
+    address"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    username = ts.user
+    post_data = util.get_fields([("*password", "Updated password"),
+                                 ("*display_name", "Updated display name"),
+                                 ("*email", "Updated email address")])
+
+    return ts.update_user(user=post_data, username=username)
 
 
 @climesync_command()
@@ -961,6 +980,22 @@ Examples:
 
     if interactive and not users:
         return {"note": "No users were returned"}
+
+    if "error" in users[0] or "pymesync error" in users[0]:
+        return users
+
+    if username:
+        projects = ts.get_projects()
+
+        if "error" in projects[0] or "pymesync error" in projects[0]:
+            util.print_json(projects)
+        else:
+            # Create a dictionary of projects that the user has a role in
+            user_projects = {project["name"]: project["users"][username]
+                             for project in projects
+                             if username in project.setdefault("users", [])}
+
+            users[0]["projects"] = user_projects
 
     return users
 

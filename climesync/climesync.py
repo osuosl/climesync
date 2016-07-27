@@ -76,6 +76,7 @@ menu_options = (
     "uu - update user\n"
     "gu - get users\n"
     "du - delete user\n\n"
+    "us - update user settings\n\n"
     "h - print this menu\n"
     "q - exit\n")
 
@@ -104,6 +105,7 @@ command_lookup = [
     ("uu", "update-user",     commands.update_user),
     ("gu", "get-users",       commands.get_users),
     ("du", "delete-user",     commands.delete_user),
+    ("us", None,              commands.update_settings),
 ]
 
 
@@ -165,7 +167,13 @@ def main(argv=None, test=False):
     interactive = False if command else True
 
     try:
-        config_dict = dict(util.read_config().items("climesync"))
+        config_obj = util.read_config()
+
+        if config_obj.has_option("climesync", "autoupdate_config"):
+            commands.autoupdate_config = \
+                config_obj.getboolean("climesync", "autoupdate_config")
+
+        config_dict = dict(config_obj.items("climesync"))
     except:
         config_dict = {}
 
