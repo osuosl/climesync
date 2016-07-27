@@ -258,13 +258,19 @@ Examples:
 
     # The data to send to the server containing revised time information
     if post_data is None:
+        current_time = ts.get_times({"uuid": uuid})[0]
+
+        if "error" in current_time or "pymesync error" in current_time:
+            return current_time
+
         post_data = util.get_fields([("*:duration",   "Duration"),
                                      ("*project",     "Project slug"),
                                      ("*user",        "New user"),
                                      ("*!activities", "Activity slugs"),
                                      ("*date_worked", "Date (yyyy-mm-dd)"),
                                      ("*issue_uri",   "Issue URI"),
-                                     ("*notes",       "Notes")])
+                                     ("*notes",       "Notes")],
+                                    current_object=current_time)
 
     if "activities" in post_data and isinstance(post_data["activities"], str):
         post_data["activities"] = [post_data["activities"]]
@@ -341,11 +347,7 @@ Examples:
 
     times = ts.get_times(query_parameters=post_data)
 
-    # If the response is free of errors, make the times human-readable
-    if times and 'error' not in times[0] and 'pymesync error' not in times[0]:
-        for time in times:
-            time["duration"] = util.to_readable_time(time["duration"])
-    elif interactive and not times:
+    if interactive and not times:
         return {"note": "No times were returned"}
 
     # Attempt to query the server for times with filtering parameters
@@ -565,12 +567,18 @@ Examples:
 
     # The data to send to the server containing revised project information
     if post_data is None:
+        current_project = ts.get_projects({"slug": slug})[0]
+
+        if "error" in current_project or "pymesync error" in current_project:
+            return current_project
+
         post_data = util.get_fields([("*name", "Updated project name"),
                                      ("*!slugs", "Updated project slugs"),
                                      ("*uri", "Updated project URI"),
                                      ("*!users", "Updated users"),
                                      ("*default_activity",
-                                      "Updated default activity")])
+                                      "Updated default activity")],
+                                    current_object=current_project)
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
                                     post_data.pop("access_mode")))
@@ -726,8 +734,14 @@ Examples:
 
     # The data to send to the server containing revised activity information
     if post_data is None:
+        current_activity = ts.get_activities({"slug": old_slug})[0]
+
+        if "error" in current_activity or "pymesync error" in current_activity:
+            return current_activity
+
         post_data = util.get_fields([("*name", "Updated activity name"),
-                                     ("*slug", "Updated activity slug")])
+                                     ("*slug", "Updated activity slug")],
+                                    current_object=current_activity)
 
     # Attempt to update the activity information and return the repsonse
     return ts.update_activity(activity=post_data, slug=old_slug)
@@ -911,6 +925,11 @@ Examples:
 
     # The data to send to the server containing revised user information
     if post_data is None:
+        current_user = ts.get_users(username=old_username)[0]
+
+        if "error" in current_user or "pymesync error" in current_user:
+                return current_user
+
         post_data = util.get_fields([("*username", "Updated username"),
                                      ("*$password", "Updated password"),
                                      ("*display_name", "Updated display name"),
@@ -919,7 +938,8 @@ Examples:
                                      ("*?site_manager", "Site manager?"),
                                      ("*?site_spectator", "Site spectator?"),
                                      ("*meta", "New metainformation"),
-                                     ("*?active", "Is the user active?")])
+                                     ("*?active", "Is the user active?")],
+                                    current_object=current_user)
 
     # Attempt to update the user and return the response
     return ts.update_user(user=post_data, username=old_username)
