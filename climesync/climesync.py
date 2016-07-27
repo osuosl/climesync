@@ -167,7 +167,13 @@ def main(argv=None, test=False):
     interactive = False if command else True
 
     try:
-        config_dict = dict(util.read_config().items("climesync"))
+        config_obj = util.read_config()
+
+        if config_obj.has_option("climesync", "autoupdate_config"):
+            commands.autoupdate_config = \
+                config_obj.getboolean("climesync", "autoupdate_config")
+
+        config_dict = dict(config_obj.items("climesync"))
     except:
         config_dict = {}
 
