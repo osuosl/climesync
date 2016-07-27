@@ -3,228 +3,137 @@ import shlex
 
 from climesync import commands
 
+import test_data
+
+
+class test_script():
+
+    def __init__(self, data):
+        self.command = data.command
+        self.cli_args = data.cli_args
+        self.expected_response = data.expected_response
+        self.admin = data.admin
+
+        self.config = {
+            "timesync_url": "test",
+            "username": "test",
+            "password": "test"
+        }
+
+    def authenticate_nonadmin(self):
+        res = commands.sign_in(config_dict=self.config)
+
+        return res
+
+    def authenticate_admin(self):
+        config_admin = dict(self.config)
+        config_admin["username"] = "admin"
+
+        res = commands.sign_in(config_dict=config_admin)
+
+        return res
+
+    def run_command(self):
+        return self.command(shlex.split(self.cli_args))
+
+    def __call__(self, test):
+        def test_wrapped(testcase):
+            commands.connect(config_dict=self.config, test=True)
+
+            if self.admin:
+                self.authenticate_admin()
+            else:
+                self.authenticate_nonadmin()
+
+            response = self.run_command()
+
+            test(testcase, self.expected_response, response)
+
+        return test_wrapped
+
 
 class ScriptingTest(unittest.TestCase):
 
-    def setUp(self):
-        commands.connect(test=True)
+    @test_script(data=test_data.create_time_data)
+    def test_create_time(self, expected, result):
+        assert result == expected
 
-    def tearDown(self):
-        commands.disconnect()
+    @test_script(data=test_data.update_time_data)
+    def test_update_time(self, expected, result):
+        assert result == expected
 
-    def auth_admin(self):
-        return commands.sign_in("admin", "test")
+    @test_script(data=test_data.get_times_no_uuid_data)
+    def test_get_times_no_uuid(self, expected, result):
+        assert result == expected
 
-    def auth_nonadmin(self):
-        return commands.sign_in("user", "test")
+    @test_script(data=test_data.get_times_uuid_data)
+    def test_get_times_uuid(self, expected, result):
+        assert result == expected
 
-    def auth_configdict(self, config_dict):
-        return commands.sign_in(config_dict=config_dict, interactive=False)
+    @test_script(data=test_data.sum_times_data)
+    def test_sum_times(self, expected, result):
+        assert result == expected
 
-    def run_command(self, command, argv_str):
-        return command(shlex.split(argv_str))
+    @test_script(data=test_data.delete_time_data)
+    def test_delete_time(self, expected, result):
+        assert result == expected
 
-    def test_incomplete_config(self):
-        complete_config = {
-            "username": "user",
-            "password": "test"
-        }
+    @test_script(data=test_data.create_project_data)
+    def test_create_project(self, expected, result):
+        assert result == expected
 
-        incomplete_config_username = {
-            "username": "user"
-        }
+    @test_script(data=test_data.update_project_data)
+    def test_update_project(self, expected, result):
+        assert result == expected
 
-        incomplete_config_password = {
-            "password": "test"
-        }
+    @test_script(data=test_data.get_projects_no_slug_data)
+    def test_get_projects_no_slug(self, expected, result):
+        assert result == expected
 
-        blank_config = {}
+    @test_script(data=test_data.get_projects_slug_data)
+    def test_get_projects_slug(self, expected, result):
+        assert result == expected
 
-        response = self.auth_configdict(complete_config)
-        self.assertNotIn("climesync error", response)
+    @test_script(data=test_data.delete_project_data)
+    def test_delete_project(self, expected, result):
+        assert result == expected
 
-        response = self.auth_configdict(incomplete_config_username)
-        self.assertIn("climesync error", response)
+    @test_script(data=test_data.create_activity_data)
+    def test_create_activity(self, expected, result):
+        assert result == expected
 
-        response = self.auth_configdict(incomplete_config_password)
-        self.assertIn("climesync error", response)
+    @test_script(data=test_data.update_activity_data)
+    def test_update_activity(self, expected, result):
+        assert result == expected
 
-        response = self.auth_configdict(blank_config)
-        self.assertIn("climesync error", response)
+    @test_script(data=test_data.get_activities_no_slug_data)
+    def test_get_activities_no_slug(self, expected, result):
+        assert result == expected
 
-    def test_create_time(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.create_time,
-                                    "0h2m proj_slug act1 act2")
+    @test_script(data=test_data.get_activities_slug_data)
+    def test_get_activities_slug(self, expected, result):
+        assert result == expected
 
-        self.assertEqual(response["duration"], 120)
-        self.assertEqual(response["project"], "proj_slug")
-        self.assertEqual(response["activities"], ["act1", "act2"])
+    @test_script(data=test_data.delete_activity_data)
+    def test_delete_activity(self, expected, result):
+        assert result == expected
 
-    def test_update_time(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.update_time,
-                                    "uuid --duration=0h5m \
-                                     --activities=\"[act1 act2]\"")
+    @test_script(data=test_data.create_user_data)
+    def test_create_user(self, expected, result):
+        assert result == expected
 
-        self.assertEqual(response["duration"], 300)
-        self.assertEqual(response["activities"], ["act1", "act2"])
+    @test_script(data=test_data.update_user_data)
+    def test_update_user(self, expected, result):
+        assert result == expected
 
-    def test_get_times(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.get_times, "--end=2016-05-04")
+    @test_script(data=test_data.get_users_no_slug_data)
+    def test_get_users_no_slug(self, expected, result):
+        assert result == expected
 
-        self.assertEqual(len(response), 3)
+    @test_script(data=test_data.get_users_slug_data)
+    def test_get_users_slug(self, expected, result):
+        assert result == expected
 
-        response = self.run_command(commands.get_times, "--uuid=uuid")
-
-        self.assertEqual(len(response), 1)
-        self.assertEqual(response[0]["uuid"], "uuid")
-
-    def test_sum_times(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.sum_times,
-                                    "proj_slug --start=2016-06-01")
-
-        self.assertEqual(len(response), 0)
-
-    def test_delete_time(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.delete_time, "uuid")
-
-        self.assertEqual(response[0]["status"], 200)
-
-    def test_create_project(self):
-        self.auth_admin()
-        response = self.run_command(commands.create_project,
-                                    "name \"[slug1 slug2]\" "
-                                    "userone 2 usertwo 5")
-
-        self.assertEqual(response["name"], "name")
-        self.assertEqual(response["slugs"], ["slug1", "slug2"])
-        self.assertEqual(response["users"], {
-            "userone": {
-                "member": False,
-                "spectator": True,
-                "manager": False
-            },
-            "usertwo": {
-                "member": True,
-                "spectator": False,
-                "manager": True
-            }
-        })
-
-    def test_update_project(self):
-        self.auth_admin()
-        response = self.run_command(commands.update_project,
-                                    "slug userone 6 usertwo 4 --name=newname")
-
-        self.assertEqual(response["name"], "newname")
-        # Commented out for now because of a Pymesync bug
-#        self.assertEqual(response["users"], {
-#            "userone": {
-#                "member": True,
-#                "spectator": True,
-#                "manager": False
-#            },
-#            "usertwo": {
-#                "member": True,
-#                "spectator": False,
-#                "manager": False
-#            }
-#        })
-
-    def test_get_projects(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.get_projects, "")
-
-        self.assertEqual(len(response), 3)
-
-        response = self.run_command(commands.get_projects, "--slug=slug")
-
-        self.assertEqual(len(response), 1)
-
-    def test_delete_project(self):
-        self.auth_admin()
-        response = self.run_command(commands.delete_project, "slug")[0]
-
-        self.assertIn("status", response)
-        self.assertEqual(response["status"], 200)
-
-    def test_create_activity(self):
-        self.auth_admin()
-        response = self.run_command(commands.create_activity, "name slug")
-
-        self.assertEqual(response["name"], "name")
-        self.assertEqual(response["slug"], "slug")
-
-    def test_update_activity(self):
-        self.auth_admin()
-        response = self.run_command(commands.update_activity,
-                                    "slug --name=newname --slug=newslug")
-
-        self.assertEqual(response["name"], "newname")
-        self.assertEqual(response["slug"], "newslug")
-
-    def test_get_activities(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.get_activities,
-                                    "--include-deleted=True")
-
-        self.assertEqual(len(response), 3)
-
-        response = self.run_command(commands.get_activities, "--slug=slug")
-
-        self.assertEqual(len(response), 1)
-
-        # Test that both --slug and --include-deleted isn't accepted
-
-        response = self.run_command(commands.get_activities,
-                                    "--slug=slug --include-deleted=True")
-
-        self.assertIn("pymesync error", response[0])
-
-    def test_delete_activity(self):
-        self.auth_admin()
-        response = self.run_command(commands.delete_activity, "slug")[0]
-
-        self.assertIn("status", response)
-        self.assertEqual(response["status"], 200)
-
-    def test_create_user(self):
-        self.auth_admin()
-        response = self.run_command(commands.create_user,
-                                    "username password \
-                                     --email=testuser@osuosl.org \
-                                     --site-admin=True")
-
-        self.assertEqual(response["username"], "username")
-        self.assertEqual(response["email"], "testuser@osuosl.org")
-        self.assertEqual(response["site_admin"], True)
-
-    def test_update_user(self):
-        self.auth_admin()
-        response = self.run_command(commands.update_user,
-                                    "username --username=newname \
-                                     --site-admin=True")
-
-        self.assertEqual(response["username"], "newname")
-        self.assertEqual(response["site_admin"], True)
-
-    def test_get_users(self):
-        self.auth_nonadmin()
-        response = self.run_command(commands.get_users, "")
-
-        self.assertEqual(len(response), 4)
-
-        response = self.run_command(commands.get_users, "--username=user")
-
-        self.assertEqual(len(response), 1)
-
-    def test_delete_user(self):
-        self.auth_admin()
-        response = self.run_command(commands.delete_user, "user")[0]
-
-        self.assertIn("status", response)
-        self.assertEqual(response["status"], 200)
+    @test_script(data=test_data.delete_user_data)
+    def test_delete_user(self, expected, result):
+        assert result == expected

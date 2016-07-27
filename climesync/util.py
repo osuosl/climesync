@@ -2,10 +2,11 @@ import ConfigParser
 import os
 import re
 import stat
-import sys
 import codecs
+import sys  # NOQA flake8 ignore
 from collections import OrderedDict
 from datetime import datetime
+from getpass import getpass
 
 
 def create_config(path="~/.climesyncrc"):
@@ -72,6 +73,30 @@ def write_config(key, value, path="~/.climesyncrc"):
 
         # Write the config values
         config.write(f)
+
+
+def check_token_expiration(ts):
+    """Checks to see if the auth token has expired. If it has, try to log the
+    user back in using the username and password in their config file"""
+
+    # If the token is expired, try to log the user back in
+    if ts and not ts.test and ts.token_expiration_time() <= datetime.now():
+        config = read_config()
+        username = config.get("climesync", "username")
+        baseurl = config.get("climesync", "timesync_url")
+        if baseurl[-1] == "/":
+            baseurl = baseurl[:-1]
+
+        if config.has_option("climesync", "username") \
+           and config.has_option("climesync", "password") \
+           and username == ts.user \
+           and baseurl == ts.baseurl:
+            username = config.get("climesync", "username")
+            password = config.get("climesync", "password")
+
+            ts.authenticate(username, password, "password")
+        else:
+            return True
 
 
 def is_time(time_str):
@@ -417,6 +442,7 @@ def get_field(prompt, optional=False, field_type="", current=None):
     ? - Yes/No input
     : - Time input
     ! - Multiple inputs delimited by commas returned as a list
+    $ - Password input
     """
 
     # If necessary, add extra prompts that inform the user
@@ -432,12 +458,15 @@ def get_field(prompt, optional=False, field_type="", current=None):
             type_prompt = "(y/N) "
         else:
             type_prompt = "(y/n) "
-
-    if field_type == ":":
+    elif field_type == ":":
         type_prompt = "(Time input - <value>h<value>m) "
-
-    if field_type == "!":
+    elif field_type == "!":
         type_prompt = "(Comma delimited) "
+    elif field_type == "$":
+        type_prompt = "(Hidden) "
+    elif field_type != "":
+        # If the field type isn't valid, return an empty string
+        return ""
 
     if current is not None:
         time_value = True if field_type == ":" else False
@@ -452,7 +481,10 @@ def get_field(prompt, optional=False, field_type="", current=None):
     response = ""
 
     while True:
-        response = raw_input(formatted_prompt).decode(sys.stdin.encoding)
+        if field_type == "$":
+            response = getpass(formatted_prompt).decode(sys.stdin.encoding)
+        else:
+            response = raw_input(formatted_prompt).decode(sys.stdin.encoding)
 
         if not response and optional:
             return ""
@@ -465,11 +497,8 @@ def get_field(prompt, optional=False, field_type="", current=None):
                     return response
             elif field_type == "!":
                 return [r.strip() for r in response.split(",")]
-            elif field_type == "":
+            elif field_type == "" or field_type == "$":
                 return response
-            else:
-                # If the provided field_type isn't valid, return empty string
-                return ""
 
         print "Please submit a valid input"
 
@@ -483,6 +512,7 @@ def get_fields(fields, current_object=None):
     ? - Yes/No field
     : - Time field
     ! - List field
+    $ - Password field
 
     In addition to those, field_name can contain a * for an optional field
     """
@@ -503,6 +533,9 @@ def get_fields(fields, current_object=None):
         elif "!" in field:
             field_type = "!"  # Comma-delimited list
             field = field.replace("!", "")
+        elif "$" in field:
+            field_type = "$"  # Password entry
+            field = field.replace("$", "")
 
         if "*" in field:
             optional = True
@@ -533,7 +566,11 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
        and config.get("climesync", key) == value:
         return
 
-    print u"> {} = {}".format(key, value)
+    if key == "password":
+        print "> password = [PASSWORD HIDDEN]"
+    else:
+        print u"> {} = {}".format(key, value)
+
     response = get_field("Add to the config file?",
                          optional=True, field_type="?")
 
@@ -605,6 +642,7 @@ def fix_args(args, optional_args):
             fixed_arg = arg[2:].replace('-', '_')
         # If it's the help option or we don't know
         else:
+            print "Invalid arg: {}".format(arg)
             continue
 
         value = args[arg]
