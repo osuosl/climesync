@@ -47,104 +47,34 @@ import sys  # NOQA flake8 ignore
 from docopt import docopt
 
 import commands
+from interpreter import ClimesyncInterpreter
 import util
 
-menu_options = (
-    "\n"
-    "===============================================================\n"
-    " Climesync Interactive Mode\n"
-    "===============================================================\n"
-    "\nWhat do you want to do?\n"
-    "c - connect\n"
-    "dc - disconnect\n"
-    "s - sign in\n"
-    "so - sign out/reset credentials\n\n"
-    "ct - submit time\n"
-    "ut - update time\n"
-    "gt - get times\n"
-    "st - sum times\n"
-    "dt - delete time\n\n"
-    "cp - create project\n"
-    "up - update project\n"
-    "gp - get projects\n"
-    "dp - delete project\n\n"
-    "ca - create activity\n"
-    "ua - update activity\n"
-    "ga - get activities\n"
-    "da - delete activity\n\n"
-    "cu - create user\n"
-    "uu - update user\n"
-    "gu - get users\n"
-    "du - delete user\n\n"
-    "h - print this menu\n"
-    "q - exit\n")
-
-# Lookup table for Climesync commands in both interactive mode and
-# scripting mode. Table entries are represented as a tuple in the form
-# (interactive_name, scripting_name, command)
-command_lookup = [
-    ("c",  None,              commands.connect),
-    ("dc", None,              commands.disconnect),
-    ("s",  None,              commands.sign_in),
-    ("so", None,              commands.sign_out),
-    ("ct", "create-time",     commands.create_time),
-    ("ut", "update-time",     commands.update_time),
-    ("gt", "get-times",       commands.get_times),
-    ("st", "sum-times",       commands.sum_times),
-    ("dt", "delete-time",     commands.delete_time),
-    ("cp", "create-project",  commands.create_project),
-    ("up", "update-project",  commands.update_project),
-    ("gp", "get-projects",    commands.get_projects),
-    ("dp", "delete-project",  commands.delete_project),
-    ("ca", "create-activity", commands.create_activity),
-    ("ua", "update-activity", commands.update_activity),
-    ("ga", "get-activities",  commands.get_activities),
-    ("da", "delete-activity", commands.delete_activity),
-    ("cu", "create-user",     commands.create_user),
-    ("uu", "update-user",     commands.update_user),
-    ("gu", "get-users",       commands.get_users),
-    ("du", "delete-user",     commands.delete_user),
-]
-
-
-def lookup_command(name, col):
-    """Look for a command in the command lookup table by matching a name
-       with a value in the specified column
-    """
-    names = [c[col] for c in command_lookup]
-    if name in names:
-        return command_lookup[names.index(name)][2]
-    else:
-        return None
-
-
-def menu():
-    """Provide an interactive shell for the user to execute commands"""
-    choice = util.get_field("(h for help) ")
-
-    command = lookup_command(choice, 0)
-
-    if command:
-        util.print_json(command())
-    elif choice == "h":
-        print menu_options
-    elif choice == "q":
-        return False
-    elif choice:
-        print "Invalid choice!"
-
-    return True
-
-
-def interactive_mode():
-    """Start Climesync in interactive mode"""
-    while menu():
-        pass
+# Command lookup table for scripting mode
+command_lookup = {
+    "create-time":     commands.create_time,
+    "update-time":     commands.update_time,
+    "get-times":       commands.get_times,
+    "sum-times":       commands.sum_times,
+    "delete-time":     commands.delete_time,
+    "create-project":  commands.create_project,
+    "update-project":  commands.update_project,
+    "get-projects":    commands.get_projects,
+    "delete-project":  commands.delete_project,
+    "create-activity": commands.create_activity,
+    "update-activity": commands.update_activity,
+    "get-activities":  commands.get_activities,
+    "delete-activity": commands.delete_activity,
+    "create-user":     commands.create_user,
+    "update-user":     commands.update_user,
+    "get-users":       commands.get_users,
+    "delete-user":     commands.delete_user,
+}
 
 
 def scripting_mode(command_name, argv):
     """Call a climesync command with command line arguments"""
-    command = lookup_command(command_name, 1)
+    command = command_lookup.get(command_name)
 
     if command:
         util.print_json(command(argv))
@@ -188,7 +118,7 @@ def main(argv=None, test=False):
         scripting_mode(command, argv)
     else:
         util.print_json(response)
-        interactive_mode()
+        ClimesyncInterpreter().cmdloop()
 
 if __name__ == "__main__":
     main()

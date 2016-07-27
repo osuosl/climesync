@@ -100,14 +100,15 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
     elif "username" in config_dict:
         username = config_dict["username"]
     elif interactive:
-        username = util.get_field("Username")
+        username = util.get_field("Username") if not ts.test else "test"
 
     if arg_pass:
         password = arg_pass
     elif "password" in config_dict:
         password = config_dict["password"]
     elif interactive:
-        password = util.get_field("Password", field_type="$")
+        password = util.get_field("Password", field_type="$") if not ts.test \
+                                                              else "test"
 
     if not username or not password:
         return {"climesync error": "Couldn't authenticate with TimeSync. Are "

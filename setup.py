@@ -28,7 +28,8 @@ setup(
     ],
     scripts=["climesync/climesync.py",
              "climesync/util.py",
-             "climesync/commands.py"],
+             "climesync/commands.py",
+             "climesync/interpreter.py"],
     entry_points={
         "console_scripts": [
             "climesync = climesync:main"
