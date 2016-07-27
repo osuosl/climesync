@@ -76,6 +76,7 @@ menu_options = (
     "uu - update user\n"
     "gu - get users\n"
     "du - delete user\n\n"
+    "us - update user settings\n\n"
     "h - print this menu\n"
     "q - exit\n")
 
@@ -104,6 +105,7 @@ command_lookup = [
     ("uu", "update-user",     commands.update_user),
     ("gu", "get-users",       commands.get_users),
     ("du", "delete-user",     commands.delete_user),
+    ("us", None,              commands.update_settings),
 ]
 
 
