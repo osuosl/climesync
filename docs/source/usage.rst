@@ -168,12 +168,15 @@ Information on the structure of this file can be obtained `here`_.
 The following configuration values are stored under the "climesync" header
 in .climesyncrc:
 
-============ =======================================================
-    Key                            Description
-============ =======================================================
-timesync_url The URL of the TimeSync server to connect to on startup
-username     The username of the user to authenticate as on startup
-password     The password of the user to authenticate as on startup
-============ =======================================================
+================= =======================================================
+    Key                                 Description
+================= =======================================================
+timesync_url      The URL of the TimeSync server to connect to on startup
+username          The username of the user to authenticate as on startup
+password          The password of the user to authenticate as on startup
+autoupdate_config Turn off prompts to automatically update your config
+                  when connecting to a new server or signing in as a new
+                  user
+================= =======================================================
 
 .. _here: https://docs.python.org/2/library/configparser.html

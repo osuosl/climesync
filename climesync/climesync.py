@@ -5,10 +5,10 @@
 Usage: climesync.py [options] [<command> [<args>... ]]
 
 Options:
-    -h             --help                 Print this dialog
-    -c <baseurl>   --connect=<baseurl>    TimeSync Server URL
-    -u <username>  --username=<username>  Username of user to authenticate as
-    -p <password>  --password=<password>  Password of user to authenticate as
+    -h --help      Print this dialog
+    -c <baseurl>   TimeSync Server URL
+    -u <username>  Username of user to authenticate as
+    -p <password>  Password of user to authenticate as
 
 Commands:
 
@@ -44,6 +44,8 @@ climesync.py <command> --help
 
 """
 
+import sys  # NOQA flake8 ignore
+
 from docopt import docopt
 
 import commands
@@ -78,6 +80,7 @@ menu_options = (
     "uu - update user\n"
     "gu - get users\n"
     "du - delete user\n\n"
+    "us - update user settings\n\n"
     "h - print this menu\n"
     "q - exit\n")
 
@@ -116,7 +119,6 @@ def lookup_command(name, col):
        with a value in the specified column
     """
     names = [c[col] for c in command_lookup]
-
     if name in names:
         return command_lookup[names.index(name)][2]
     else:
@@ -125,7 +127,7 @@ def lookup_command(name, col):
 
 def menu():
     """Provide an interactive shell for the user to execute commands"""
-    choice = raw_input("(h for help) $ ")
+    choice = util.get_field("(h for help) ")
 
     command = lookup_command(choice, 0)
 
@@ -157,7 +159,7 @@ def scripting_mode(command_name, argv):
         print __doc__
 
 
-def main(argv=None):
+def main(argv=None, test=False):
     # Command line arguments
     args = docopt(__doc__, argv=argv, options_first=True)
     url = args['-c']
@@ -170,13 +172,19 @@ def main(argv=None):
     interactive = False if command else True
 
     try:
-        config_dict = dict(util.read_config().items("climesync"))
+        config_obj = util.read_config()
+
+        if config_obj.has_option("climesync", "autoupdate_config"):
+            commands.autoupdate_config = \
+                config_obj.getboolean("climesync", "autoupdate_config")
+
+        config_dict = dict(config_obj.items("climesync"))
     except:
         config_dict = {}
 
     # Attempt to connect with arguments and/or config
     response = commands.connect(arg_url=url, config_dict=config_dict,
-                                interactive=interactive)
+                                interactive=interactive, test=test)
 
     if "climesync error" in response:
         util.print_json(response)

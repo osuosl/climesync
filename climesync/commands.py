@@ -7,6 +7,8 @@ import util
 
 ts = None  # pymesync.TimeSync object
 
+autoupdate_config = True
+
 
 # climesync_command decorator
 class climesync_command():
@@ -33,6 +35,10 @@ class climesync_command():
                     return command(post_data)
 
             else:
+                if util.check_token_expiration(ts):
+                    return {"error": "Your token has expired. Please sign in "
+                                     "again"}
+
                 return command()
 
         return wrapped_command
@@ -58,7 +64,7 @@ def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
         return {"climesync error": "Couldn't connect to TimeSync. Is "
                                    "timesync_url set in ~/.climesyncrc?"}
 
-    if interactive and not test:
+    if interactive and not test and autoupdate_config:
         util.add_kv_pair("timesync_url", url)
 
     # Create a new instance and attempt to connect to the provided url
@@ -103,14 +109,14 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
     elif "password" in config_dict:
         password = config_dict["password"]
     elif interactive:
-        password = util.get_field("Password")
+        password = util.get_field("Password", field_type="$")
 
     if not username or not password:
         return {"climesync error": "Couldn't authenticate with TimeSync. Are "
                                    "username and password set in "
                                    "~/.climesyncrc?"}
 
-    if interactive and not ts.test:
+    if interactive and not ts.test and autoupdate_config:
         util.add_kv_pair("username", username)
         util.add_kv_pair("password", password)
 
@@ -134,6 +140,23 @@ def sign_out():
 
     # No response from server
     return list()
+
+
+def update_settings():
+    """Prompts the user to update their password, display name, and/or email
+    address"""
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    username = ts.user
+    post_data = util.get_fields([("*password", "Updated password"),
+                                 ("*display_name", "Updated display name"),
+                                 ("*email", "Updated email address")])
+
+    return ts.update_user(user=post_data, username=username)
 
 
 @climesync_command()
@@ -198,6 +221,7 @@ def update_time(post_data=None, uuid=None):
 
 Usage: update-time [-h] <uuid> [--duration=<duration>]
                         [--project=<project>]
+                        [--user=<user>]
                         [--activities=<activities>]
                         [--date-worked=<date worked>]
                         [--issue-uri=<issue uri>]
@@ -210,6 +234,7 @@ Options:
     -h --help                    Show this help message and exit
     --duration=<duration>        Duration of time entry
     --project=<project>          Slug of project worked on
+    --user=<user>                New time owner
     --activities=<activities>    Slugs of activities worked on
     --date-worked=<date worked>  The date of the entry
     --issue-uri=<issue uri>      The URI of the issue on an issue tracker
@@ -243,9 +268,12 @@ Examples:
                                      ("*user",        "New user"),
                                      ("*!activities", "Activity slugs"),
                                      ("*date_worked", "Date (yyyy-mm-dd)"),
-                                     ("*issue_url",   "Issue URI"),
+                                     ("*issue_uri",   "Issue URI"),
                                      ("*notes",       "Notes")],
                                     current_object=current_time)
+
+    if "activities" in post_data and isinstance(post_data["activities"], str):
+        post_data["activities"] = [post_data["activities"]]
 
     # Attempt to update a time and return the response
     return ts.update_time(uuid=uuid, time=post_data)
@@ -691,7 +719,7 @@ Examples:
     # Optional filtering parameters
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
-                                     ("*?include_deleted", "Allow revised?"),
+                                     ("*?include_deleted", "Allow deleted?"),
                                      ("*slug", "By project slug")])
 
     # Attempt to query the server with filtering parameters
@@ -933,7 +961,7 @@ Examples:
     # The data to send to the server containing new user information
     if post_data is None:
         post_data = util.get_fields([("username", "New user username"),
-                                     ("password", "New user password"),
+                                     ("$password", "New user password"),
                                      ("*display_name", "New display name"),
                                      ("*email", "New user email"),
                                      ("*?site_admin", "Site admin?"),
@@ -996,7 +1024,7 @@ Examples:
                 return current_user
 
         post_data = util.get_fields([("*username", "Updated username"),
-                                     ("*password", "Updated password"),
+                                     ("*$password", "Updated password"),
                                      ("*display_name", "Updated display name"),
                                      ("*email", "Updated email"),
                                      ("*?site_admin", "Site admin?"),
@@ -1045,6 +1073,22 @@ Examples:
 
     if interactive and not users:
         return {"note": "No users were returned"}
+
+    if "error" in users[0] or "pymesync error" in users[0]:
+        return users
+
+    if username:
+        projects = ts.get_projects()
+
+        if "error" in projects[0] or "pymesync error" in projects[0]:
+            util.print_json(projects)
+        else:
+            # Create a dictionary of projects that the user has a role in
+            user_projects = {project["name"]: project["users"][username]
+                             for project in projects
+                             if username in project.setdefault("users", [])}
+
+            users[0]["projects"] = user_projects
 
     return users
 
