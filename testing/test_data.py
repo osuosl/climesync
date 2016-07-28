@@ -591,7 +591,8 @@ update_user_data = TestData(
 get_users_no_slug_data = TestData(
         command=commands.get_users,
         mocked_input=[
-            ""  # Username
+            "",  # Username
+            ""  # Metadata
         ],
         cli_args="",
         expected_response=[{

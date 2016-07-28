@@ -949,7 +949,7 @@ Examples:
 def get_users(post_data=None):
     """get-users
 
-Usage: get-users [-h] [--username=<username>]
+Usage: get-users [-h] [--username=<username>] [--meta=<metainfo>]
 
 Options:
     -h --help              Show this help message and exit
@@ -958,7 +958,9 @@ Options:
 Examples:
     climesync.py get-users
 
-    climesync.py get-users userfour
+    climesync.py get-users --username=userfour
+
+    climesync.py get-users --meta="fulltime"
     """
 
     global ts
@@ -966,7 +968,7 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    interactive = False if post_data else True
+    interactive = post_data is None
 
     # Optional filtering parameters
     if post_data is None:
@@ -974,6 +976,14 @@ Examples:
 
     # Using dict.get so that None is returned if the key doesn't exist
     username = post_data.get("username")
+
+    # Get metadata filter parameter
+    if "meta" in post_data:
+        meta = post_data["meta"].upper()
+    elif interactive and not username:
+        meta = util.get_field("By metadata", optional=True).upper()
+    else:
+        meta = None
 
     # Attempt to query the server with filtering parameters
     users = ts.get_users(username=username)
@@ -984,7 +994,7 @@ Examples:
     if "error" in users[0] or "pymesync error" in users[0]:
         return users
 
-    if username:
+    if username:  # Get user projects
         projects = ts.get_projects()
 
         if "error" in projects[0] or "pymesync error" in projects[0]:
@@ -996,6 +1006,9 @@ Examples:
                              if username in project.setdefault("users", [])}
 
             users[0]["projects"] = user_projects
+    elif meta:  # Filter users by substrings in metadata
+        users = [user for user in users
+                 if user["meta"] and meta in user["meta"].upper()]
 
     return users
 
