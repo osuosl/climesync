@@ -163,7 +163,7 @@ def update_settings():
 def create_time(post_data=None):
     """create-time
 
-Usage: create-time [-h] <duration> <project> <activities> ...
+Usage: create-time [-h] <duration> <project> [<activities> ...]
                         [--date-worked=<date_worked>]
                         [--issue-uri=<issue_uri>]
                         [--notes=<notes>]
@@ -171,7 +171,8 @@ Usage: create-time [-h] <duration> <project> <activities> ...
 Arguments:
     <duration>    Duration of time entry
     <project>     Slug of project worked on
-    <activities>  Slugs of activities worked on
+    <activities>  Slugs of activities worked on (Optional if the project has
+                  a default activity)
 
 Options:
     -h --help                    Show this help message and exit
@@ -194,18 +195,33 @@ Examples:
     # The data to send to the server containing the new time information
     if post_data is None:
         post_data = util.get_fields([(":duration",   "Duration"),
-                                     ("project",     "Project slug"),
-                                     ("!activities", "Activity slugs"),
                                      ("date_worked", "Date (yyyy-mm-dd)"),
-                                     ("*issue_uri",  "Issue URI"),
-                                     ("*notes",      "Notes")])
+                                     ("project",     "Project slug")])
+
+        project_slug = post_data["project"]
+
+        project = ts.get_projects({"slug": project_slug})[0]
+
+        if "error" in project or "pymesync error" in project:
+            return project
+
+        if project["default_activity"]:
+            activity_query = "*!activities"
+        else:
+            activity_query = "!activities"
+
+        post_data_cont = util.get_fields([(activity_query, "Activity slugs"),
+                                          ("*issue_uri",  "Issue URI"),
+                                          ("*notes",      "Notes")])
+
+        post_data.update(post_data_cont)
 
     # Today's date
     if post_data["date_worked"] == "today":
         post_data["date_worked"] = date.today().isoformat()
 
     # If activities was sent as a single item
-    if isinstance(post_data["activities"], str):
+    if "activities" in post_data and isinstance(post_data["activities"], str):
         post_data["activities"] = [post_data["activities"]]
 
     # Use the currently authenticated user
