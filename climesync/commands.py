@@ -22,17 +22,22 @@ class climesync_command():
             if argv is not None:
                 args = docopt(command.__doc__, argv=argv)
 
+                command_kwargs = {}
+
                 # Put values gotten from docopt into a Pymesync dictionary
                 post_data = util.fix_args(args, self.optional_args)
 
                 if self.select_arg:
-                    select = post_data.pop(self.select_arg)
-                    if post_data:
-                        return command(post_data, select)
-                    else:
-                        return command(select)
-                else:
-                    return command(post_data)
+                    command_kwargs[self.select_arg] = \
+                            post_data.pop(self.select_arg)
+
+                if post_data or self.select_arg not in command_kwargs:
+                    command_kwargs["post_data"] = post_data
+
+                if args.get("--csv"):
+                    command_kwargs["csv_format"] = True
+
+                return command(**command_kwargs)
 
             else:
                 if util.check_token_expiration(ts):
@@ -205,7 +210,7 @@ Examples:
         if "error" in project or "pymesync error" in project:
             return project
 
-        if project["default_activity"]:
+        if not ts.test and project["default_activity"]:
             activity_query = "*!activities"
         else:
             activity_query = "!activities"
@@ -296,7 +301,7 @@ Examples:
 
 
 @climesync_command(optional_args=True)
-def get_times(post_data=None):
+def get_times(post_data=None, csv_format=False):
     """get-times
 
 Usage: get-times [-h] [--user=<users>] [--project=<projects>]
@@ -304,6 +309,7 @@ Usage: get-times [-h] [--user=<users>] [--project=<projects>]
                       [--end=<end date>] [--uuid=<uuid>]
                       [--include-revisions=<True/False>]
                       [--include-deleted=<True/False>]
+                      [--csv]
 
 Options:
     -h --help                         Show this help message and exit
@@ -318,9 +324,12 @@ Options:
                                       --include-deleted are ignored
 `   --include-revisions=<True/False>  Whether to include all time revisions
 `   --include-deleted=<True/False>    Whether to include deleted times
+    --csv                             Output the result in CSV format
 
 Examples:
     climesync.py get-times
+
+    climesync.py get-times --csv > times.csv
 
     climesync.py get-times --project=projectx --activity=planning
 `       --user="[userone usertwo]"
@@ -333,7 +342,7 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    interactive = False if post_data else True
+    interactive = post_data is None
 
     # Optional filtering parameters to send to the server
     if post_data is None:
@@ -361,17 +370,27 @@ Examples:
     if "end" in post_data:
         post_data["end"] = [post_data["end"]]
 
+    # Attempt to query the server for times with filtering parameters
     times = ts.get_times(query_parameters=post_data)
 
     if interactive and not times:
         return {"note": "No times were returned"}
 
-    # Attempt to query the server for times with filtering parameters
+    # Optionally output to a CSV file
+    if interactive:
+        csv_path = util.ask_csv()
+
+        if csv_path:
+            util.output_csv(times, "time", csv_path)
+    elif csv_format:
+        util.output_csv(times, "time", None)
+        return []
+
     return times
 
 
 @climesync_command(optional_args=True)
-def sum_times(query=None):
+def sum_times(post_data=None):
     """sum-times
 
 Usage: sum-times [-h] <project> ... [--start=<start date>] [--end=<end date>]
@@ -390,18 +409,18 @@ Examples:
     climesync.py sum-times projectx projecty --start=2016-06-01
     """
 
-    if query is None:
-        query = util.get_fields([("!project", "Project slugs"),
-                                 ("*start", "Start date (yyyy-mm-dd)"),
-                                 ("*end", "End date (yyyy-mm-dd)")])
+    if post_data is None:
+        post_data = util.get_fields([("!project", "Project slugs"),
+                                     ("*start", "Start date (yyyy-mm-dd)"),
+                                     ("*end", "End date (yyyy-mm-dd)")])
 
-    if isinstance(query["project"], str):
-        query["project"] = [query["project"]]
+    if isinstance(post_data["project"], str):
+        post_data["project"] = [post_data["project"]]
 
-    result = ts.get_times(query)
+    result = ts.get_times(post_data)
 
     try:
-        for project in query["project"]:
+        for project in post_data["project"]:
             time_sum = 0
 
             for user_time in result:
@@ -613,21 +632,25 @@ Examples:
 
 
 @climesync_command(optional_args=True)
-def get_projects(post_data=None):
+def get_projects(post_data=None, csv_format=False):
     """get-projects
 
 Usage: get-projects [-h] [--include-revisions=<True/False>]
                          [--include-deleted=<True/False>]
                          [--slug=<slug>]
+                         [--csv]
 
 Options:
     -h --help                         Show this help message and exit
     --include-revisions=<True/False>  Whether to include revised entries
     --include-deleted=<True/False>    Whether to include deleted entries
     --slug=<slug>                     Filter by project slug
+    --csv                             Output the result in CSV format
 
 Examples:
     climesync.py get-projects
+
+    climesync.py get-projects --csv > projects.csv
 
     climesync.py get-projects --slug=projectx --include-revisions=True
     """
@@ -637,7 +660,7 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    interactive = False if post_data else True
+    interactive = post_data is None
 
     # Optional filtering parameters
     if post_data is None:
@@ -650,6 +673,15 @@ Examples:
 
     if interactive and not projects:
         return {"note": "No projects were returned"}
+
+    if interactive:
+        csv_path = util.ask_csv()
+
+        if csv_path:
+            util.output_csv(projects, "project", csv_path)
+    elif csv_format:
+        util.output_csv(projects, "project", None)
+        return []
 
     return projects
 
@@ -764,21 +796,25 @@ Examples:
 
 
 @climesync_command(optional_args=True)
-def get_activities(post_data=None):
+def get_activities(post_data=None, csv_format=False):
     """get-activities
 
 Usage: get-activities [-h] [--include-revisions=<True/False>]
                            [--include-deleted=<True/False>]
                            [--slug=<slug>]
+                           [--csv]
 
 Options:
     -h --help                         Show this help message and exit
     --include-revisions=<True/False>  Whether to include revised entries
     --include-deleted=<True/False>    Whether to include deleted entries
     --slug=<slug>                     Filter by activity slug
+    --csv                             Output the result in CSV format
 
 Examples:
     climesync.py get-activities
+
+    climesync.py get-activities --csv > activities.csv
 
     climesync.py get-activities --include-deleted=True
 
@@ -790,7 +826,7 @@ Examples:
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
-    interactive = False if post_data else True
+    interactive = post_data is None
 
     # Optional filtering parameters
     if post_data is None:
@@ -803,6 +839,15 @@ Examples:
 
     if interactive and not activities:
         return {"note": "No activities were returned"}
+
+    if interactive:
+        csv_path = util.ask_csv()
+
+        if csv_path:
+            util.output_csv(activities, "activity", csv_path)
+    elif csv_format:
+        util.output_csv(activities, "activity", None)
+        return []
 
     return activities
 
@@ -962,17 +1007,21 @@ Examples:
 
 
 @climesync_command(optional_args=True)
-def get_users(post_data=None):
+def get_users(post_data=None, csv_format=False):
     """get-users
 
-Usage: get-users [-h] [--username=<username>] [--meta=<metainfo>]
+Usage: get-users [-h] [--username=<username>] [--meta=<metainfo>] [--csv]
 
 Options:
     -h --help              Show this help message and exit
     --username=<username>  Search for a user by username
+    --meta=<metainfo>      Search for a user by metainfo
+    --csv                  Output the result in CSV format
 
 Examples:
     climesync.py get-users
+
+    climesync.py get-users --csv > users.csv
 
     climesync.py get-users --username=userfour
 
@@ -1025,6 +1074,15 @@ Examples:
     elif meta:  # Filter users by substrings in metadata
         users = [user for user in users
                  if user["meta"] and meta in user["meta"].upper()]
+
+    if interactive:
+        csv_path = util.ask_csv()
+
+        if csv_path:
+            util.output_csv(users, "user", csv_path)
+    elif csv_format:
+        util.output_csv(users, "user", None)
+        return []
 
     return users
 
