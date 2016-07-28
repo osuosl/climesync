@@ -205,7 +205,7 @@ Examples:
         if "error" in project or "pymesync error" in project:
             return project
 
-        if project["default_activity"]:
+        if not ts.test and project["default_activity"]:
             activity_query = "*!activities"
         else:
             activity_query = "!activities"

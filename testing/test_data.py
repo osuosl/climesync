@@ -16,9 +16,9 @@ create_time_data = TestData(
         command=commands.create_time,
         mocked_input=[
             "1h0m",  # Duration
+            "2016-05-04",  # Date worked
             "p_foo",  # Project slug
             ["planning", "code"],  # Activity slugs
-            "2016-05-04",  # Date worked
             "https://www.github.com/osuosl/projectfoo/issues/42",  # Issue URI
             "Worked on coding"  # Notes
         ],
