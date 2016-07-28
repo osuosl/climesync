@@ -4,9 +4,51 @@ import re
 import stat
 import codecs
 import csv
+import cStringIO
 import sys  # NOQA flake8 ignore
+from collections import OrderedDict
 from datetime import datetime
 from getpass import getpass
+
+
+class UnicodeDictWriter:
+    """
+    Replacement for csv.DictWriter that adds support for dictionaries that
+    have Unicode contents
+    """
+
+    def __init__(self, f, headers, dialect=csv.excel, encoding="utf-8",
+                 **kwargs):
+        self.queue = cStringIO.StringIO()
+        self.writer = csv.writer(self.queue, dialect=dialect, **kwargs)
+        self.stream = f
+        self.encoder = codecs.getincrementalencoder(encoding)()
+        self.headers = headers
+
+    def writeheader(self):
+        uni_headers = [u"{}".format(h) for h in self.headers]
+
+        self.__writerow_int(uni_headers)
+
+    def writerow(self, row):
+        row_ordered = OrderedDict()
+
+        for header in self.headers:
+            row_ordered[header] = u"{}".format(row.setdefault(header, ""))
+
+        self.__writerow_int(row_ordered.itervalues())
+
+    ################
+
+    def __writerow_int(self, row):
+        self.writer.writerow([s.encode("utf-8") for s in row])
+
+        data = self.queue.getvalue()
+        data = data.decode("utf-8")
+        data = self.encoder.encode(data)
+
+        self.stream.write(data)
+        self.queue.truncate(0)
 
 
 def create_config(path="~/.climesyncrc"):
@@ -160,7 +202,7 @@ def output_csv(response, data_type, path):
     else:
         csvfile = sys.stdout
 
-    writer = csv.DictWriter(csvfile, headers, quoting=csv.QUOTE_ALL)
+    writer = UnicodeDictWriter(csvfile, headers, quoting=csv.QUOTE_ALL)
 
     writer.writeheader()
     for ts_object in response:
