@@ -1050,13 +1050,13 @@ Examples:
                 role = ""
 
         users = []
-        for username, roles in project_users.iteritems():
+        for user, roles in project_users.iteritems():
             if (role == "--members" and "member" not in roles) or \
                (role == "--managers" and "manager" not in roles) or \
                (role == "--spectators" and "spectator" not in roles):
                 continue
 
-            user_object = ts.get_users(username=username)[0]
+            user_object = ts.get_users(username=user)[0]
 
             if "error" in user_object or "pymesync error" in user_object:
                 return user_object
