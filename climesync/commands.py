@@ -7,6 +7,8 @@ import util
 
 ts = None  # pymesync.TimeSync object
 
+autoupdate_config = True
+
 
 # climesync_command decorator
 class climesync_command():
@@ -67,7 +69,7 @@ def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
         return {"climesync error": "Couldn't connect to TimeSync. Is "
                                    "timesync_url set in ~/.climesyncrc?"}
 
-    if interactive and not test:
+    if interactive and not test and autoupdate_config:
         util.add_kv_pair("timesync_url", url)
 
     # Create a new instance and attempt to connect to the provided url
@@ -119,7 +121,7 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
                                    "username and password set in "
                                    "~/.climesyncrc?"}
 
-    if interactive and not ts.test:
+    if interactive and not ts.test and autoupdate_config:
         util.add_kv_pair("username", username)
         util.add_kv_pair("password", password)
 
@@ -166,7 +168,7 @@ def update_settings():
 def create_time(post_data=None):
     """create-time
 
-Usage: create-time [-h] <duration> <project> <activities> ...
+Usage: create-time [-h] <duration> <project> [<activities> ...]
                         [--date-worked=<date_worked>]
                         [--issue-uri=<issue_uri>]
                         [--notes=<notes>]
@@ -174,7 +176,8 @@ Usage: create-time [-h] <duration> <project> <activities> ...
 Arguments:
     <duration>    Duration of time entry
     <project>     Slug of project worked on
-    <activities>  Slugs of activities worked on
+    <activities>  Slugs of activities worked on (Optional if the project has
+                  a default activity)
 
 Options:
     -h --help                    Show this help message and exit
@@ -197,18 +200,33 @@ Examples:
     # The data to send to the server containing the new time information
     if post_data is None:
         post_data = util.get_fields([(":duration",   "Duration"),
-                                     ("project",     "Project slug"),
-                                     ("!activities", "Activity slugs"),
                                      ("date_worked", "Date (yyyy-mm-dd)"),
-                                     ("*issue_uri",  "Issue URI"),
-                                     ("*notes",      "Notes")])
+                                     ("project",     "Project slug")])
+
+        project_slug = post_data["project"]
+
+        project = ts.get_projects({"slug": project_slug})[0]
+
+        if "error" in project or "pymesync error" in project:
+            return project
+
+        if not ts.test and project["default_activity"]:
+            activity_query = "*!activities"
+        else:
+            activity_query = "!activities"
+
+        post_data_cont = util.get_fields([(activity_query, "Activity slugs"),
+                                          ("*issue_uri",  "Issue URI"),
+                                          ("*notes",      "Notes")])
+
+        post_data.update(post_data_cont)
 
     # Today's date
     if post_data["date_worked"] == "today":
         post_data["date_worked"] = date.today().isoformat()
 
     # If activities was sent as a single item
-    if isinstance(post_data["activities"], str):
+    if "activities" in post_data and isinstance(post_data["activities"], str):
         post_data["activities"] = [post_data["activities"]]
 
     # Use the currently authenticated user
@@ -261,13 +279,19 @@ Examples:
 
     # The data to send to the server containing revised time information
     if post_data is None:
+        current_time = ts.get_times({"uuid": uuid})[0]
+
+        if "error" in current_time or "pymesync error" in current_time:
+            return current_time
+
         post_data = util.get_fields([("*:duration",   "Duration"),
                                      ("*project",     "Project slug"),
                                      ("*user",        "New user"),
                                      ("*!activities", "Activity slugs"),
                                      ("*date_worked", "Date (yyyy-mm-dd)"),
                                      ("*issue_uri",   "Issue URI"),
-                                     ("*notes",       "Notes")])
+                                     ("*notes",       "Notes")],
+                                    current_object=current_time)
 
     if "activities" in post_data and isinstance(post_data["activities"], str):
         post_data["activities"] = [post_data["activities"]]
@@ -349,11 +373,7 @@ Examples:
     # Attempt to query the server for times with filtering parameters
     times = ts.get_times(query_parameters=post_data)
 
-    # If the response is free of errors, make the times human-readable
-    if times and 'error' not in times[0] and 'pymesync error' not in times[0]:
-        for time in times:
-            time["duration"] = util.to_readable_time(time["duration"])
-    elif interactive and not times:
+    if interactive and not times:
         return {"note": "No times were returned"}
 
     # Optionally output to a CSV file
@@ -582,12 +602,18 @@ Examples:
 
     # The data to send to the server containing revised project information
     if post_data is None:
+        current_project = ts.get_projects({"slug": slug})[0]
+
+        if "error" in current_project or "pymesync error" in current_project:
+            return current_project
+
         post_data = util.get_fields([("*name", "Updated project name"),
                                      ("*!slugs", "Updated project slugs"),
                                      ("*uri", "Updated project URI"),
                                      ("*!users", "Updated users"),
                                      ("*default_activity",
-                                      "Updated default activity")])
+                                      "Updated default activity")],
+                                    current_object=current_project)
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
                                     post_data.pop("access_mode")))
@@ -756,8 +782,14 @@ Examples:
 
     # The data to send to the server containing revised activity information
     if post_data is None:
+        current_activity = ts.get_activities({"slug": old_slug})[0]
+
+        if "error" in current_activity or "pymesync error" in current_activity:
+            return current_activity
+
         post_data = util.get_fields([("*name", "Updated activity name"),
-                                     ("*slug", "Updated activity slug")])
+                                     ("*slug", "Updated activity slug")],
+                                    current_object=current_activity)
 
     # Attempt to update the activity information and return the repsonse
     return ts.update_activity(activity=post_data, slug=old_slug)
@@ -954,6 +986,11 @@ Examples:
 
     # The data to send to the server containing revised user information
     if post_data is None:
+        current_user = ts.get_users(username=old_username)[0]
+
+        if "error" in current_user or "pymesync error" in current_user:
+                return current_user
+
         post_data = util.get_fields([("*username", "Updated username"),
                                      ("*$password", "Updated password"),
                                      ("*display_name", "Updated display name"),
@@ -962,7 +999,8 @@ Examples:
                                      ("*?site_manager", "Site manager?"),
                                      ("*?site_spectator", "Site spectator?"),
                                      ("*meta", "New metainformation"),
-                                     ("*?active", "Is the user active?")])
+                                     ("*?active", "Is the user active?")],
+                                    current_object=current_user)
 
     # Attempt to update the user and return the response
     return ts.update_user(user=post_data, username=old_username)
@@ -972,11 +1010,12 @@ Examples:
 def get_users(post_data=None, csv_format=False):
     """get-users
 
-Usage: get-users [-h] [--username=<username>] [--csv]
+Usage: get-users [-h] [--username=<username>] [--meta=<metainfo>] [--csv]
 
 Options:
     -h --help              Show this help message and exit
     --username=<username>  Search for a user by username
+    --meta=<metainfo>      Search for a user by metainfo
     --csv                  Output the result in CSV format
 
 Examples:
@@ -984,7 +1023,9 @@ Examples:
 
     climesync.py get-users --csv > users.csv
 
-    climesync.py get-users userfour
+    climesync.py get-users --username=userfour
+
+    climesync.py get-users --meta="fulltime"
     """
 
     global ts
@@ -1001,6 +1042,14 @@ Examples:
     # Using dict.get so that None is returned if the key doesn't exist
     username = post_data.get("username")
 
+    # Get metadata filter parameter
+    if "meta" in post_data:
+        meta = post_data["meta"].upper()
+    elif interactive and not username:
+        meta = util.get_field("By metadata", optional=True).upper()
+    else:
+        meta = None
+
     # Attempt to query the server with filtering parameters
     users = ts.get_users(username=username)
 
@@ -1010,7 +1059,7 @@ Examples:
     if "error" in users[0] or "pymesync error" in users[0]:
         return users
 
-    if username:
+    if username:  # Get user projects
         projects = ts.get_projects()
 
         if "error" in projects[0] or "pymesync error" in projects[0]:
@@ -1022,6 +1071,9 @@ Examples:
                              if username in project.setdefault("users", [])}
 
             users[0]["projects"] = user_projects
+    elif meta:  # Filter users by substrings in metadata
+        users = [user for user in users
+                 if user["meta"] and meta in user["meta"].upper()]
 
     if interactive:
         csv_path = util.ask_csv()

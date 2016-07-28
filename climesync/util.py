@@ -141,34 +141,6 @@ def check_token_expiration(ts):
             return True
 
 
-def print_json(response):
-    """Prints values returned by Pymesync nicely"""
-
-    if not response:
-        return
-
-    if isinstance(response, list):  # List of dictionaries
-        print
-
-        for json_dict in response:
-            for key, value in json_dict.iteritems():
-                print u"{}: {}".format(key, value)
-
-            print
-    elif isinstance(response, dict):  # Plain dictionary
-        print
-
-        for key, value in response.iteritems():
-            print u"{}: {}".format(key, value)
-
-        print
-    else:
-        print
-        print "I don't know how to print that!"
-        print response
-        print
-
-
 def output_csv(response, data_type, path):
     """Outputs a TimeSync response to a CSV file at the specified path, or
     to stdout if path is None"""
@@ -235,7 +207,71 @@ def to_readable_time(seconds):
     return "{}h{}m".format(hours, minutes)
 
 
-def get_field(prompt, optional=False, field_type=""):
+def value_to_printable(value, **format_flags):
+    """Formats values returned by Pymesync into nice-looking strings
+
+    format_flags is a dictionary of boolean flags used to format the output in
+    different ways
+
+    Supported flags:
+    time_value - Take the integer value and make it a human-readable time
+    short_perms - Return users in a permissions dict but not permissions
+    """
+
+    if isinstance(value, list):  # List of values
+        return ", ".join(value)
+    elif isinstance(value, dict):  # Project permission dict
+        if format_flags.get("short_perms"):
+            return ", ".join(value.keys())
+
+        users_sorted = list(reversed(sorted(value.keys(), key=len)))
+        if users_sorted:
+            max_name_len = len(users_sorted[0])
+
+        user_strings = []
+        for user in value:
+            permissions = ", ".join([p for p in value[user] if value[user][p]])
+            name_len = len(user)
+            buffer_spaces = ' ' * (max_name_len - name_len)
+            user_strings.append("\t{}{} <{}>".format(user, buffer_spaces,
+                                                     permissions))
+
+        return "\n" + "\n".join(user_strings)
+    else:  # Something else (integer, string, etc.)
+        if format_flags.get("time_value"):
+            return to_readable_time(value)
+        else:
+            return "{}".format(value)
+
+
+def print_json(response):
+    """Prints JSON returned by Pymesync nicely to the terminal"""
+
+    print ""
+
+    if isinstance(response, list):  # List of dictionaries
+        for json_dict in response:
+            for key, value in json_dict.iteritems():
+                time_value = True if key == "duration" else False
+                print u"{}: {}" \
+                      .format(key, value_to_printable(value,
+                                                      time_value=time_value))
+
+            print ""
+    elif isinstance(response, dict):  # Plain dictionary
+        for key, value in response.iteritems():
+            time_value = True if key == "duration" else False
+            print u"{}: {}" \
+                  .format(key, value_to_printable(value,
+                                                  time_value=time_value))
+
+        print ""
+    else:
+        print "I don't know how to print that!"
+        print response
+
+
+def get_field(prompt, optional=False, field_type="", current=None):
     """Prompts the user for input and returns it in the specified format
 
     prompt - The prompt to display to the user
@@ -252,6 +288,7 @@ def get_field(prompt, optional=False, field_type=""):
     # If necessary, add extra prompts that inform the user
     optional_prompt = ""
     type_prompt = ""
+    current_prompt = ""
 
     if optional:
         optional_prompt = "(Optional) "
@@ -265,15 +302,22 @@ def get_field(prompt, optional=False, field_type=""):
         type_prompt = "(Time input - <value>h<value>m) "
     elif field_type == "!":
         type_prompt = "(Comma delimited) "
+    elif field_type == "$":
+        type_prompt = "(Hidden) "
     elif field_type != "":
         # If the field type isn't valid, return an empty string
         return ""
 
-    if field_type == "$":
-        type_prompt = "(Hidden) "
+    if current is not None:
+        time_value = True if field_type == ":" else False
+        current_prompt = " [{}]" \
+                         .format(value_to_printable(current,
+                                                    time_value=time_value,
+                                                    short_perms=True))
 
     # Format the original prompt with prepended additions
-    formatted_prompt = "{}{}{}: ".format(optional_prompt, type_prompt, prompt)
+    formatted_prompt = "{}{}{}{}: ".format(optional_prompt, type_prompt,
+                                           prompt, current_prompt)
     response = ""
 
     while True:
@@ -299,7 +343,7 @@ def get_field(prompt, optional=False, field_type=""):
         print "Please submit a valid input"
 
 
-def get_fields(fields):
+def get_fields(fields, current_object=None):
     """Prompts for multiple fields and returns everything in a dictionary
 
     fields - A list of tuples that are ordered (field_name, prompt)
@@ -317,6 +361,7 @@ def get_fields(fields):
     for field, prompt in fields:
         optional = False
         field_type = ""
+        current = None
 
         # Deduce field type
         if "?" in field:
@@ -336,7 +381,13 @@ def get_fields(fields):
             optional = True
             field = field.replace("*", "")
 
-        response = get_field(prompt, optional, field_type)
+        if current_object and field in current_object:
+            current = current_object.get(field)
+
+            if current is None:
+                current = "None"
+
+        response = get_field(prompt, optional, field_type, current)
 
         # Only add response if it isn't empty
         if response != "":

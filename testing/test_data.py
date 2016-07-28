@@ -16,9 +16,9 @@ create_time_data = TestData(
         command=commands.create_time,
         mocked_input=[
             "1h0m",  # Duration
+            "2016-05-04",  # Date worked
             "p_foo",  # Project slug
             ["planning", "code"],  # Activity slugs
-            "2016-05-04",  # Date worked
             "https://www.github.com/osuosl/projectfoo/issues/42",  # Issue URI
             "Worked on coding"  # Notes
         ],
@@ -84,7 +84,7 @@ get_times_no_uuid_data = TestData(
                 "deleted_at": None,
                 "uuid": "c3706e79-1c9a-4765-8d7f-89b4544cad56",
                 "revision": 1,
-                "duration": "0h0m",
+                "duration": 12,
                 "project": ["ganeti-webmgr", "gwm"],
                 "activities": ["docs", "planning"],
                 "date_worked": "2014-04-17",
@@ -98,7 +98,7 @@ get_times_no_uuid_data = TestData(
                 "deleted_at": None,
                 "uuid": "12345676-1c9a-rrrr-bbbb-89b4544cad56",
                 "revision": 1,
-                "duration": "0h0m",
+                "duration": 13,
                 "project": ["ganeti-webmgr", "gwm"],
                 "activities": ["code", "planning"],
                 "date_worked": "2014-04-17",
@@ -112,7 +112,7 @@ get_times_no_uuid_data = TestData(
                 "deleted_at": None,
                 "uuid": "12345676-1c9a-ssss-cccc-89b4544cad56",
                 "revision": 1,
-                "duration": "0h0m",
+                "duration": 14,
                 "project": ["timesync", "ts"],
                 "activities": ["code"],
                 "date_worked": "2014-04-17",
@@ -145,7 +145,7 @@ get_times_uuid_data = TestData(
             "deleted_at": None,
             "uuid": "838853e3-3635-4076-a26f-7efr4e60981f",
             "revision": 1,
-            "duration": "0h0m",
+            "duration": 12,
             "project": ["ganeti-webmgr", "gwm"],
             "activities": ["docs", "planning"],
             "date_worked": "2014-04-17",
@@ -597,6 +597,7 @@ get_users_no_slug_data = TestData(
         command=commands.get_users,
         mocked_input=[
             "",  # Username
+            "",  # Metadata
             False  # Output CSV
         ],
         cli_args="",
