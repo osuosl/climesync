@@ -34,7 +34,9 @@ class UnicodeDictWriter:
         row_ordered = OrderedDict()
 
         for header in self.headers:
-            row_ordered[header] = u"{}".format(row.setdefault(header, ""))
+            uni_value = self.__convert_csv_writable(row.setdefault(header, ""))
+
+            row_ordered[header] = uni_value
 
         self.__writerow_int(row_ordered.itervalues())
 
@@ -49,6 +51,20 @@ class UnicodeDictWriter:
 
         self.stream.write(data)
         self.queue.truncate(0)
+
+    def __convert_csv_writable(self, value):
+        if isinstance(value, list):
+            return u"[{}]".format(u",".join(u"'{}'"
+                                            .format(self.__convert_csv_writable(v))
+                                            for v in value))
+        elif isinstance(value, dict):
+            return u"{{{}}}" \
+                   .format(u",".join(u"'{}': '{}'"
+                                     .format(self.__convert_csv_writable(k),
+                                             self.__convert_csv_writable(v))
+                                     for k, v in value.iteritems()))
+        else:
+            return u"{}".format(value)
 
 
 def create_config(path="~/.climesyncrc"):
@@ -400,7 +416,8 @@ def ask_csv():
     """Ask the user if they want to output data into a CSV file, and if so
     ask for the relative path of the file"""
 
-    do_create_csv = get_field("Write data to a CSV file?", field_type="?")
+    do_create_csv = get_field("Write data to a CSV file?", field_type="?",
+                              optional=True)
 
     if do_create_csv:
         return get_field("Enter the path to the new CSV file")
