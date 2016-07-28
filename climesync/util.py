@@ -2,8 +2,10 @@ import ConfigParser
 import os
 import re
 import stat
-import sys
 import codecs
+import sys  # NOQA flake8 ignore
+from datetime import datetime
+from getpass import getpass
 
 
 def create_config(path="~/.climesyncrc"):
@@ -72,32 +74,28 @@ def write_config(key, value, path="~/.climesyncrc"):
         config.write(f)
 
 
-def print_json(response):
-    """Prints values returned by Pymesync nicely"""
+def check_token_expiration(ts):
+    """Checks to see if the auth token has expired. If it has, try to log the
+    user back in using the username and password in their config file"""
 
-    if not response:
-        return
+    # If the token is expired, try to log the user back in
+    if ts and not ts.test and ts.token_expiration_time() <= datetime.now():
+        config = read_config()
+        username = config.get("climesync", "username")
+        baseurl = config.get("climesync", "timesync_url")
+        if baseurl[-1] == "/":
+            baseurl = baseurl[:-1]
 
-    if isinstance(response, list):  # List of dictionaries
-        print
+        if config.has_option("climesync", "username") \
+           and config.has_option("climesync", "password") \
+           and username == ts.user \
+           and baseurl == ts.baseurl:
+            username = config.get("climesync", "username")
+            password = config.get("climesync", "password")
 
-        for json_dict in response:
-            for key, value in json_dict.iteritems():
-                print u"{}: {}".format(key, value)
-
-            print
-    elif isinstance(response, dict):  # Plain dictionary
-        print
-
-        for key, value in response.iteritems():
-            print u"{}: {}".format(key, value)
-
-        print
-    else:
-        print
-        print "I don't know how to print that!"
-        print response
-        print
+            ts.authenticate(username, password, "password")
+        else:
+            return True
 
 
 def is_time(time_str):
@@ -123,7 +121,71 @@ def to_readable_time(seconds):
     return "{}h{}m".format(hours, minutes)
 
 
-def get_field(prompt, optional=False, field_type=""):
+def value_to_printable(value, **format_flags):
+    """Formats values returned by Pymesync into nice-looking strings
+
+    format_flags is a dictionary of boolean flags used to format the output in
+    different ways
+
+    Supported flags:
+    time_value - Take the integer value and make it a human-readable time
+    short_perms - Return users in a permissions dict but not permissions
+    """
+
+    if isinstance(value, list):  # List of values
+        return ", ".join(value)
+    elif isinstance(value, dict):  # Project permission dict
+        if format_flags.get("short_perms"):
+            return ", ".join(value.keys())
+
+        users_sorted = list(reversed(sorted(value.keys(), key=len)))
+        if users_sorted:
+            max_name_len = len(users_sorted[0])
+
+        user_strings = []
+        for user in value:
+            permissions = ", ".join([p for p in value[user] if value[user][p]])
+            name_len = len(user)
+            buffer_spaces = ' ' * (max_name_len - name_len)
+            user_strings.append("\t{}{} <{}>".format(user, buffer_spaces,
+                                                     permissions))
+
+        return "\n" + "\n".join(user_strings)
+    else:  # Something else (integer, string, etc.)
+        if format_flags.get("time_value"):
+            return to_readable_time(value)
+        else:
+            return "{}".format(value)
+
+
+def print_json(response):
+    """Prints JSON returned by Pymesync nicely to the terminal"""
+
+    print ""
+
+    if isinstance(response, list):  # List of dictionaries
+        for json_dict in response:
+            for key, value in json_dict.iteritems():
+                time_value = True if key == "duration" else False
+                print u"{}: {}" \
+                      .format(key, value_to_printable(value,
+                                                      time_value=time_value))
+
+            print ""
+    elif isinstance(response, dict):  # Plain dictionary
+        for key, value in response.iteritems():
+            time_value = True if key == "duration" else False
+            print u"{}: {}" \
+                  .format(key, value_to_printable(value,
+                                                  time_value=time_value))
+
+        print ""
+    else:
+        print "I don't know how to print that!"
+        print response
+
+
+def get_field(prompt, optional=False, field_type="", current=None):
     """Prompts the user for input and returns it in the specified format
 
     prompt - The prompt to display to the user
@@ -134,11 +196,13 @@ def get_field(prompt, optional=False, field_type=""):
     ? - Yes/No input
     : - Time input
     ! - Multiple inputs delimited by commas returned as a list
+    $ - Password input
     """
 
     # If necessary, add extra prompts that inform the user
     optional_prompt = ""
     type_prompt = ""
+    current_prompt = ""
 
     if optional:
         optional_prompt = "(Optional) "
@@ -148,19 +212,33 @@ def get_field(prompt, optional=False, field_type=""):
             type_prompt = "(y/N) "
         else:
             type_prompt = "(y/n) "
-
-    if field_type == ":":
+    elif field_type == ":":
         type_prompt = "(Time input - <value>h<value>m) "
-
-    if field_type == "!":
+    elif field_type == "!":
         type_prompt = "(Comma delimited) "
+    elif field_type == "$":
+        type_prompt = "(Hidden) "
+    elif field_type != "":
+        # If the field type isn't valid, return an empty string
+        return ""
+
+    if current is not None:
+        time_value = True if field_type == ":" else False
+        current_prompt = " [{}]" \
+                         .format(value_to_printable(current,
+                                                    time_value=time_value,
+                                                    short_perms=True))
 
     # Format the original prompt with prepended additions
-    formatted_prompt = "{}{}{}: ".format(optional_prompt, type_prompt, prompt)
+    formatted_prompt = "{}{}{}{}: ".format(optional_prompt, type_prompt,
+                                           prompt, current_prompt)
     response = ""
 
     while True:
-        response = raw_input(formatted_prompt).decode(sys.stdin.encoding)
+        if field_type == "$":
+            response = getpass(formatted_prompt).decode(sys.stdin.encoding)
+        else:
+            response = raw_input(formatted_prompt).decode(sys.stdin.encoding)
 
         if not response and optional:
             return ""
@@ -173,16 +251,13 @@ def get_field(prompt, optional=False, field_type=""):
                     return response
             elif field_type == "!":
                 return [r.strip() for r in response.split(",")]
-            elif field_type == "":
+            elif field_type == "" or field_type == "$":
                 return response
-            else:
-                # If the provided field_type isn't valid, return empty string
-                return ""
 
         print "Please submit a valid input"
 
 
-def get_fields(fields):
+def get_fields(fields, current_object=None):
     """Prompts for multiple fields and returns everything in a dictionary
 
     fields - A list of tuples that are ordered (field_name, prompt)
@@ -191,6 +266,7 @@ def get_fields(fields):
     ? - Yes/No field
     : - Time field
     ! - List field
+    $ - Password field
 
     In addition to those, field_name can contain a * for an optional field
     """
@@ -199,6 +275,7 @@ def get_fields(fields):
     for field, prompt in fields:
         optional = False
         field_type = ""
+        current = None
 
         # Deduce field type
         if "?" in field:
@@ -210,12 +287,21 @@ def get_fields(fields):
         elif "!" in field:
             field_type = "!"  # Comma-delimited list
             field = field.replace("!", "")
+        elif "$" in field:
+            field_type = "$"  # Password entry
+            field = field.replace("$", "")
 
         if "*" in field:
             optional = True
             field = field.replace("*", "")
 
-        response = get_field(prompt, optional, field_type)
+        if current_object and field in current_object:
+            current = current_object.get(field)
+
+            if current is None:
+                current = "None"
+
+        response = get_field(prompt, optional, field_type, current)
 
         # Only add response if it isn't empty
         if response != "":
@@ -234,7 +320,11 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
        and config.get("climesync", key) == value:
         return
 
-    print u"> {} = {}".format(key, value)
+    if key == "password":
+        print "> password = [PASSWORD HIDDEN]"
+    else:
+        print u"> {} = {}".format(key, value)
+
     response = get_field("Add to the config file?",
                          optional=True, field_type="?")
 
@@ -306,6 +396,7 @@ def fix_args(args, optional_args):
             fixed_arg = arg[2:].replace('-', '_')
         # If it's the help option or we don't know
         else:
+            print "Invalid arg: {}".format(arg)
             continue
 
         value = args[arg]
