@@ -54,9 +54,10 @@ class UnicodeDictWriter:
 
     def __convert_csv_writable(self, value):
         if isinstance(value, list):
-            return u"[{}]".format(u",".join(u"'{}'"
-                                            .format(self.__convert_csv_writable(v))
-                                            for v in value))
+            return u"[{}]" \
+                   .format(u",".join(u"'{}'"
+                                     .format(self.__convert_csv_writable(v))
+                                     for v in value))
         elif isinstance(value, dict):
             return u"{{{}}}" \
                    .format(u",".join(u"'{}': '{}'"
