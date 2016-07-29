@@ -274,6 +274,10 @@ get_projects_no_slug_data = TestData(
         ],
         cli_args="",
         expected_response=[{
+                "time_total": "0h0m",
+                "first_time": "2014-04-17",
+                "num_times": 3,
+                "latest_time": "2014-04-17",
                 "created_at": "2014-07-17",
                 "updated_at": "2014-07-20",
                 "deleted_at": None,
@@ -296,6 +300,10 @@ get_projects_no_slug_data = TestData(
                 }
             },
             {
+                "time_total": "0h0m",
+                "first_time": "2014-04-17",
+                "num_times": 3,
+                "latest_time": "2014-04-17",
                 "created_at": "2014-07-17",
                 "updated_at": "2014-07-20",
                 "deleted_at": None,
@@ -323,6 +331,10 @@ get_projects_no_slug_data = TestData(
                 }
             },
             {
+                "time_total": "0h0m",
+                "first_time": "2014-04-17",
+                "num_times": 3,
+                "latest_time": "2014-04-17",
                 "created_at": "2014-07-17",
                 "updated_at": "2014-07-20",
                 "deleted_at": None,
@@ -370,6 +382,10 @@ get_projects_slug_data = TestData(
         ],
         cli_args="--slug=gwm --include-revisions=False",
         expected_response=[{
+            "time_total": "0h0m",
+            "first_time": "2014-04-17",
+            "num_times": 3,
+            "latest_time": "2014-04-17",
             "created_at": "2014-07-17",
             "updated_at": "2014-07-20",
             "deleted_at": None,
