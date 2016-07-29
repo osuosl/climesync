@@ -8,6 +8,7 @@ import util
 ts = None  # pymesync.TimeSync object
 
 autoupdate_config = True
+ldap = False  # Use LDAP?
 
 
 # climesync_command decorator
@@ -95,6 +96,7 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
 
     username = ""
     password = ""
+    auth_type = "ldap" if ldap else "password"
 
     # If username or password in config, use them at program startup.
     if arg_user:
@@ -121,7 +123,7 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
         util.add_kv_pair("password", password)
 
     # Attempt to authenticate and return the server's response
-    return ts.authenticate(username, password, "password")
+    return ts.authenticate(username, password, auth_type)
 
 
 def sign_out():

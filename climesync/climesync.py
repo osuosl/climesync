@@ -5,10 +5,11 @@
 Usage: climesync.py [options] [<command> [<args>... ]]
 
 Options:
-    -h --help      Print this dialog
-    -c <baseurl>   TimeSync Server URL
-    -u <username>  Username of user to authenticate as
-    -p <password>  Password of user to authenticate as
+    -h             --help                 Print this dialog
+    -c <baseurl>   --connect=<baseurl>    TimeSync Server URL
+    -u <username>  --username=<username>  Username of user to authenticate as
+    -p <password>  --password=<password>  Password of user to authenticate as
+    -l             --ldap                 Authenticate using LDAP credentials
 
 Commands:
 
@@ -160,6 +161,7 @@ def main(argv=None, test=False):
     url = args['-c']
     user = args['-u']
     password = args['-p']
+    ldap = args['-l']
 
     command = args['<command>']
     argv = args['<args>']
@@ -176,6 +178,12 @@ def main(argv=None, test=False):
         config_dict = dict(config_obj.items("climesync"))
     except:
         config_dict = {}
+
+    if ldap or \
+       ("ldap" in config_dict and config_dict["ldap"].lower() == "true"):
+        commands.ldap = True
+    else:
+        commands.ldap = False
 
     # Attempt to connect with arguments and/or config
     response = commands.connect(arg_url=url, config_dict=config_dict,
