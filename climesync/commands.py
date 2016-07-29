@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 import pymesync
 from docopt import docopt
@@ -650,6 +650,30 @@ Examples:
 
     if interactive and not projects:
         return {"note": "No projects were returned"}
+
+    if "error" in projects[0] or "pymesync error" in projects[0]:
+        return projects
+
+    for project in projects:
+        proj_slug = project["slugs"][0]
+        proj_times = ts.get_times(query_parameters={"project": [proj_slug]})
+
+        if not proj_times or \
+           "error" in proj_times[0] or "pymesync error" in proj_times[0]:
+            continue
+
+        proj_time_sum = util.to_readable_time(sum(t["duration"]
+                                                  for t in proj_times))
+        proj_num_entries = len(proj_times)
+        proj_latest_time = max(datetime.strptime(t["date_worked"], "%Y-%m-%d")
+                               for t in proj_times).date().isoformat()
+        proj_first_time = min(datetime.strptime(t["date_worked"], "%Y-%m-%d")
+                              for t in proj_times).date().isoformat()
+
+        project["time_total"] = proj_time_sum
+        project["num_times"] = proj_num_entries
+        project["latest_time"] = proj_latest_time
+        project["first_time"] = proj_first_time
 
     return projects
 
