@@ -248,7 +248,7 @@ class ClimesyncTest(unittest.TestCase):
         result = climesync.menu()
 
         assert result
-        mock_util.print_json.assert_called_with(command_result)
+        mock_util.print_pretty.assert_called_with(command_result)
 
     @patch("climesync.climesync.util")
     @patch("climesync.climesync.sys.stdout", new_callable=StringIO)

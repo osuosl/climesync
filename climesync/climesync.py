@@ -133,7 +133,7 @@ def menu():
     command = lookup_command(choice, 0)
 
     if command:
-        util.print_json(command())
+        util.print_pretty(command())
     elif choice == "h":
         print menu_options
     elif choice == "q":
