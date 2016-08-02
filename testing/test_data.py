@@ -192,8 +192,8 @@ create_project_data = TestData(
             "projectx",  # Project name
             ["projx", "px"],  # Project slugs
             "https://www.github.com/osuosl/projectx",  # Project URI
+            "code",  # Default activity
             ["userone", "usertwo"],  # Project users
-            "code"  # Default activity
         ],
         cli_args="projectx \"[projx px]\" userone 4 usertwo 7 \
                   --uri=https://www.github.com/osuosl/projectx \
@@ -230,10 +230,9 @@ update_project_data = TestData(
             "Project X",  # Updated name
             ["px"],  # Updated slugs
             "https://www.github.com/osuosl/projectx",  # Updated URI
-            ["userone", "usertwo", "userthree"],  # Updated users
             "planning"  # Updated default activity
         ],
-        cli_args="projx userone 4 usertwo 7 userthree 2 --name=\"Project X\" \
+        cli_args="projx --name=\"Project X\" \
                   --slugs=px --uri=https://www.github.com/osuosl/projectx \
                   --default-activity=planning",
         expected_response={
@@ -246,20 +245,15 @@ update_project_data = TestData(
             "slugs": ["px"],
             "uri": "https://www.github.com/osuosl/projectx",
             "users": {
-                "userone": {
+                "patcht": {
                     "member": True,
                     "spectator": False,
                     "manager": False
                 },
-                "usertwo": {
+                "tschuy": {
                     "member": True,
                     "spectator": True,
                     "manager": True
-                },
-                "userthree": {
-                    "member": False,
-                    "spectator": True,
-                    "manager": False
                 }
             },
         },

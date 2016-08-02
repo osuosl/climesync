@@ -510,9 +510,9 @@ Examples:
         post_data = util.get_fields([("name", "Project name"),
                                      ("!slugs", "Project slugs"),
                                      ("*uri", "Project URI"),
-                                     ("*!users", "Users"),
                                      ("*default_activity",
-                                      "Default activity")])
+                                      "Default activity"),
+                                     ("*!users", "Users")])
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
                                     post_data.pop("access_mode")))
@@ -534,15 +534,13 @@ Examples:
 def update_project(post_data=None, slug=None):
     """update-project (Site admins only)
 
-Usage: update-project [-h] <slug> [(<username> <access_mode>) ...]
-                           [--name=<project_name>]
+Usage: update-project [-h] <slug> [--name=<project_name>]
                            [--slugs=<project_slugs>]
                            [--uri=<project_uri>]
                            [--default-activity=<default_activity>]
 
 Arguments:
-    <username>     The name of a user to add to the project
-    <access_mode>  The permissions of a user to add to the project
+    <slug>  The slug of the project
 
 Options:
     -h --help                              Show this help message and exit
@@ -552,27 +550,10 @@ Options:
     --default-activity=<default_activity>  Updated slug of the default activity
                                            associated with this project
 
-User permissions help:
-    User permissions are entered in a similar format to *nix file permissions.
-    Each possible permission is represented as a binary 0 or 1 in the following
-    format where each argument is a binary 0 or 1:
-
-    <member><spectator><manager>
-
-    For example, to set a user's permission level to both member and manager
-    this would be the permission number:
-
-    <member = 1><spectator = 0><manager = 1> == 101 == 5
-
-    So the entire command would be entered as:
-
-    update-project <name> <slugs> <username> 5
-
 Examples:
     climesync.py update-project foo --name=Foobarbaz --slugs="[foo bar baz]"
 
-    climesync.py update-project pz userone 7
-`       --uri=https://www.github.com/bar/projectz
+    climesync.py update-project pz --uri=https://www.github.com/bar/projectz
     """
 
     global ts
@@ -593,25 +574,137 @@ Examples:
         post_data = util.get_fields([("*name", "Updated project name"),
                                      ("*!slugs", "Updated project slugs"),
                                      ("*uri", "Updated project URI"),
-                                     ("*!users", "Updated users"),
                                      ("*default_activity",
                                       "Updated default activity")],
                                     current_object=current_project)
-    else:
-        permissions_dict = dict(zip(post_data.pop("username"),
-                                    post_data.pop("access_mode")))
-        post_data["users"] = util.fix_user_permissions(permissions_dict)
-
-    # If user permissions are going to be updated, ask for them
-    if "users" in post_data and not isinstance(post_data["users"], dict):
-        users = post_data["users"]
-        post_data["users"] = util.get_user_permissions(users)
 
     if "slugs" in post_data and isinstance(post_data["slugs"], str):
         post_data["slugs"] = [post_data["slugs"]]
 
     # Attempt to update the project information and return the response
     return ts.update_project(project=post_data, slug=slug)
+
+
+@climesync_command(select_arg="slug")
+def update_project_users(post_data=None, slug=None):
+    """update-project-users (Site admins/Site managers/Project managers only)
+
+Usage: update-project-users [-h] <slug> (<username> <access_mode>) ...
+
+Arguments:
+    <slug>         The slug of the project
+    <username>     The username of the user to either update or add to the
+                   project
+    <access_mode>  The new access mode of the user
+
+User permissions help:
+    User permissions are entered in a similar format to *nix file permissions.
+    Each possible permission is represented as a binary 0 or 1 in the following
+    format where each argument is a binary 0 or 1:
+
+    <member><spectator><manager>
+
+    For example, to set a user's permission level to both member and manager
+    this would be the permission number:
+
+    <member = 1><spectator = 0><manager = 1> == 101 == 5
+
+    So the entire command would be entered as:
+
+    update-project <name> <slugs> <username> 5
+
+Examples:
+    climesync.py update-project-users proj_foo newuser 4 olduser 6
+
+    climesync.py update-project-users proj_bar olduser1 4 olduser2 7
+    """
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    if slug is None:
+        slug = util.get_field("Slug of project to update")
+
+    if post_data is None:
+        current_project = ts.get_projects({"slug": slug})[0]
+
+        if "error" in current_project or "pymesync error" in current_project:
+            return current_project
+
+        post_data = util.get_fields([("*!users", "Users to add/update")],
+                                    current_object=current_project)
+    else:
+        permissions_dict = dict(zip(post_data.pop("username"),
+                                    post_data.pop("access_mode")))
+        post_data["users"] = util.fix_user_permissions(permissions_dict)
+
+    if "users" in post_data and not isinstance(post_data["users"], dict):
+        users_list = post_data["users"]
+        current_users = current_project["users"]
+        post_data["users"] = util.get_user_permissions(users_list,
+                                                       current_users)
+
+    old_project = ts.get_projects(query_parameters={"slug": slug})[0]
+
+    if "error" in old_project or "pymesync error" in old_project:
+        return old_project
+
+    users = old_project.setdefault("users", {})
+    users.update(post_data["users"])
+
+    return ts.update_project(project={"users": users}, slug=slug)
+
+
+@climesync_command(select_arg="slug")
+def remove_project_users(post_data=None, slug=None):
+    """remove-project-users (Site admins/Site managers/Project managers only)
+
+Usage: remove-project-users [-h] <slug> <users> ...
+
+Arguments:
+    <slug>      The slug of the project
+    <username>  The username of the user to remove
+
+Examples:
+    climesync.py remove-project-users proj_foo user1 user2
+
+    climesync.py remove-project-users proj_bar user1
+    """
+
+    global ts
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    if slug is None:
+        slug = util.get_field("Slug of project to update")
+
+    if post_data is None:
+        current_project = ts.get_projects({"slug": slug})[0]
+
+        if "error" in current_project or "pymesync error" in current_project:
+            return current_project
+
+        post_data = util.get_fields([("*!users", "Users to remove")],
+                                    current_object=current_project)
+
+    old_project = ts.get_projects(query_parameters={"slug": slug})[0]
+
+    if "error" in old_project or "pymesync error" in old_project:
+        return old_project
+
+    to_remove = post_data["users"] if "users" in post_data else []
+    users = old_project.setdefault("users", {})
+
+    if any(user not in users for user in to_remove):
+        return {"error": "User doesn't exist in project"}
+
+    users = {user: perms for user, perms in users.iteritems()
+             if user not in to_remove}
+
+    return ts.update_project(project={"users": users}, slug=slug)
 
 
 @climesync_command(optional_args=True)

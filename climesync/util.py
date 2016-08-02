@@ -208,7 +208,7 @@ def get_field(prompt, optional=False, field_type="", current=None):
         optional_prompt = "(Optional) "
 
     if field_type == "?":
-        if optional:
+        if optional and current is None:
             type_prompt = "(y/N) "
         else:
             type_prompt = "(y/n) "
@@ -333,20 +333,39 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
         print "New value added!"
 
 
-def get_user_permissions(users):
+def get_user_permissions(users, current_users={}):
     """Asks for permissions for multiple users and returns them in a dict"""
 
-    permissions = dict()
+    permissions = {}
 
     for user in users:
-        user_permissions = dict()
+        user_permissions = {}
+        current_permissions = {}
+        optional = False
+
+        if user in current_users:
+            current_permissions = {k: "Y" if v else "N"
+                                   for k, v in current_users[user].iteritems()}
+            optional = True
 
         member = get_field(u"Is {} a project member?".format(user),
-                           field_type="?")
+                           optional=optional, field_type="?",
+                           current=current_permissions.get("member"))
         spectator = get_field(u"Is {} a project spectator?".format(user),
-                              field_type="?")
+                              optional=optional, field_type="?",
+                              current=current_permissions.get("spectator"))
         manager = get_field(u"Is {} a project manager?".format(user),
-                            field_type="?")
+                            optional=optional, field_type="?",
+                            current=current_permissions.get("manager"))
+
+        if optional and member == "":
+            member = current_users[user]["member"]
+
+        if optional and spectator == "":
+            spectator = current_users[user]["spectator"]
+
+        if optional and manager == "":
+            manager = current_users[user]["manager"]
 
         user_permissions["member"] = member
         user_permissions["spectator"] = spectator
