@@ -602,7 +602,8 @@ get_users_no_slug_data = TestData(
         command=commands.get_users,
         mocked_input=[
             "",  # Username
-            ""  # Metadata
+            "",  # Metadata
+            ""   # Project
         ],
         cli_args="",
         expected_response=[{

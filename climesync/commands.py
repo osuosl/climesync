@@ -23,18 +23,25 @@ class climesync_command():
             if argv is not None:
                 args = docopt(command.__doc__, argv=argv)
 
+                command_kwargs = {}
+
                 # Put values gotten from docopt into a Pymesync dictionary
                 post_data = util.fix_args(args, self.optional_args)
 
                 if self.select_arg:
-                    select = post_data.pop(self.select_arg)
-                    if post_data:
-                        return command(post_data, select)
-                    else:
-                        return command(select)
-                else:
-                    return command(post_data)
+                    command_kwargs[self.select_arg] = \
+                            post_data.pop(self.select_arg)
 
+                if post_data or self.select_arg not in command_kwargs:
+                    command_kwargs["post_data"] = post_data
+
+                roles = ("--members", "--managers", "--spectators")
+
+                if any(args.get(r) for r in roles):
+                    command_kwargs["role"] = [r for r in roles
+                                              if args.get(r)][0]
+
+                return command(**command_kwargs)
             else:
                 if util.check_token_expiration(ts):
                     return {"error": "Your token has expired. Please sign in "
@@ -373,7 +380,7 @@ Examples:
 
 
 @climesync_command(optional_args=True)
-def sum_times(query=None):
+def sum_times(post_data=None):
     """sum-times
 
 Usage: sum-times [-h] <project> ... [--start=<start date>] [--end=<end date>]
@@ -392,18 +399,18 @@ Examples:
     climesync.py sum-times projectx projecty --start=2016-06-01
     """
 
-    if query is None:
-        query = util.get_fields([("!project", "Project slugs"),
-                                 ("*start", "Start date (yyyy-mm-dd)"),
-                                 ("*end", "End date (yyyy-mm-dd)")])
+    if post_data is None:
+        post_data = util.get_fields([("!project", "Project slugs"),
+                                     ("*start", "Start date (yyyy-mm-dd)"),
+                                     ("*end", "End date (yyyy-mm-dd)")])
 
-    if isinstance(query["project"], str):
-        query["project"] = [query["project"]]
+    if isinstance(post_data["project"], str):
+        post_data["project"] = [post_data["project"]]
 
-    result = ts.get_times(query)
+    result = ts.get_times(post_data)
 
     try:
-        for project in query["project"]:
+        for project in post_data["project"]:
             time_sum = 0
 
             for user_time in result:
@@ -1081,10 +1088,12 @@ Examples:
 
 
 @climesync_command(optional_args=True)
-def get_users(post_data=None):
+def get_users(post_data=None, role=None):
     """get-users
 
-Usage: get-users [-h] [--username=<username>] [--meta=<metainfo>]
+Usage: get-users [-h] [--meta=<metainfo>] [--username=<username>] |
+                     ([--project=<project>
+                      [--members|--managers|--spectators]])
 
 Options:
     -h --help              Show this help message and exit
@@ -1094,6 +1103,8 @@ Examples:
     climesync.py get-users
 
     climesync.py get-users --username=userfour
+
+    climesync.py get-users --project=p_foo --managers
 
     climesync.py get-users --meta="fulltime"
     """
@@ -1106,7 +1117,7 @@ Examples:
     interactive = post_data is None
 
     # Optional filtering parameters
-    if post_data is None:
+    if interactive:
         post_data = util.get_fields([("*username", "Username")])
 
     # Using dict.get so that None is returned if the key doesn't exist
@@ -1120,11 +1131,63 @@ Examples:
     else:
         meta = None
 
-    # Attempt to query the server with filtering parameters
-    users = ts.get_users(username=username)
+    if interactive and not username:
+        post_data.update(util.get_fields([("*project", "By project slug")]))
+
+    project = post_data.get("project")
+
+    if project:
+        project_users = ts.project_users(project=project)
+
+        if "error" in project_users or "pymesync error" in project_users:
+            return project_users
+
+        if interactive:
+            filter_members = util.get_field("Get project members?",
+                                            optional=True,
+                                            field_type="?")
+
+            filter_managers = filter_spectators = False
+
+            if not filter_members:
+                filter_managers = util.get_field("Get project managers?",
+                                                 optional=True,
+                                                 field_type="?")
+
+            if not filter_members and not filter_managers:
+                filter_spectators = util.get_field("Get project spectators?",
+                                                   optional=True,
+                                                   field_type="?")
+
+            if filter_members:
+                role = "--members"
+            elif filter_managers:
+                role = "--managers"
+            elif filter_spectators:
+                role = "--spectators"
+            else:
+                role = ""
+
+        users = []
+        for user, roles in project_users.iteritems():
+            if (role == "--members" and "member" not in roles) or \
+               (role == "--managers" and "manager" not in roles) or \
+               (role == "--spectators" and "spectator" not in roles):
+                continue
+
+            user_object = ts.get_users(username=user)[0]
+
+            if "error" in user_object or "pymesync error" in user_object:
+                return user_object
+
+            users.append(user_object)
+    else:
+        users = ts.get_users(username=username)
 
     if interactive and not users:
         return {"note": "No users were returned"}
+    elif not users:
+        return []
 
     if "error" in users[0] or "pymesync error" in users[0]:
         return users

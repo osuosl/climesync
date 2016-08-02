@@ -657,7 +657,8 @@ def fix_args(args, optional_args):
         elif arg.isupper():
             fixed_arg = arg.lower()
         # If it's a long option
-        elif arg[0:2] == '--' and arg != "--help":
+        elif arg[0:2] == '--' and arg not in ("--help", "--members",
+                                              "--managers", "--spectators"):
             fixed_arg = arg[2:].replace('-', '_')
         # If it's the help option or we don't know
         else:
@@ -672,6 +673,9 @@ def fix_args(args, optional_args):
                 fixed_value = int(value)
             else:
                 fixed_value = value
+        # If the value is a boolean (flag) value
+        elif isinstance(value, bool):
+            fixed_value = value
         # If the value is a space-delimited list
         elif value and value[0] == "[" and value[-1] == "]":
             fixed_value = value[1:-1].split()
