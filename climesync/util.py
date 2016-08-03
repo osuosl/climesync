@@ -368,19 +368,19 @@ def print_pretty_project(response):
     if isinstance(response, dict):
         response = [response]
 
-    project_data = []
+    projects_data = []
 
     for project in response:
-        project = OrderedDict()
-        project = {k: v for k, v in project.iteritems()
-                   if k in ["name", "slugs", "users"]}
+        project_data = OrderedDict()
+        project_data = {k: v for k, v in project.iteritems()
+                        if k in ["name", "slugs", "users"]}
 
-        if "users" not in project:
-            project["users"] = {}
+        if "users" not in project_data:
+            project_data["users"] = {}
 
-        project_data.append(project)
+        projects_data.append(project_data)
 
-    print_json(project_data)
+    print_json(projects_data)
 
 
 def print_pretty_activity(response):
