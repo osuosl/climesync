@@ -44,8 +44,7 @@ class climesync_command():
                 return command(**command_kwargs)
             else:
                 if util.check_token_expiration(ts):
-                    return {"error": "Your token has expired. Please sign in "
-                                     "again"}
+                    return {"error": "You need to sign in."}
 
                 return command()
 

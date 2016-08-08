@@ -79,6 +79,10 @@ def check_token_expiration(ts):
     """Checks to see if the auth token has expired. If it has, try to log the
     user back in using the username and password in their config file"""
 
+    # If ts_token_expiration_time() returns a dict, there must be an error
+    if type(ts.token_expiration_time()) is dict:
+        return True
+
     # If the token is expired, try to log the user back in
     if ts and not ts.test and ts.token_expiration_time() <= datetime.now():
         config = read_config()
