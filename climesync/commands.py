@@ -168,7 +168,7 @@ def update_settings():
     return ts.update_user(user=post_data, username=username)
 
 
-@climesync_command()
+@climesync_command(optional_args=True)
 def create_time(post_data=None):
     """create-time
 
