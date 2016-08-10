@@ -4,31 +4,34 @@
 
 CLI for the TimeSync API
 
-This is not an official TimeSync client, and is not officially supported by the
-OSL. This CLI is used internally by the OSL for time-tracking purposes during
-development of other tools.
+Climesync is a CLI frontend to submit times to a TimeSync implementation.
 
 Install and Run
 ---------------
 
-To install clone this repo then run the following commands:
+To install from git, run the following commands
 
 ```
-$ virtualenv venv
-(venv) $ pip install -r requirements.txt
-(venv) $ ./climesync.py
+$ git clone https://github.com/osuosl/climesync && cd climesync
+$ python setup.py install
+```
+
+Then, to run the program, type
+
+```
+$ climesync
 ```
 
 climesync accepts args like so:
 
 ```
-(venv) $ ./climesync.py --connect <timesync baseurl> --user <username> --password <password>
+$ climesync --connect <timesync baseurl> --user <username> --password <password>
 ```
 
 or with short options:
 
 ```
-(venv) $ ./climesync.py -c <timesync baseurl> -u <username> -p <password>
+$ climesync -c <timesync baseurl> -u <username> -p <password>
 ```
 
 If all three args are provided, climesync will connect to timesync and
@@ -67,10 +70,23 @@ du - delete user
 q - exit
 ```
 
-To run tests, do
+Developing for Climesync
+------------------------
+
+To set up a development environment, you must install `virtualenvwrapper` from PyPI and create
+a new virtualenv.
 
 ```
-(venv) $ nosetests
+$ pip install virtualenvwrapper
+$ mkvirtualenv venv
+...
+(venv) $ ...
+```
+
+After creating the virtualenv, several dependencies must be installed
+
+```
+(venv) $ pip install -r requirements.txt
 ```
 
 Documentation
@@ -83,8 +99,23 @@ To build Climesync documentation, run the following commands:
 (venv) $ make html
 ```
 
-To view the documentation after it has been built, run this command:
+To view the documentation after it has been built, run this command in a virtualenv:
 
 ```
-(venv) $ (insert your favorite browser here) build/html/index.html
+(venv) $ <browser> build/html/index.html
+```
+
+Testing
+-------
+
+To lint Climesync for PEP8 compliance, run this command in a virtualenv:
+
+```
+(venv) $ flake8 climesync.py testing
+```
+
+To run Climesync's unit test suite, run this command in a virtualenv:
+
+```
+(venv) $ nosetests
 ```

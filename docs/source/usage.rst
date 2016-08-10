@@ -19,15 +19,12 @@ Climesync currently supports the following versions of the TimeSync API:
 Install Climesync
 -----------------
 
-To install Climesync, clone the `Github repo`_ and run the following command 
-in a `virtualenv`_
+To install Climesync from git, run the following commands:
 
 .. code-block:: none
 
-    (venv) $ pip install -r requirements.txt
-
-.. _Github repo: https://www.github.com/osuosl/climesync/
-.. _virtualenv: http://docs.python-guide.org/en/latest/dev/virtualenvs/
+    $ git clone https://github.com/osuosl/climesync && cd climesync
+    $ python setup.py install
 
 Running Climesync
 -----------------
@@ -37,7 +34,7 @@ have been installed, you can run climesync with
 
 .. code-block:: none
 
-    (venv) $ ./climesync
+    $ climesync
 
 Climesync also accepts several optional command line arguments
 
@@ -45,7 +42,13 @@ Climesync also accepts several optional command line arguments
 -u <username>, --user <username>      Attempt to authenticate on startup with the given username
 -p <password>, --password <password>  Attempt to authenticate on startup with the given password
 
-Climesync Options
+Since server information and user credentials can be specified in multiple
+places (See `Climesync Configuration`_ below), these values are prioritized
+in the following order:
+
+**User input inside program > Command line arguments > Configuration file values**
+
+Interactive Mode
 -----------------
 
 Through an interactive shell, users have the following options:
@@ -116,3 +119,64 @@ Admin-only options:
 
     **du**
         Delete a user
+
+Scripting Mode
+--------------
+
+In addition to providing an interactive shell, Climesync also allows commands
+to be run from the command line. This is useful when calling Climesync from
+shell scripts and makes automating repetitive tasks for admins a breeze!
+
+Scripting mode accepts arguments and options in the usual bash script format
+with one addition. To pass a list of values to a command, you format the values
+as a space-separated list enclosed within square brackets. For example:
+
+.. code-block:: none
+
+    (venv) $ ./climesync.py get-times --user="[user1 user2 user3]"
+
+This example gets all the time entries submitted either by user1, user2, or user3.
+
+When running Climesync in scripting mode, authentication can be done by
+specifying the username and password as command line arguments or by using
+the configuration file (See below)
+
+To get a list of scripting mode commands, run
+
+.. code-block:: none
+
+    (venv) $ ./climesync.py --help
+
+To get help for a specific scripting mode command, run
+
+.. code-block:: none
+
+    (venv) $ ./climesync.py <command_name> --help
+
+Climesync Configuration
+-----------------------
+
+On the first run of the program in interactive mode, the configuration file
+`.climesyncrc` is created in the user's home directory. This configuration
+file stores server information and user credentials. If Climesync is going to
+only be run in interactive mode then manually editing this file manually won't
+be necessary because Climesync will handle updating these values while it's
+being run in interactive mode,
+
+Information on the structure of this file can be obtained `here`_.
+
+The following configuration values are stored under the "climesync" header
+in .climesyncrc:
+
+================= =======================================================
+    Key                                 Description
+================= =======================================================
+timesync_url      The URL of the TimeSync server to connect to on startup
+username          The username of the user to authenticate as on startup
+password          The password of the user to authenticate as on startup
+autoupdate_config Turn off prompts to automatically update your config
+                  when connecting to a new server or signing in as a new
+                  user
+================= =======================================================
+
+.. _here: https://docs.python.org/2/library/configparser.html
