@@ -3,10 +3,73 @@ import os
 import re
 import stat
 import codecs
+import csv
+import cStringIO
 import sys  # NOQA flake8 ignore
 from collections import OrderedDict
 from datetime import datetime
 from getpass import getpass
+
+
+class UnicodeDictWriter:
+    """
+    Wrapper for csv.DictWriter that adds support for dictionaries with
+    Unicode string contents
+
+    Based on a recipe from the Python 2 docs
+    """
+
+    def __init__(self, f, headers, dialect=csv.excel, encoding="utf-8",
+                 **kwargs):
+        self.queue = cStringIO.StringIO()
+        self.writer = csv.writer(self.queue, dialect=dialect, **kwargs)
+        self.stream = f
+        self.encoder = codecs.getincrementalencoder(encoding)()
+        self.headers = headers
+
+    def writeheader(self):
+        uni_headers = [u"{}".format(h) for h in self.headers]
+
+        self.__writerow(uni_headers)
+
+    def writerow(self, row):
+        row_ordered = OrderedDict()
+
+        for header in self.headers:
+            uni_value = self.__convert_csv_writable(row.setdefault(header, ""))
+
+            row_ordered[header] = uni_value
+
+        self.__writerow(row_ordered.itervalues())
+
+    ####################
+
+    def __writerow(self, row):
+        self.writer.writerow([s.encode("utf-8") for s in row])
+
+        data = self.queue.getvalue()
+        data = data.decode("utf-8")
+        data = self.encoder.encode(data)
+
+        self.stream.write(data)
+        self.queue.truncate(0)
+
+    def __convert_csv_writable(self, value):
+        if isinstance(value, list):
+            return u"[{}]" \
+                   .format(u",".join(u"'{}'"
+                                     .format(self.__convert_csv_writable(v))
+                                     for v in value))
+        elif isinstance(value, dict):
+            return u"{{{}}}" \
+                   .format(u",".join(u"'{}': '{}'"
+                                     .format(self.__convert_csv_writable(k),
+                                             self.__convert_csv_writable(v))
+                                     for k, v in value.iteritems()))
+        elif value is None:
+            return u""
+        else:
+            return u"{}".format(value)
 
 
 def ts_error(*ts_objects):
@@ -117,6 +180,49 @@ def check_token_expiration(ts):
             ts.authenticate(username, password, "password")
         else:
             return True
+
+
+def output_csv(response, data_type, path=None):
+    """Outputs a TimeSync response to a CSV file at the specified path, or
+    to stdout if no path is supplied"""
+
+    if response and "error" in response[0] or "pymesync error" in response[0]:
+        return
+
+    common_headers = ["uuid", "revision", "created_at", "updated_at",
+                      "deleted_at", "parents"]
+
+    if data_type == "time":
+        headers = ["duration", "user", "project", "activities",
+                   "date_worked", "issue_uri", "notes"] + common_headers
+    elif data_type == "project":
+        headers = ["name", "slugs", "uri", "default_activity",
+                   "users"] + common_headers
+    elif data_type == "activity":
+        headers = ["name", "slug"] + common_headers
+    elif data_type == "user":
+        headers = ["username", "display_name", "email", "site_spectator",
+                   "site_manager", "site_admin", "active", "meta",
+                   "created_at", "updated_at", "deleted_at"]
+    elif path is not None:
+        print "Unknown data type!"
+        return
+    else:
+        return
+
+    if path is not None:
+        csvfile = codecs.open(path, "w", "utf-8-sig")
+    else:
+        csvfile = sys.stdout
+
+    writer = UnicodeDictWriter(csvfile, headers, quoting=csv.QUOTE_ALL)
+
+    writer.writeheader()
+    for ts_object in response:
+        writer.writerow(ts_object)
+
+    if path is not None:
+        csvfile.close()
 
 
 def is_time(time_str):
@@ -665,6 +771,19 @@ def get_fields(fields, current_object=None):
     return responses
 
 
+def ask_csv():
+    """Ask the user if they want to output data to a CSV file, and if so
+    ask for the relative path of the file"""
+
+    do_create_csv = get_field("Write data to a CSV file?", field_type="?",
+                              optional=True)
+
+    if do_create_csv:
+        return get_field("Enter the path to the new CSV file")
+    else:
+        return None
+
+
 def add_kv_pair(key, value, path="~/.climesyncrc"):
     """Ask the user if they want to add a key/value pair to the config file"""
 
@@ -774,7 +893,7 @@ def fix_args(args, optional_args):
         elif arg.isupper():
             fixed_arg = arg.lower()
         # If it's a long option
-        elif arg[0:2] == '--' and arg not in ("--help", "--members",
+        elif arg[0:2] == '--' and arg not in ("--help", "--csv", "--members",
                                               "--managers", "--spectators"):
             fixed_arg = arg[2:].replace('-', '_')
         # If it's the help option or we don't know

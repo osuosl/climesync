@@ -75,7 +75,7 @@ update_time_data = TestData(
 
 get_times_no_uuid_data = TestData(
         command=commands.get_times,
-        mocked_input=[None]*8,
+        mocked_input=[None]*9,
         cli_args="",
         expected_response=[{
                 "created_at": "2014-04-17",
@@ -131,7 +131,8 @@ get_times_uuid_data = TestData(
             "2014-04-18",  # End date
             False,  # Include revisions
             False,  # Include deleted
-            "838853e3-3635-4076-a26f-7efr4e60981f"  # UUID
+            "838853e3-3635-4076-a26f-7efr4e60981f",  # UUID
+            False  # Output to CSV
         ],
         cli_args="--user=userone --project=gwm --activity=docs \
                   --start=2014-04-16 --end=2014-05-18 \
@@ -263,7 +264,8 @@ get_projects_no_slug_data = TestData(
         mocked_input=[
             False,  # Include revisions
             False,  # Include deleted
-            ""  # Project slug
+            "",  # Project slug
+            False  # Output CSV
         ],
         cli_args="",
         expected_response=[{
@@ -371,7 +373,8 @@ get_projects_slug_data = TestData(
         mocked_input=[
             "",  # Include revisions
             "",  # Include deleted
-            "gwm"  # Project slug
+            "gwm",  # Project slug
+            False  # Output CSV
         ],
         cli_args="--slug=gwm --include-revisions=False",
         expected_response=[{
@@ -466,6 +469,7 @@ get_activities_no_slug_data = TestData(
             "",  # Include revisions
             "",  # Include deleted
             "",  # Activity slug
+            False  # Output CSV
         ],
         cli_args="",
         expected_response=[{
@@ -503,6 +507,7 @@ get_activities_slug_data = TestData(
             "",  # Include revisions
             "",  # Include deleted
             "docs",  # Activity slug
+            False  # Output CSV
         ],
         cli_args="--slug=docs --include-revisions=False",
         expected_response=[{
@@ -602,7 +607,8 @@ get_users_no_slug_data = TestData(
         mocked_input=[
             "",  # Username
             "",  # Metadata
-            ""   # Project
+            "",   # Project
+            False  # Output CSV
         ],
         cli_args="",
         expected_response=[{
@@ -654,7 +660,8 @@ get_users_no_slug_data = TestData(
 get_users_slug_data = TestData(
         command=commands.get_users,
         mocked_input=[
-            "userone"  # Username
+            "userone",  # Username
+            False  # Output CSV
         ],
         cli_args="--username=userone",
         expected_response=[{
