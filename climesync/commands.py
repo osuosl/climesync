@@ -189,10 +189,10 @@ Options:
     --notes=<notes>              Additional notes
 
 Examples:
-    climesync.py create-time 1h0m projectx docs design qa
+    climesync create-time 1h0m projectx docs design qa
 `       --issue-uri=https//www.github.com/foo/projectx/issue/42
 
-    climesync.py create-time 0h45m projecty design --notes="Designing the API"
+    climesync create-time 0h45m projecty design --notes="Designing the API"
     """
 
     global ts
@@ -265,10 +265,10 @@ Options:
     --notes=<notes>              Additional notes
 
 Examples:
-    climesync.py update-time 838853e3-3635-4076-a26f-7efr4e60981f
+    climesync update-time 838853e3-3635-4076-a26f-7efr4e60981f
 `       --activities="[dev planning code]" --date-worked=2016-06-15
 
-    climesync.py update-time c3706e79-1c9a-4765-8d7f-89b4544cad56
+    climesync update-time c3706e79-1c9a-4765-8d7f-89b4544cad56
 `       --project=projecty --notes="Notes notes notes"
     """
 
@@ -328,12 +328,12 @@ Options:
 `   --include-deleted=<True/False>    Whether to include deleted times
 
 Examples:
-    climesync.py get-times
+    climesync get-times
 
-    climesync.py get-times --project=projectx --activity=planning
+    climesync get-times --project=projectx --activity=planning
 `       --user="[userone usertwo]"
 
-    climesync.py get-times --uuid=12345676-1c9a-rrrr-bbbb-89b4544cad56
+    climesync get-times --uuid=12345676-1c9a-rrrr-bbbb-89b4544cad56
     """
 
     global ts
@@ -393,9 +393,9 @@ Options:
     --end=<end date>      The date to end summing times
 
 Examples:
-    climesync.py sum-times projectx
+    climesync sum-times projectx
 
-    climesync.py sum-times projectx projecty --start=2016-06-01
+    climesync sum-times projectx projecty --start=2016-06-01
     """
 
     if post_data is None:
@@ -442,7 +442,7 @@ Options:
     -h --help  Show this help message and exit
 
 Examples:
-    climesync.py delete-time 12345676-1c9a-rrrr-bbbb-89b4544cad56
+    climesync delete-time 12345676-1c9a-rrrr-bbbb-89b4544cad56
     """
 
     global ts
@@ -499,10 +499,10 @@ User permissions help:
     create-project <name> <slugs> <username> 5
 
 Examples:
-    climesync.py create-project "Project Z" "[pz projectz]"
+    climesync create-project "Project Z" "[pz projectz]"
 `       userone 4 usertwo 5 userthree 7
 
-    climesync.py create-project "Project Foo" foo userone 7
+    climesync create-project "Project Foo" foo userone 7
 `       --uri=https://www.github.com/bar/foo --default-activity=planning
     """
 
@@ -557,9 +557,9 @@ Options:
                                            associated with this project
 
 Examples:
-    climesync.py update-project foo --name=Foobarbaz --slugs="[foo bar baz]"
+    climesync update-project foo --name=Foobarbaz --slugs="[foo bar baz]"
 
-    climesync.py update-project pz --uri=https://www.github.com/bar/projectz
+    climesync update-project pz --uri=https://www.github.com/bar/projectz
     """
 
     global ts
@@ -620,9 +620,9 @@ User permissions help:
     update-project <name> <slugs> <username> 5
 
 Examples:
-    climesync.py update-project-users proj_foo newuser 4 olduser 6
+    climesync update-project-users proj_foo newuser 4 olduser 6
 
-    climesync.py update-project-users proj_bar olduser1 4 olduser2 7
+    climesync update-project-users proj_bar olduser1 4 olduser2 7
     """
 
     global ts
@@ -674,9 +674,9 @@ Arguments:
     <username>  The username of the user to remove
 
 Examples:
-    climesync.py remove-project-users proj_foo user1 user2
+    climesync remove-project-users proj_foo user1 user2
 
-    climesync.py remove-project-users proj_bar user1
+    climesync remove-project-users proj_bar user1
     """
 
     global ts
@@ -728,9 +728,9 @@ Options:
     --slug=<slug>                     Filter by project slug
 
 Examples:
-    climesync.py get-projects
+    climesync get-projects
 
-    climesync.py get-projects --slug=projectx --include-revisions=True
+    climesync get-projects --slug=projectx --include-revisions=True
     """
 
     global ts
@@ -792,7 +792,7 @@ Options:
     -h --help  Show this help message and exit
 
 Examples:
-    climesync.py delete-project foo
+    climesync delete-project foo
     """
 
     global ts
@@ -826,9 +826,9 @@ Options:
     -h --help  Show this help message and exit
 
 Examples:
-    climesync.py create-activity Coding code
+    climesync create-activity Coding code
 
-    climesync.py create-activity "Project Planning" planning
+    climesync create-activity "Project Planning" planning
     """
 
     global ts
@@ -860,9 +860,9 @@ Options:
     --slug=<slug>  The updated activity slug
 
 Examples:
-    climesync.py update-activity planning --name=Planning
+    climesync update-activity planning --name=Planning
 
-    climesync.py update-activity code --slug=coding
+    climesync update-activity code --slug=coding
     """
 
     global ts
@@ -903,11 +903,11 @@ Options:
     --slug=<slug>                     Filter by activity slug
 
 Examples:
-    climesync.py get-activities
+    climesync get-activities
 
-    climesync.py get-activities --include-deleted=True
+    climesync get-activities --include-deleted=True
 
-    climesync.py get-activities --slug=planning
+    climesync get-activities --slug=planning
     """
 
     global ts
@@ -945,7 +945,7 @@ Options:
     -h --help  Show this help message and exit
 
 Examples:
-    climesync.py delete-activity planning
+    climesync delete-activity planning
     """
 
     global ts
@@ -994,10 +994,10 @@ Options:
                                    [Default: True]
 
 Examples:
-    climesync.py create-user userfour pa$$word --display-name=4chan
+    climesync create-user userfour pa$$word --display-name=4chan
 `       --meta="Who is this 4chan?"
 
-    climesync.py create-user anotheruser "correct horse battery staple"
+    climesync create-user anotheruser "correct horse battery staple"
 `       --email=anotheruser@osuosl.org --site-admin=True
     """
 
@@ -1049,10 +1049,10 @@ Options:
     --active=<True/False>          Whether the user is active
 
 Examples:
-    climesync.py update-user userfour --display-name="System Administrator"
+    climesync update-user userfour --display-name="System Administrator"
 `       --active=False --site-spectator=True
 
-    climesync.py update-user anotheruser --username=newuser
+    climesync update-user anotheruser --username=newuser
 `       --meta="Metainformation goes here" --site-admin=False
     """
 
@@ -1099,13 +1099,13 @@ Options:
     --username=<username>  Search for a user by username
 
 Examples:
-    climesync.py get-users
+    climesync get-users
 
-    climesync.py get-users --username=userfour
+    climesync get-users --username=userfour
 
-    climesync.py get-users --project=p_foo --managers
+    climesync get-users --project=p_foo --managers
 
-    climesync.py get-users --meta="fulltime"
+    climesync get-users --meta="fulltime"
     """
 
     global ts
@@ -1223,7 +1223,7 @@ Options:
     -h --help  Show this help message and exit
 
 Examples:
-    climesync.py delete-user userfour
+    climesync delete-user userfour
     """
 
     global ts
