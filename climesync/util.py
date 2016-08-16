@@ -72,6 +72,9 @@ def write_config(key, value, path="~/.climesyncrc"):
     if "climesync" not in config.sections():
         create_config(path)
 
+    # Make sure the value is a string so it can be encoded
+    value = u"{}".format(value)
+
     # Attempt to set the option value in the config
     # If the "climesync" section doesn't exist (NoSectionError), create it
     try:
@@ -667,9 +670,17 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
 
     config = read_config(path)
 
+    # Get the current value in the config if there is one
+    if config.has_option("climesync", key):
+        if isinstance(value, bool):
+            current_value = config.getboolean("climesync", key)
+        else:
+            current_value = config.get("climesync", key)
+    else:
+        current_value = None
+
     # If that key/value pair is already in the config, skip asking
-    if config.has_option("climesync", key) \
-       and config.get("climesync", key) == value:
+    if current_value is not None and value == current_value:
         return
 
     if key == "password":
