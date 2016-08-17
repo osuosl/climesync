@@ -17,7 +17,8 @@ class test_script():
         self.config = {
             "timesync_url": "test",
             "username": "test",
-            "password": "test"
+            "password": "test",
+            "ldap": False
         }
 
     def authenticate_nonadmin(self):
