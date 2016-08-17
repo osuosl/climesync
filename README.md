@@ -22,6 +22,18 @@ Then, to run the program, type
 $ climesync
 ```
 
+To view help, type
+
+```
+$ climesync -h
+```
+
+To view the program version and license information, type
+
+```
+$ climesync -v
+```
+
 climesync accepts args like so:
 
 ```
