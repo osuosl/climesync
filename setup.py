@@ -6,21 +6,19 @@ def read(fname):
 
 setup(
     name="climesync",
-    version="0.1.0",
+    version="0.1.1",
     author="OSU Open Source Lab",
     author_email="support@osuosl.org",
     url="https://github.com/osuosl/climesync",
     license="Apache Version 2.0",
     description="Climesync - CLI Frontend for the OSUOSL TimeSync API",
-    long_description=read("README.md"),
-
+    long_description=read("README"),
     keywords="timesync pymesync cli frontend",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 2.7"
     ],
-
     packages=find_packages(),
     install_requires=[
         "pymesync",
