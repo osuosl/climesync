@@ -7,6 +7,11 @@ import util
 
 ts = None  # pymesync.TimeSync object
 
+user = None
+users = None
+projects = None
+activities = None
+
 autoupdate_config = True
 ldap = False  # Use LDAP?
 
@@ -54,7 +59,7 @@ class climesync_command():
 def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
     """Creates a new pymesync.TimeSync instance with a new URL"""
 
-    global ts
+    global ts, autoupdate_config
 
     url = ""
 
@@ -77,6 +82,12 @@ def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
     # Create a new instance and attempt to connect to the provided url
     ts = pymesync.TimeSync(baseurl=url, test=test)
 
+    # Clear cached TS objects
+    user = None
+    users = None
+    projects = None
+    activities = None
+
     # No response from server upon connection
     return list()
 
@@ -95,7 +106,7 @@ def disconnect():
 def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
     """Attempts to sign in with user-supplied or command line credentials"""
 
-    global ts
+    global ts, user, users, projects, activities, autoupdate_config, ldap
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -129,13 +140,34 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
         util.add_kv_pair("password", password)
 
     # Attempt to authenticate and return the server's response
-    return ts.authenticate(username, password, auth_type)
+    res = ts.authenticate(username, password, auth_type)
+
+    # Cache user object and other TimeSync data
+    if not util.ts_error(res):
+        users = ts.get_users()
+        projects = ts.get_projects()
+        activities = ts.get_activities()
+
+        if not util.ts_error(users, projects, activities):
+            if ts.test:
+                user = users[0]
+            else:
+                user = {u["username"]: u for u in users}[username]
+        else:
+            for o in (users, projects, activities):
+                util.ts_error(o)
+            
+            users = None
+            projects = None
+            activities = None
+
+    return res
 
 
 def sign_out():
     """Signs out from TimeSync and resets command line credentials"""
 
-    global ts
+    global ts, user, users, projects, activities
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -145,6 +177,12 @@ def sign_out():
 
     # Create a new instance connected to the same server as the last
     ts = pymesync.TimeSync(baseurl=url, test=test)
+
+    # Clear cached TS objects
+    user = None
+    users = None
+    projects = None
+    activities = None
 
     # No response from server
     return list()

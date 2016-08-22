@@ -9,6 +9,16 @@ from datetime import datetime
 from getpass import getpass
 
 
+def ts_error(*ts_objects):
+    for ts_object in ts_objects:
+        if isinstance(ts_object, list):
+            ts_object = ts_object[0]
+
+        if "error" in ts_object or "pymesync error" in ts_object:
+            print_json(ts_object)
+            return True
+
+
 def create_config(path="~/.climesyncrc"):
     """Create the configuration file if it doesn't exist"""
 
