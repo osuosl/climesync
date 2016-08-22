@@ -7,10 +7,14 @@ import sys  # NOQA flake8 ignore
 from collections import OrderedDict
 from datetime import datetime
 from getpass import getpass
+from itertools import chain, islice, repeat
 
 
 def ts_error(*ts_objects):
     for ts_object in ts_objects:
+        if not ts_object:
+            continue
+
         if isinstance(ts_object, list):
             ts_object = ts_object[0]
 
@@ -445,12 +449,15 @@ def print_pretty(response):
         print_json(response)
 
 
-def get_field(prompt, optional=False, field_type="", current=None):
+def get_field(prompt, optional=False, field_type="", validator=None,
+              current=None):
     """Prompts the user for input and returns it in the specified format
 
     prompt - The prompt to display to the user
     optional - Whether or not the field is optional (defaults to False)
     field_type - The type of input. If left empty, input is a string
+    validator - A list of valid inputs (only applicable for text/list fields)
+    current - The current value of the field
 
     Valid field_types:
     ? - Yes/No input
@@ -510,9 +517,20 @@ def get_field(prompt, optional=False, field_type="", current=None):
                 if is_time(response):
                     return response
             elif field_type == "!":
-                return [r.strip() for r in response.split(",")]
-            elif field_type == "" or field_type == "$":
+                response = [r.strip() for r in response.split(",")]
+                for r in response:
+                    if validator and r not in validator:
+                        print "Invalid response {}".format(r)
+                        break
+                else:
+                    return response
+            elif field_type == "$":
                 return response
+            elif field_type == "":
+                if validator and response not in validator:
+                    print "Invalid response {}".format(response)
+                else:
+                    return response
 
         print "Please submit a valid input"
 
@@ -520,7 +538,8 @@ def get_field(prompt, optional=False, field_type="", current=None):
 def get_fields(fields, current_object=None):
     """Prompts for multiple fields and returns everything in a dictionary
 
-    fields - A list of tuples that are ordered (field_name, prompt)
+    fields - A list of tuples that are ordered (field_name, prompt,
+                                                validator=None)
 
     field_name can contain special characters that signify input type
     ? - Yes/No field
@@ -531,8 +550,8 @@ def get_fields(fields, current_object=None):
     In addition to those, field_name can contain a * for an optional field
     """
     responses = dict()
-
-    for field, prompt in fields:
+    
+    for field, prompt, validator in [(f + (None,))[:3] for f in fields]:
         optional = False
         field_type = ""
         current = None
@@ -561,7 +580,7 @@ def get_fields(fields, current_object=None):
             if current is None:
                 current = "None"
 
-        response = get_field(prompt, optional, field_type, current)
+        response = get_field(prompt, optional, field_type, validator, current)
 
         # Only add response if it isn't empty
         if response != "":
