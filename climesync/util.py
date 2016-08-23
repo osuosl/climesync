@@ -7,7 +7,6 @@ import sys  # NOQA flake8 ignore
 from collections import OrderedDict
 from datetime import datetime
 from getpass import getpass
-from itertools import chain, islice, repeat
 
 
 def ts_error(*ts_objects):
@@ -550,7 +549,7 @@ def get_fields(fields, current_object=None):
     In addition to those, field_name can contain a * for an optional field
     """
     responses = dict()
-    
+
     for field, prompt, validator in [(f + (None,))[:3] for f in fields]:
         optional = False
         field_type = ""

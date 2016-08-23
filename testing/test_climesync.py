@@ -1,6 +1,6 @@
 from StringIO import StringIO
 import unittest
-from mock import call, patch, MagicMock
+from mock import patch, MagicMock
 
 from climesync import climesync
 from climesync.climesync import command_lookup
@@ -14,7 +14,7 @@ class ClimesyncTest(unittest.TestCase):
         # Reset cached TS data between tests
         commands.user = None
         commands.users = None
-        commands.projects= None
+        commands.projects = None
         commands.activities = None
 
     def test_lookup_command_interactive(self):

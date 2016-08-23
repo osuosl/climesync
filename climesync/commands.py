@@ -59,7 +59,7 @@ class climesync_command():
 def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
     """Creates a new pymesync.TimeSync instance with a new URL"""
 
-    global ts, autoupdate_config
+    global ts, user, users, projects, activities, autoupdate_config
 
     url = ""
 
@@ -160,7 +160,7 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
         else:
             for o in (users, projects, activities):
                 util.ts_error(o)
-            
+
             users = None
             projects = None
             activities = None
@@ -246,7 +246,8 @@ Examples:
     if post_data is None:
         post_data = util.get_fields([(":duration",   "Duration"),
                                      ("date_worked", "Date (yyyy-mm-dd)"),
-                                     ("project",     "Project slug", projects)])
+                                     ("project",     "Project slug",
+                                      projects)])
 
         project_slug = post_data["project"]
 
@@ -260,7 +261,8 @@ Examples:
         else:
             activity_query = "!activities"
 
-        post_data_cont = util.get_fields([(activity_query, "Activity slugs", activities),
+        post_data_cont = util.get_fields([(activity_query, "Activity slugs",
+                                           activities),
                                           ("*issue_uri",  "Issue URI"),
                                           ("*notes",      "Notes")])
 
@@ -287,7 +289,6 @@ def update_time(post_data=None, uuid=None):
 
 Usage: update-time [-h] <uuid> [--duration=<duration>]
                         [--project=<project>]
-                        [--user=<user>]
                         [--activities=<activities>]
                         [--date-worked=<date worked>]
                         [--issue-uri=<issue uri>]
@@ -330,8 +331,10 @@ Examples:
             return current_time
 
         post_data = util.get_fields([("*:duration",   "Duration"),
-                                     ("*project",     "Project slug", projects),
-                                     ("*!activities", "Activity slugs", activities),
+                                     ("*project",     "Project slug",
+                                      projects),
+                                     ("*!activities", "Activity slugs",
+                                      activities),
                                      ("*date_worked", "Date (yyyy-mm-dd)"),
                                      ("*issue_uri",   "Issue URI"),
                                      ("*notes",       "Notes")],
@@ -387,8 +390,10 @@ Examples:
     # Optional filtering parameters to send to the server
     if post_data is None:
         post_data = util.get_fields([("*!user", "Submitted by users", users),
-                                     ("*!project", "Belonging to projects", projects),
-                                     ("*!activity", "Belonging to activities", activities),
+                                     ("*!project", "Belonging to projects",
+                                      projects),
+                                     ("*!activity", "Belonging to activities",
+                                      activities),
                                      ("*start", "Beginning on date"),
                                      ("*end", "Ending on date"),
                                      ("*?include_revisions", "Allow revised?"),
@@ -682,7 +687,8 @@ Examples:
         if "error" in current_project or "pymesync error" in current_project:
             return current_project
 
-        post_data = util.get_fields([("*!users", "Users to add/update", users)],
+        post_data = util.get_fields([("*!users", "Users to add/update",
+                                      users)],
                                     current_object=current_project)
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
@@ -914,7 +920,8 @@ Examples:
         return {"error": "Not connected to TimeSync server"}
 
     if old_slug is None:
-        old_slug = util.get_field("Slug of activity to update", validator=activities)
+        old_slug = util.get_field("Slug of activity to update",
+                                  validator=activities)
 
     # The data to send to the server containing revised activity information
     if post_data is None:
@@ -964,7 +971,8 @@ Examples:
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
                                      ("*?include_deleted", "Allow deleted?"),
-                                     ("*slug", "By activity slug", activities)])
+                                     ("*slug", "By activity slug",
+                                      activities)])
 
     # Attempt to query the server with filtering parameters
     activities_res = ts.get_activities(query_parameters=post_data)
@@ -1105,7 +1113,8 @@ Examples:
         return {"error": "Not connected to TimeSync server"}
 
     if old_username is None:
-        old_username = util.get_field("Username of user to update", validator=users)
+        old_username = util.get_field("Username of user to update",
+                                      validator=users)
 
     # The data to send to the server containing revised user information
     if post_data is None:
@@ -1174,7 +1183,8 @@ Examples:
         meta = None
 
     if interactive and not username:
-        post_data.update(util.get_fields([("*project", "By project slug", projects)]))
+        post_data.update(util.get_fields([("*project", "By project slug",
+                                           projects)]))
 
     project = post_data.get("project")
 

@@ -11,6 +11,16 @@ from mock import patch, MagicMock
 
 class UtilTest(unittest.TestCase):
 
+    def test_ts_error_no_error(self):
+        ts_objects = [{"example": "object"}]
+
+        assert not util.ts_error(*ts_objects)
+
+    def test_ts_error_error(self):
+        ts_objects = [{"example": "object"}, {"error": 404}]
+
+        assert util.ts_error(*ts_objects)
+
     @patch("climesync.util.codecs.open")
     @patch("climesync.util.os.chmod")
     @patch("climesync.util.os.path")
@@ -246,6 +256,32 @@ class UtilTest(unittest.TestCase):
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
     @patch("climesync.util.raw_input")
+    def test_get_field_string_validated(self, mock_raw_input):
+        prompt = "Prompt"
+        validator = ["v1", "v2"]
+
+        mocked_input = "v1"
+
+        mock_raw_input.return_value = mocked_input
+
+        value = util.get_field(prompt, validator=validator)
+
+        assert value == "v1"
+
+    @patch("climesync.util.raw_input")
+    def test_get_field_string_invalid(self, mock_raw_input):
+        prompt = "Prompt"
+        validator = ["v1", "v2"]
+
+        mocked_input = ["v3", "v2"]
+
+        mock_raw_input.side_effect = mocked_input
+
+        value = util.get_field(prompt, validator=validator)
+
+        assert value == "v2"
+
+    @patch("climesync.util.raw_input")
     def test_get_field_bool_yes(self, mock_raw_input):
         prompt = "Prompt"
         expected_formatted_prompt = "(y/n) Prompt: "
@@ -405,6 +441,32 @@ class UtilTest(unittest.TestCase):
         mock_raw_input.assert_called_with(expected_formatted_prompt)
 
     @patch("climesync.util.raw_input")
+    def test_get_field_list_validated(self, mock_raw_input):
+        prompt = "Prompt"
+        validator = ["v1", "v2", "v3"]
+
+        mocked_input = "v1, v3"
+
+        mock_raw_input.return_value = mocked_input
+
+        value = util.get_field(prompt, field_type="!", validator=validator)
+
+        assert value == ["v1", "v3"]
+
+    @patch("climesync.util.raw_input")
+    def test_get_field_list_invalid(self, mock_raw_input):
+        prompt = "Prompt"
+        validator = ["v1", "v2", "v3"]
+
+        mocked_input = ["v1, v4, v2", "v1, v2"]
+
+        mock_raw_input.side_effect = mocked_input
+
+        value = util.get_field(prompt, field_type="!", validator=validator)
+
+        assert value == ["v1", "v2"]
+
+    @patch("climesync.util.raw_input")
     def test_get_field_type_invalid(self, mock_raw_input):
         prompt = "Prompt"
 
@@ -415,13 +477,13 @@ class UtilTest(unittest.TestCase):
     @patch("climesync.util.get_field")
     def test_get_fields(self, mock_get_field):
         fields = [
-            ("strval",       "String value"),
+            ("strval",       "String value", ["str", "val"]),
             ("*optstrval",   "Optional string value"),
             ("?boolval",     "Bool value"),
             ("*?optboolval", "Optional bool value"),
             (":timeval",     "Time value"),
             ("*:opttimeval", "Optional time value"),
-            ("!listval",     "List value"),
+            ("!listval",     "List value", ["val1", "val2", "val3"]),
             ("*!optlistval", "Optional list value")
         ]
 
