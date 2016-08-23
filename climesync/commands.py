@@ -151,8 +151,11 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
         if not util.ts_error(users, projects, activities):
             if ts.test:
                 user = users[0]
+                user["projects"] = []
             else:
                 user = {u["username"]: u for u in users}[username]
+                user["projects"] = [p for p in projects
+                                    if user["username"] in projects["users"]]
 
             users = [u["username"] for u in users]
             projects = [p["slugs"][0] for p in projects]
@@ -237,7 +240,7 @@ Examples:
     climesync.py create-time 0h45m projecty design --notes="Designing the API"
     """
 
-    global ts, projects, activities
+    global ts, user, activities
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -247,7 +250,7 @@ Examples:
         post_data = util.get_fields([(":duration",   "Duration"),
                                      ("date_worked", "Date (yyyy-mm-dd)"),
                                      ("project",     "Project slug",
-                                      projects)])
+                                      user["projects"])])
 
         project_slug = post_data["project"]
 
@@ -315,7 +318,7 @@ Examples:
 `       --project=projecty --notes="Notes notes notes"
     """
 
-    global ts, projects, activities
+    global ts, user, activities
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -332,7 +335,7 @@ Examples:
 
         post_data = util.get_fields([("*:duration",   "Duration"),
                                      ("*project",     "Project slug",
-                                      projects),
+                                      user["projects"]),
                                      ("*!activities", "Activity slugs",
                                       activities),
                                      ("*date_worked", "Date (yyyy-mm-dd)"),
