@@ -51,7 +51,11 @@ class climesync_command():
                 if util.check_token_expiration(ts):
                     return {"error": "You need to sign in."}
 
-                return command()
+                try:
+                    return command()
+                except IndexError as e:
+                    print e
+                    return []
 
         return wrapped_command
 
@@ -152,10 +156,13 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
             if ts.test:
                 user = users[0]
                 user["projects"] = []
+                user["project_slugs"] = ["test"]
             else:
                 user = {u["username"]: u for u in users}[username]
                 user["projects"] = [p for p in projects
-                                    if user["username"] in projects["users"]]
+                                    if user["username"] in p["users"]]
+                user["project_slugs"] = [p["slugs"][0]
+                                         for p in user["projects"]]
 
             users = [u["username"] for u in users]
             projects = [p["slugs"][0] for p in projects]
@@ -250,7 +257,7 @@ Examples:
         post_data = util.get_fields([(":duration",   "Duration"),
                                      ("date_worked", "Date (yyyy-mm-dd)"),
                                      ("project",     "Project slug",
-                                      user["projects"])])
+                                      user["project_slugs"])])
 
         project_slug = post_data["project"]
 
@@ -335,7 +342,7 @@ Examples:
 
         post_data = util.get_fields([("*:duration",   "Duration"),
                                      ("*project",     "Project slug",
-                                      user["projects"]),
+                                      user["project_slugs"]),
                                      ("*!activities", "Activity slugs",
                                       activities),
                                      ("*date_worked", "Date (yyyy-mm-dd)"),

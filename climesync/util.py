@@ -465,6 +465,10 @@ def get_field(prompt, optional=False, field_type="", validator=None,
     $ - Password input
     """
 
+    # Check for an empty validator and raise an error
+    if validator == []:
+        raise IndexError("No valid choices for field '{}'".format(prompt))
+
     # If necessary, add extra prompts that inform the user
     optional_prompt = ""
     type_prompt = ""
@@ -550,7 +554,14 @@ def get_fields(fields, current_object=None):
     """
     responses = dict()
 
-    for field, prompt, validator in [(f + (None,))[:3] for f in fields]:
+    padded_fields = [(f + (None,))[:3] for f in fields]
+
+    # Check to see if any of the validators are empty lists
+    for _, prompt, validator in padded_fields:
+        if validator == []:
+            raise IndexError("No valid choices for field '{}'".format(prompt))
+
+    for field, prompt, validator in padded_fields:
         optional = False
         field_type = ""
         current = None
