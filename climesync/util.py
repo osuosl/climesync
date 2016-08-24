@@ -536,6 +536,8 @@ def get_field(prompt, optional=False, field_type="", validator=None,
                     return response
 
         print "Please submit a valid input"
+        if validator:
+            print "Valid choices: [{}]".format(", ".join(validator))
 
 
 def get_fields(fields, current_object=None):

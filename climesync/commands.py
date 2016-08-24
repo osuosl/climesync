@@ -160,7 +160,8 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
             else:
                 user = {u["username"]: u for u in users}[username]
                 user["projects"] = [p for p in projects
-                                    if user["username"] in p["users"]]
+                                    if "users" in p
+                                    and user["username"] in p["users"]]
                 user["project_slugs"] = [p["slugs"][0]
                                          for p in user["projects"]]
 
