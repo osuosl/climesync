@@ -130,6 +130,20 @@ def is_time(time_str):
     return True if re.match(r"\A[\d]+h[\d]+m\Z", time_str) else False
 
 
+def is_date(date_str):
+    """Checks if the supplied string is formatted as an ISO 8601 datestring
+
+    i.e. 2016-04-01, 2015-03-14, etc.
+    """
+
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:  # If strptime fails, a ValueError is raised
+        return False
+
+    return True
+
+
 def to_readable_time(seconds):
     """Converts a time in seconds to a human-readable format"""
 
@@ -461,6 +475,7 @@ def get_field(prompt, optional=False, field_type="", validator=None,
     Valid field_types:
     ? - Yes/No input
     : - Time input
+    ~ - Date input
     ! - Multiple inputs delimited by commas returned as a list
     $ - Password input
     """
@@ -484,6 +499,8 @@ def get_field(prompt, optional=False, field_type="", validator=None,
             type_prompt = "(y/n) "
     elif field_type == ":":
         type_prompt = "(Time input - <value>h<value>m) "
+    elif field_type == '~':
+        type_prompt = "(Date input - YYYY-MM-DD) "
     elif field_type == "!":
         type_prompt = "(Comma delimited) "
     elif field_type == "$":
@@ -519,6 +536,9 @@ def get_field(prompt, optional=False, field_type="", validator=None,
             elif field_type == ":":
                 if is_time(response):
                     return response
+            elif field_type == "~":
+                if is_date(response):
+                    return response
             elif field_type == "!":
                 response = [r.strip() for r in response.split(",")]
                 for r in response:
@@ -549,6 +569,7 @@ def get_fields(fields, current_object=None):
     field_name can contain special characters that signify input type
     ? - Yes/No field
     : - Time field
+    ~ - Date field
     ! - List field
     $ - Password field
 
@@ -575,6 +596,9 @@ def get_fields(fields, current_object=None):
         elif ":" in field:
             field_type = ":"  # Time
             field = field.replace(":", "")
+        elif "~" in field:
+            field_type = "~"  # Date
+            field = field.replace("~", "")
         elif "!" in field:
             field_type = "!"  # Comma-delimited list
             field = field.replace("!", "")

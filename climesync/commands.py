@@ -256,7 +256,7 @@ Examples:
     # The data to send to the server containing the new time information
     if post_data is None:
         post_data = util.get_fields([(":duration",   "Duration"),
-                                     ("date_worked", "Date (yyyy-mm-dd)"),
+                                     ("~date_worked", "Date worked"),
                                      ("project",     "Project slug",
                                       user["project_slugs"])])
 
@@ -346,7 +346,7 @@ Examples:
                                       user["project_slugs"]),
                                      ("*!activities", "Activity slugs",
                                       activities),
-                                     ("*date_worked", "Date (yyyy-mm-dd)"),
+                                     ("*~date_worked", "Date worked"),
                                      ("*issue_uri",   "Issue URI"),
                                      ("*notes",       "Notes")],
                                     current_object=current_time)
@@ -405,8 +405,8 @@ Examples:
                                       projects),
                                      ("*!activity", "Belonging to activities",
                                       activities),
-                                     ("*start", "Beginning on date"),
-                                     ("*end", "Ending on date"),
+                                     ("*~start", "Beginning on date"),
+                                     ("*~end", "Ending on date"),
                                      ("*?include_revisions", "Allow revised?"),
                                      ("*?include_deleted", "Allow deleted?"),
                                      ("*uuid", "By UUID")])
@@ -459,8 +459,8 @@ Examples:
 
     if post_data is None:
         post_data = util.get_fields([("!project", "Project slugs", projects),
-                                     ("*start", "Start date (yyyy-mm-dd)"),
-                                     ("*end", "End date (yyyy-mm-dd)")])
+                                     ("*~start", "Start date"),
+                                     ("*~end", "End date")])
 
     if isinstance(post_data["project"], str):
         post_data["project"] = [post_data["project"]]
