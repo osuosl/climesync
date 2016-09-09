@@ -47,14 +47,13 @@ update_time_data = TestData(
             "838853e3-3635-4076-a26f-7efr4e60981f",  # UUID of time to update
             "2h0m",  # Updated duration
             "p_bar",  # Updated project slug
-            "usertwo",  # Updated user
             ["docs"],  # Updated activity slugs
             "2016-06-20",  # Updated date worked
             "https://www.github.com/osuosl/projectbar/issues/5",  # Updated URI
             "Worked on documentation"  # Updated notes
         ],
         cli_args="838853e3-3635-4076-a26f-7efr4e60981f --duration=2h0m \
-             --project=p_bar --user=usertwo --activities=docs \
+             --project=p_bar --activities=docs \
              --date-worked=2016-06-20 \
              --issue-uri=https://www.github.com/osuosl/projectbar/issues/5 \
              --notes=\"Worked on documentation\"",
@@ -68,7 +67,7 @@ update_time_data = TestData(
             "project": "p_bar",
             "activities": ["docs"],
             "date_worked": "2016-06-20",
-            "user": "usertwo",
+            "user": "example-user",
             "notes": "Worked on documentation",
             "issue_uri": "https://www.github.com/osuosl/projectbar/issues/5"
         },

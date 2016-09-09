@@ -69,6 +69,8 @@ class CommandsTest(unittest.TestCase):
 
     @test_command(data=test_data.update_time_data)
     def test_update_time(self, expected, result):
+        print result
+        print expected
         assert result == expected
 
     @test_command(data=test_data.get_times_no_uuid_data)

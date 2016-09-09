@@ -9,6 +9,19 @@ from datetime import datetime
 from getpass import getpass
 
 
+def ts_error(*ts_objects):
+    for ts_object in ts_objects:
+        if not ts_object:
+            continue
+
+        if isinstance(ts_object, list):
+            ts_object = ts_object[0]
+
+        if "error" in ts_object or "pymesync error" in ts_object:
+            print_json(ts_object)
+            return True
+
+
 def create_config(path="~/.climesyncrc"):
     """Create the configuration file if it doesn't exist"""
 
@@ -115,6 +128,42 @@ def is_time(time_str):
     """
 
     return True if re.match(r"\A[\d]+h[\d]+m\Z", time_str) else False
+
+
+def is_date(date_str):
+    """Checks if the supplied string is formatted as an ISO 8601 datestring
+
+    i.e. 2016-04-01, 2015-03-14, etc.
+    """
+
+    if not isinstance(date_str, basestring):
+        return False
+
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:  # If strptime fails, a ValueError is raised
+        return False
+
+    return True
+
+
+def check_start_end(start_date_str, end_date_str):
+    """Checks if the supplied end datestring is the same as or comes after the
+    suplied start datestring
+    """
+
+    if not is_date(start_date_str):
+        print "{} is not a valid datestring".format(start_date_str)
+        return False
+
+    if not is_date(end_date_str):
+        print "{} is not a valid datestring".format(end_date_str)
+        return False
+
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+
+    return end_date >= start_date
 
 
 def to_readable_time(seconds):
@@ -435,19 +484,27 @@ def print_pretty(response):
         print_json(response)
 
 
-def get_field(prompt, optional=False, field_type="", current=None):
+def get_field(prompt, optional=False, field_type="", validator=None,
+              current=None):
     """Prompts the user for input and returns it in the specified format
 
     prompt - The prompt to display to the user
     optional - Whether or not the field is optional (defaults to False)
     field_type - The type of input. If left empty, input is a string
+    validator - A list of valid inputs (only applicable for text/list fields)
+    current - The current value of the field
 
     Valid field_types:
     ? - Yes/No input
     : - Time input
+    ~ - Date input
     ! - Multiple inputs delimited by commas returned as a list
     $ - Password input
     """
+
+    # Check for an empty validator and raise an error
+    if validator == []:
+        raise IndexError("No valid choices for field '{}'".format(prompt))
 
     # If necessary, add extra prompts that inform the user
     optional_prompt = ""
@@ -464,6 +521,8 @@ def get_field(prompt, optional=False, field_type="", current=None):
             type_prompt = "(y/n) "
     elif field_type == ":":
         type_prompt = "(Time input - <value>h<value>m) "
+    elif field_type == '~':
+        type_prompt = "(Date input - YYYY-MM-DD) "
     elif field_type == "!":
         type_prompt = "(Comma delimited) "
     elif field_type == "$":
@@ -499,30 +558,62 @@ def get_field(prompt, optional=False, field_type="", current=None):
             elif field_type == ":":
                 if is_time(response):
                     return response
+            elif field_type == "~":
+                if is_date(response) and \
+                   (not validator or check_start_end(validator, response)):
+                    return response
             elif field_type == "!":
-                return [r.strip() for r in response.split(",")]
-            elif field_type == "" or field_type == "$":
+                response = [r.strip() for r in response.split(",")]
+                for r in response:
+                    if validator and r not in validator:
+                        print "Invalid response {}".format(r)
+                        break
+                else:
+                    return response
+            elif field_type == "$":
                 return response
+            elif field_type == "":
+                if validator and response not in validator:
+                    print "Invalid response {}".format(response)
+                else:
+                    return response
 
         print "Please submit a valid input"
+        if validator:
+            if is_date(validator):
+                print "The input date must be the same as or later than {}" \
+                      .format(validator)
+            else:
+                print "Valid choices: [{}]".format(", ".join(validator))
 
 
 def get_fields(fields, current_object=None):
     """Prompts for multiple fields and returns everything in a dictionary
 
-    fields - A list of tuples that are ordered (field_name, prompt)
+    fields - A list of tuples that are ordered (field_name, prompt,
+                                                validator=None)
 
     field_name can contain special characters that signify input type
     ? - Yes/No field
     : - Time field
+    ~ - Date field
     ! - List field
     $ - Password field
 
     In addition to those, field_name can contain a * for an optional field
     """
+    global start_cached
+
     responses = dict()
 
-    for field, prompt in fields:
+    padded_fields = [(f + (None,))[:3] for f in fields]
+
+    # Check to see if any of the validators are empty lists
+    for _, prompt, validator in padded_fields:
+        if validator == []:
+            raise IndexError("No valid choices for field '{}'".format(prompt))
+
+    for field, prompt, validator in padded_fields:
         optional = False
         field_type = ""
         current = None
@@ -534,6 +625,9 @@ def get_fields(fields, current_object=None):
         elif ":" in field:
             field_type = ":"  # Time
             field = field.replace(":", "")
+        elif "~" in field:
+            field_type = "~"  # Date
+            field = field.replace("~", "")
         elif "!" in field:
             field_type = "!"  # Comma-delimited list
             field = field.replace("!", "")
@@ -551,7 +645,15 @@ def get_fields(fields, current_object=None):
             if current is None:
                 current = "None"
 
-        response = get_field(prompt, optional, field_type, current)
+        if field == "end":
+            validator = start_cached
+
+        response = get_field(prompt, optional, field_type, validator, current)
+
+        if field == "start":
+            start_cached = response
+        elif field == "end":
+            start_cached = None
 
         # Only add response if it isn't empty
         if response != "":

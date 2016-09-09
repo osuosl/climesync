@@ -7,6 +7,11 @@ import util
 
 ts = None  # pymesync.TimeSync object
 
+user = None
+users = None
+projects = None
+activities = None
+
 autoupdate_config = True
 ldap = False  # Use LDAP?
 
@@ -46,7 +51,11 @@ class climesync_command():
                 if util.check_token_expiration(ts):
                     return {"error": "You need to sign in."}
 
-                return command()
+                try:
+                    return command()
+                except IndexError as e:
+                    print e
+                    return []
 
         return wrapped_command
 
@@ -54,7 +63,7 @@ class climesync_command():
 def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
     """Creates a new pymesync.TimeSync instance with a new URL"""
 
-    global ts
+    global ts, user, users, projects, activities, autoupdate_config
 
     url = ""
 
@@ -77,6 +86,12 @@ def connect(arg_url="", config_dict=dict(), test=False, interactive=True):
     # Create a new instance and attempt to connect to the provided url
     ts = pymesync.TimeSync(baseurl=url, test=test)
 
+    # Clear cached TS objects
+    user = None
+    users = None
+    projects = None
+    activities = None
+
     # No response from server upon connection
     return list()
 
@@ -95,7 +110,7 @@ def disconnect():
 def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
     """Attempts to sign in with user-supplied or command line credentials"""
 
-    global ts
+    global ts, user, users, projects, activities, autoupdate_config, ldap
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -129,13 +144,45 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
         util.add_kv_pair("password", password)
 
     # Attempt to authenticate and return the server's response
-    return ts.authenticate(username, password, auth_type)
+    res = ts.authenticate(username, password, auth_type)
+
+    # Cache user object and other TimeSync data
+    if not util.ts_error(res):
+        users = ts.get_users()
+        projects = ts.get_projects()
+        activities = ts.get_activities()
+
+        if not util.ts_error(users, projects, activities):
+            if ts.test:
+                user = users[0]
+                user["projects"] = []
+                user["project_slugs"] = ["test"]
+            else:
+                user = {u["username"]: u for u in users}[username]
+                user["projects"] = [p for p in projects
+                                    if "users" in p
+                                    and user["username"] in p["users"]]
+                user["project_slugs"] = [p["slugs"][0]
+                                         for p in user["projects"]]
+
+            users = [u["username"] for u in users]
+            projects = [p["slugs"][0] for p in projects]
+            activities = [a["slug"] for a in activities]
+        else:
+            for o in (users, projects, activities):
+                util.ts_error(o)
+
+            users = None
+            projects = None
+            activities = None
+
+    return res
 
 
 def sign_out():
     """Signs out from TimeSync and resets command line credentials"""
 
-    global ts
+    global ts, user, users, projects, activities
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -145,6 +192,12 @@ def sign_out():
 
     # Create a new instance connected to the same server as the last
     ts = pymesync.TimeSync(baseurl=url, test=test)
+
+    # Clear cached TS objects
+    user = None
+    users = None
+    projects = None
+    activities = None
 
     # No response from server
     return list()
@@ -195,7 +248,7 @@ Examples:
     climesync.py create-time 0h45m projecty design --notes="Designing the API"
     """
 
-    global ts
+    global ts, user, activities
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -203,8 +256,9 @@ Examples:
     # The data to send to the server containing the new time information
     if post_data is None:
         post_data = util.get_fields([(":duration",   "Duration"),
-                                     ("date_worked", "Date (yyyy-mm-dd)"),
-                                     ("project",     "Project slug")])
+                                     ("~date_worked", "Date worked"),
+                                     ("project",     "Project slug",
+                                      user["project_slugs"])])
 
         project_slug = post_data["project"]
 
@@ -218,7 +272,8 @@ Examples:
         else:
             activity_query = "!activities"
 
-        post_data_cont = util.get_fields([(activity_query, "Activity slugs"),
+        post_data_cont = util.get_fields([(activity_query, "Activity slugs",
+                                           activities),
                                           ("*issue_uri",  "Issue URI"),
                                           ("*notes",      "Notes")])
 
@@ -245,7 +300,6 @@ def update_time(post_data=None, uuid=None):
 
 Usage: update-time [-h] <uuid> [--duration=<duration>]
                         [--project=<project>]
-                        [--user=<user>]
                         [--activities=<activities>]
                         [--date-worked=<date worked>]
                         [--issue-uri=<issue uri>]
@@ -272,7 +326,7 @@ Examples:
 `       --project=projecty --notes="Notes notes notes"
     """
 
-    global ts
+    global ts, user, activities
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -288,10 +342,11 @@ Examples:
             return current_time
 
         post_data = util.get_fields([("*:duration",   "Duration"),
-                                     ("*project",     "Project slug"),
-                                     ("*user",        "New user"),
-                                     ("*!activities", "Activity slugs"),
-                                     ("*date_worked", "Date (yyyy-mm-dd)"),
+                                     ("*project",     "Project slug",
+                                      user["project_slugs"]),
+                                     ("*!activities", "Activity slugs",
+                                      activities),
+                                     ("*~date_worked", "Date worked"),
                                      ("*issue_uri",   "Issue URI"),
                                      ("*notes",       "Notes")],
                                     current_object=current_time)
@@ -336,7 +391,7 @@ Examples:
     climesync.py get-times --uuid=12345676-1c9a-rrrr-bbbb-89b4544cad56
     """
 
-    global ts
+    global ts, users, projects, activities
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -345,11 +400,13 @@ Examples:
 
     # Optional filtering parameters to send to the server
     if post_data is None:
-        post_data = util.get_fields([("*!user", "Submitted by users"),
-                                     ("*!project", "Belonging to projects"),
-                                     ("*!activity", "Belonging to activities"),
-                                     ("*start", "Beginning on date"),
-                                     ("*end", "Ending on date"),
+        post_data = util.get_fields([("*!user", "Submitted by users", users),
+                                     ("*!project", "Belonging to projects",
+                                      projects),
+                                     ("*!activity", "Belonging to activities",
+                                      activities),
+                                     ("*~start", "Beginning on date"),
+                                     ("*~end", "Ending on date"),
                                      ("*?include_revisions", "Allow revised?"),
                                      ("*?include_deleted", "Allow deleted?"),
                                      ("*uuid", "By UUID")])
@@ -398,10 +455,12 @@ Examples:
     climesync.py sum-times projectx projecty --start=2016-06-01
     """
 
+    global ts, projects
+
     if post_data is None:
-        post_data = util.get_fields([("!project", "Project slugs"),
-                                     ("*start", "Start date (yyyy-mm-dd)"),
-                                     ("*end", "End date (yyyy-mm-dd)")])
+        post_data = util.get_fields([("!project", "Project slugs", projects),
+                                     ("*~start", "Start date"),
+                                     ("*~end", "End date")])
 
     if isinstance(post_data["project"], str):
         post_data["project"] = [post_data["project"]]
@@ -506,7 +565,7 @@ Examples:
 `       --uri=https://www.github.com/bar/foo --default-activity=planning
     """
 
-    global ts
+    global ts, users
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -518,7 +577,7 @@ Examples:
                                      ("*uri", "Project URI"),
                                      ("*default_activity",
                                       "Default activity"),
-                                     ("*!users", "Users")])
+                                     ("*!users", "Users", users)])
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
                                     post_data.pop("access_mode")))
@@ -562,13 +621,13 @@ Examples:
     climesync.py update-project pz --uri=https://www.github.com/bar/projectz
     """
 
-    global ts
+    global ts, projects
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
     if slug is None:
-        slug = util.get_field("Slug of project to update")
+        slug = util.get_field("Slug of project to update", validator=projects)
 
     # The data to send to the server containing revised project information
     if post_data is None:
@@ -625,13 +684,13 @@ Examples:
     climesync.py update-project-users proj_bar olduser1 4 olduser2 7
     """
 
-    global ts
+    global ts, users, projects
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
     if slug is None:
-        slug = util.get_field("Slug of project to update")
+        slug = util.get_field("Slug of project to update", validator=projects)
 
     if post_data is None:
         current_project = ts.get_projects({"slug": slug})[0]
@@ -639,7 +698,8 @@ Examples:
         if "error" in current_project or "pymesync error" in current_project:
             return current_project
 
-        post_data = util.get_fields([("*!users", "Users to add/update")],
+        post_data = util.get_fields([("*!users", "Users to add/update",
+                                      users)],
                                     current_object=current_project)
     else:
         permissions_dict = dict(zip(post_data.pop("username"),
@@ -679,13 +739,13 @@ Examples:
     climesync.py remove-project-users proj_bar user1
     """
 
-    global ts
+    global ts, users, projects
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
     if slug is None:
-        slug = util.get_field("Slug of project to update")
+        slug = util.get_field("Slug of project to update", validator=projects)
 
     if post_data is None:
         current_project = ts.get_projects({"slug": slug})[0]
@@ -693,7 +753,7 @@ Examples:
         if "error" in current_project or "pymesync error" in current_project:
             return current_project
 
-        post_data = util.get_fields([("*!users", "Users to remove")],
+        post_data = util.get_fields([("*!users", "Users to remove", users)],
                                     current_object=current_project)
 
     old_project = ts.get_projects(query_parameters={"slug": slug})[0]
@@ -733,7 +793,7 @@ Examples:
     climesync.py get-projects --slug=projectx --include-revisions=True
     """
 
-    global ts
+    global ts, projects
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -744,18 +804,18 @@ Examples:
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
                                      ("*?include_deleted", "Allow deleted?"),
-                                     ("*slug", "By project slug")])
+                                     ("*slug", "By project slug", projects)])
 
     # Attempt to query the server with filtering parameters
-    projects = ts.get_projects(query_parameters=post_data)
+    projects_res = ts.get_projects(query_parameters=post_data)
 
-    if interactive and not projects:
+    if interactive and not projects_res:
         return {"note": "No projects were returned"}
 
-    if "error" in projects[0] or "pymesync error" in projects[0]:
-        return projects
+    if "error" in projects_res[0] or "pymesync error" in projects_res[0]:
+        return projects_res
 
-    for project in projects:
+    for project in projects_res:
         proj_slug = project["slugs"][0]
         proj_times = ts.get_times(query_parameters={"project": [proj_slug]})
 
@@ -776,7 +836,7 @@ Examples:
         project["latest_time"] = proj_latest_time
         project["first_time"] = proj_first_time
 
-    return projects
+    return projects_res
 
 
 @climesync_command(select_arg="slug")
@@ -795,13 +855,13 @@ Examples:
     climesync.py delete-project foo
     """
 
-    global ts
+    global ts, projects
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
     if slug is None:
-        slug = util.get_field("Project slug")
+        slug = util.get_field("Project slug", validator=projects)
         really = util.get_field(u"Do you really want to delete {}?"
                                 .format(slug),
                                 field_type="?")
@@ -865,13 +925,14 @@ Examples:
     climesync.py update-activity code --slug=coding
     """
 
-    global ts
+    global ts, activities
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
     if old_slug is None:
-        old_slug = util.get_field("Slug of activity to update")
+        old_slug = util.get_field("Slug of activity to update",
+                                  validator=activities)
 
     # The data to send to the server containing revised activity information
     if post_data is None:
@@ -910,7 +971,7 @@ Examples:
     climesync.py get-activities --slug=planning
     """
 
-    global ts
+    global ts, activities
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -921,15 +982,16 @@ Examples:
     if post_data is None:
         post_data = util.get_fields([("*?include_revisions", "Allow revised?"),
                                      ("*?include_deleted", "Allow deleted?"),
-                                     ("*slug", "By activity slug")])
+                                     ("*slug", "By activity slug",
+                                      activities)])
 
     # Attempt to query the server with filtering parameters
-    activities = ts.get_activities(query_parameters=post_data)
+    activities_res = ts.get_activities(query_parameters=post_data)
 
-    if interactive and not activities:
+    if interactive and not activities_res:
         return {"note": "No activities were returned"}
 
-    return activities
+    return activities_res
 
 
 @climesync_command(select_arg="slug")
@@ -948,13 +1010,13 @@ Examples:
     climesync.py delete-activity planning
     """
 
-    global ts
+    global ts, activities
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
     if slug is None:
-        slug = util.get_field("Activity slug")
+        slug = util.get_field("Activity slug", validator=activities)
         really = util.get_field(u"Do you really want to delete {}?"
                                 .format(slug),
                                 field_type="?")
@@ -1056,13 +1118,14 @@ Examples:
 `       --meta="Metainformation goes here" --site-admin=False
     """
 
-    global ts
+    global ts, users
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
     if old_username is None:
-        old_username = util.get_field("Username of user to update")
+        old_username = util.get_field("Username of user to update",
+                                      validator=users)
 
     # The data to send to the server containing revised user information
     if post_data is None:
@@ -1108,7 +1171,7 @@ Examples:
     climesync.py get-users --meta="fulltime"
     """
 
-    global ts
+    global ts, users, projects
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -1117,7 +1180,7 @@ Examples:
 
     # Optional filtering parameters
     if interactive:
-        post_data = util.get_fields([("*username", "Username")])
+        post_data = util.get_fields([("*username", "Username", users)])
 
     # Using dict.get so that None is returned if the key doesn't exist
     username = post_data.get("username")
@@ -1131,7 +1194,8 @@ Examples:
         meta = None
 
     if interactive and not username:
-        post_data.update(util.get_fields([("*project", "By project slug")]))
+        post_data.update(util.get_fields([("*project", "By project slug",
+                                           projects)]))
 
     project = post_data.get("project")
 
@@ -1167,7 +1231,7 @@ Examples:
             else:
                 role = ""
 
-        users = []
+        users_res = []
         for user, roles in project_users.iteritems():
             if (role == "--members" and "member" not in roles) or \
                (role == "--managers" and "manager" not in roles) or \
@@ -1179,17 +1243,17 @@ Examples:
             if "error" in user_object or "pymesync error" in user_object:
                 return user_object
 
-            users.append(user_object)
+            users_res.append(user_object)
     else:
-        users = ts.get_users(username=username)
+        users_res = ts.get_users(username=username)
 
-    if interactive and not users:
+    if interactive and not users_res:
         return {"note": "No users were returned"}
-    elif not users:
+    elif not users_res:
         return []
 
-    if "error" in users[0] or "pymesync error" in users[0]:
-        return users
+    if "error" in users_res[0] or "pymesync error" in users_res[0]:
+        return users_res
 
     if username:  # Get user projects
         projects = ts.get_projects()
@@ -1202,12 +1266,12 @@ Examples:
                              for project in projects
                              if username in project.setdefault("users", [])}
 
-            users[0]["projects"] = user_projects
+            users_res[0]["projects"] = user_projects
     elif meta:  # Filter users by substrings in metadata
-        users = [user for user in users
-                 if user["meta"] and meta in user["meta"].upper()]
+        users_res = [user for user in users_res
+                     if user["meta"] and meta in user["meta"].upper()]
 
-    return users
+    return users_res
 
 
 @climesync_command(select_arg="username")
@@ -1226,13 +1290,13 @@ Examples:
     climesync.py delete-user userfour
     """
 
-    global ts
+    global ts, users
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
 
     if username is None:
-        username = util.get_field("Username")
+        username = util.get_field("Username", validator=users)
         really = util.get_field(u"Do you really want to delete {}?"
                                 .format(username),
                                 field_type="?")

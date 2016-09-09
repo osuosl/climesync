@@ -1,13 +1,21 @@
 from StringIO import StringIO
 import unittest
-from mock import call, patch, MagicMock
+from mock import patch, MagicMock
 
 from climesync import climesync
 from climesync.climesync import command_lookup
 from climesync import commands
+from climesync import util
 
 
 class ClimesyncTest(unittest.TestCase):
+
+    def setUp(self):
+        # Reset cached TS data between tests
+        commands.user = None
+        commands.users = None
+        commands.projects = None
+        commands.activities = None
 
     def test_lookup_command_interactive(self):
         test_queries = [
@@ -92,34 +100,30 @@ class ClimesyncTest(unittest.TestCase):
 
         assert not commands.ts
 
-    @patch("climesync.commands.util")
     @patch("climesync.commands.ts")
-    def test_sign_in_args(self, mock_ts, mock_util):
+    def test_sign_in_args(self, mock_ts):
         username = "test"
         password = "password"
 
-        mock_ts.test = False
-
         commands.sign_in(arg_user=username, arg_pass=password)
 
-        mock_util.add_kv_pair.assert_has_calls([call("username", username),
-                                                call("password", password)])
         mock_ts.authenticate.assert_called_with(username, password, "password")
 
-    @patch("climesync.commands.util")
+        assert not util.ts_error(commands.user, commands.users,
+                                 commands.projects, commands.activities)
+
     @patch("climesync.commands.ts")
-    def test_sign_in_config_dict(self, mock_ts, mock_util):
+    def test_sign_in_config_dict(self, mock_ts):
         username = "test"
         password = "password"
         config_dict = {"username": username, "password": password}
 
-        mock_ts.test = False
-
         commands.sign_in(config_dict=config_dict)
 
-        mock_util.add_kv_pair.assert_has_calls([call("username", username),
-                                                call("password", password)])
         mock_ts.authenticate.assert_called_with(username, password, "password")
+
+        assert not util.ts_error(commands.user, commands.users,
+                                 commands.projects, commands.activities)
 
     @patch("climesync.commands.util")
     @patch("climesync.commands.ts")
@@ -128,28 +132,28 @@ class ClimesyncTest(unittest.TestCase):
         password = "test"
         mocked_input = [username, password]
 
+        mock_util.ts_error = util.ts_error
         mock_util.get_field.side_effect = mocked_input
-        mock_ts.test = False
 
         commands.sign_in()
 
-        mock_util.add_kv_pair.assert_has_calls([call("username", username),
-                                                call("password", password)])
         mock_ts.authenticate.assert_called_with(username, password, "password")
 
-    @patch("climesync.commands.util")
+        assert not util.ts_error(commands.user, commands.users,
+                                 commands.projects, commands.activities)
+
     @patch("climesync.commands.ts")
-    def test_sign_in_noninteractive(self, mock_ts, mock_util):
+    def test_sign_in_noninteractive(self, mock_ts):
         username = "test"
         password = "test"
-
-        mock_ts.test = False
 
         commands.sign_in(arg_user=username, arg_pass=password,
                          interactive=False)
 
-        mock_util.add_kv_pair.assert_not_called()
         mock_ts.authenticate.assert_called_with(username, password, "password")
+
+        assert not util.ts_error(commands.user, commands.users,
+                                 commands.projects, commands.activities)
 
     def test_sign_in_not_connected(self):
         commands.ts = None
@@ -158,11 +162,19 @@ class ClimesyncTest(unittest.TestCase):
 
         assert "error" in response
 
+        for o in (commands.user, commands.users, commands.projects,
+                  commands.activities):
+            assert not o
+
     @patch("climesync.commands.ts")
     def test_sign_in_error(self, mock_ts):
         response = commands.sign_in(interactive=False)
 
         assert "climesync error" in response
+
+        for o in (commands.user, commands.users, commands.projects,
+                  commands.activities):
+            assert not o
 
     @patch("climesync.commands.ts")
     @patch("climesync.commands.pymesync.TimeSync")
@@ -177,12 +189,20 @@ class ClimesyncTest(unittest.TestCase):
 
         mock_timesync.assert_called_with(baseurl=url, test=test)
 
+        for o in (commands.user, commands.users, commands.projects,
+                  commands.activities):
+            assert not o
+
     def test_sign_out_not_connected(self):
         commands.ts = None
 
         response = commands.sign_out()
 
         assert "error" in response
+
+        for o in (commands.user, commands.users, commands.projects,
+                  commands.activities):
+            assert not o
 
     @patch("climesync.climesync.commands")
     @patch("climesync.climesync.interactive_mode")
