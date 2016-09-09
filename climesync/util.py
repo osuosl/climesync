@@ -579,18 +579,22 @@ def print_pretty_user(response):
 def print_pretty(response):
     """Attempts to print data returned by Pymesync nicely"""
 
-    data_type = determine_data_type(response)
-
-    if data_type == "time":
-        print_pretty_time(response)
-    elif data_type == "project":
-        print_pretty_project(response)
-    elif data_type == "activity":
-        print_pretty_activity(response)
-    elif data_type == "user":
-        print_pretty_user(response)
-    else:
+    if "detail" in response:
+        del response[response.index("detail")]
         print_json(response)
+    else:
+        data_type = determine_data_type(response)
+
+        if data_type == "time":
+            print_pretty_time(response)
+        elif data_type == "project":
+            print_pretty_project(response)
+        elif data_type == "activity":
+            print_pretty_activity(response)
+        elif data_type == "user":
+            print_pretty_user(response)
+        else:
+            print_json(response)
 
 
 def get_field(prompt, optional=False, field_type="", validator=None,

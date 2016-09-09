@@ -75,7 +75,7 @@ update_time_data = TestData(
 
 get_times_no_uuid_data = TestData(
         command=commands.get_times,
-        mocked_input=[None]*9,
+        mocked_input=[None]*9 + [True],
         cli_args="",
         expected_response=[{
                 "created_at": "2014-04-17",
@@ -118,7 +118,7 @@ get_times_no_uuid_data = TestData(
                 "user": "userthree",
                 "notes": "Worked on coding",
                 "issue_uri": "https://github.com/osuosl/timesync"
-        }],
+        }, "detail"],
         admin=False)
 
 get_times_uuid_data = TestData(
@@ -151,7 +151,7 @@ get_times_uuid_data = TestData(
             "user": "userone",
             "notes": "Worked on documentation.",
             "issue_uri": "https://github.com/osuosl/ganeti_webmgr"
-        }],
+        }, "detail"],
         admin=False)
 
 sum_times_data = TestData(
