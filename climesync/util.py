@@ -136,12 +136,34 @@ def is_date(date_str):
     i.e. 2016-04-01, 2015-03-14, etc.
     """
 
+    if not isinstance(date_str, basestring):
+        return False
+
     try:
         datetime.strptime(date_str, "%Y-%m-%d")
     except ValueError:  # If strptime fails, a ValueError is raised
         return False
 
     return True
+
+
+def check_start_end(start_date_str, end_date_str):
+    """Checks if the supplied end datestring is the same as or comes after the
+    suplied start datestring
+    """
+
+    if not is_date(start_date_str):
+        print "{} is not a valid datestring".format(start_date_str)
+        return False
+
+    if not is_date(end_date_str):
+        print "{} is not a valid datestring".format(end_date_str)
+        return False
+
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+
+    return end_date >= start_date
 
 
 def to_readable_time(seconds):
@@ -537,7 +559,8 @@ def get_field(prompt, optional=False, field_type="", validator=None,
                 if is_time(response):
                     return response
             elif field_type == "~":
-                if is_date(response):
+                if is_date(response) and \
+                   (not validator or check_start_end(validator, response)):
                     return response
             elif field_type == "!":
                 response = [r.strip() for r in response.split(",")]
@@ -557,7 +580,11 @@ def get_field(prompt, optional=False, field_type="", validator=None,
 
         print "Please submit a valid input"
         if validator:
-            print "Valid choices: [{}]".format(", ".join(validator))
+            if is_date(validator):
+                print "The input date must be the same as or later than {}" \
+                      .format(validator)
+            else:
+                print "Valid choices: [{}]".format(", ".join(validator))
 
 
 def get_fields(fields, current_object=None):
@@ -575,6 +602,8 @@ def get_fields(fields, current_object=None):
 
     In addition to those, field_name can contain a * for an optional field
     """
+    global start_cached
+
     responses = dict()
 
     padded_fields = [(f + (None,))[:3] for f in fields]
@@ -616,7 +645,15 @@ def get_fields(fields, current_object=None):
             if current is None:
                 current = "None"
 
+        if field == "end":
+            validator = start_cached
+
         response = get_field(prompt, optional, field_type, validator, current)
+
+        if field == "start":
+            start_cached = response
+        elif field == "end":
+            start_cached = None
 
         # Only add response if it isn't empty
         if response != "":
