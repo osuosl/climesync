@@ -5,11 +5,13 @@
 Usage: climesync [options] [<command> [<args>... ]]
 
 Options:
-    -h             --help                 Print this dialog
-    -c <baseurl>   --connect=<baseurl>    TimeSync Server URL
-    -u <username>  --username=<username>  Username of user to authenticate as
-    -p <password>  --password=<password>  Password of user to authenticate as
-    -l             --ldap                 Authenticate using LDAP credentials
+    -h               --help                      Print this dialog
+    -c <baseurl>     --connect=<baseurl>         TimeSync Server URL
+    -u <username>    --username=<username>       Username of user
+    -p <password>    --password=<password>       Password of user
+    -l               --ldap                      Authenticate using LDAP
+    -f <config_file> --config-file=<config_file> Use a config file other than
+                                                 the default ~/.climesyncrc
 
 Commands:
 
@@ -164,18 +166,23 @@ def scripting_mode(command_name, argv):
 def main(argv=None, test=False):
     # Command line arguments
     args = docopt(__doc__, argv=argv, options_first=True)
+    print args
     url = args['-c']
     user = args['-u']
     password = args['-p']
     ldap = args['-l']
+    config_file = args['--config-file']
 
     command = args['<command>']
     argv = args['<args>']
 
     interactive = False if command else True
 
+    if not config_file:
+        config_file = "~/.climesyncrc"
+
     try:
-        config_obj = util.read_config()
+        config_obj = util.read_config(config_file)
 
         if config_obj.has_option("climesync", "autoupdate_config"):
             commands.autoupdate_config = \
