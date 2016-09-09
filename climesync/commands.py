@@ -256,9 +256,12 @@ Examples:
     # The data to send to the server containing the new time information
     if post_data is None:
         post_data = util.get_fields([(":duration",   "Duration"),
-                                     ("~date_worked", "Date worked"),
+                                     ("*~date_worked", "Date worked"),
                                      ("project",     "Project slug",
-                                      user["project_slugs"])])
+                                      user["project_slugs"])],
+                                    current_object={
+                                        "date_worked": date.today()
+                                        })
 
         project_slug = post_data["project"]
 
@@ -280,7 +283,7 @@ Examples:
         post_data.update(post_data_cont)
 
     # Today's date
-    if post_data["date_worked"] == "today":
+    if "date_worked" not in post_data:
         post_data["date_worked"] = date.today().isoformat()
 
     # If activities was sent as a single item
