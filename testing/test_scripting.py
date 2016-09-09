@@ -73,10 +73,6 @@ class ScriptingTest(unittest.TestCase):
     def test_get_times_uuid(self, expected, result):
         assert result == expected
 
-    @test_script(data=test_data.sum_times_data)
-    def test_sum_times(self, expected, result):
-        assert result == expected
-
     @test_script(data=test_data.delete_time_data)
     def test_delete_time(self, expected, result):
         assert result == expected

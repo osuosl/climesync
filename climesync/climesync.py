@@ -18,7 +18,6 @@ Commands:
     create-time           Submit a new time
     update-time           Update the fields of an existing time
     get-times             List and optionally filter times on the server
-    sum-times             Sum all the times worked on a project
     delete-time           Delete a time
 
     create-project        Create a new project
@@ -98,7 +97,6 @@ command_lookup = [
     ("ct",  "create-time",          commands.create_time),
     ("ut",  "update-time",          commands.update_time),
     ("gt",  "get-times",            commands.get_times),
-    ("st",  "sum-times",            commands.sum_times),
     ("dt",  "delete-time",          commands.delete_time),
     ("cp",  "create-project",       commands.create_project),
     ("up",  "update-project",       commands.update_project),
