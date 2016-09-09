@@ -56,6 +56,9 @@ class climesync_command():
                 except IndexError as e:
                     print e
                     return []
+                except KeyboardInterrupt:
+                    print "\nCaught keyboard interrupt. Exiting..."
+                    return []
 
         return wrapped_command
 
