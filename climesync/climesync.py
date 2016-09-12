@@ -166,7 +166,6 @@ def scripting_mode(command_name, argv):
 def main(argv=None, test=False):
     # Command line arguments
     args = docopt(__doc__, argv=argv, options_first=True)
-    print args
     url = args['-c']
     user = args['-u']
     password = args['-p']
