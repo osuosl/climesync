@@ -65,10 +65,10 @@ class test_command():
 class CommandsTest(unittest.TestCase):
 
     @patch("climesync.util.session_exists")
-    @patch("climesync.util.write_session")
+    @patch("climesync.util.create_session")
     @patch("climesync.util.get_field")
     @patch("commands.datetime.now")
-    def test_clock_in(self, mock_now, mock_get_field, mock_write_session, mock_session_exists):
+    def test_clock_in(self, mock_now, mock_get_field, mock_create_session, mock_session_exists):
         mocked_input = [
             "px",  # Project
             [],  # Activities
@@ -91,12 +91,12 @@ class CommandsTest(unittest.TestCase):
 
         commands.clock_in()
 
-        mock_write_session.assert_called_with(expected_session_object)
+        mock_create_session.assert_called_with(expected_session_object)
 
     @patch("climesync.util.session_exists")
-    @patch("climesync.util.write_session")
+    @patch("climesync.util.create_session")
     @patch("climesync.util.get_field")
-    def test_clock_in_already_clocked_in(self, mock_get_field, mock_write_session, mock_session_exists):
+    def test_clock_in_already_clocked_in(self, mock_get_field, mock_create_session, mock_session_exists):
         mocked_input = [
             "",  # Project
             [],  # Activities
@@ -110,7 +110,7 @@ class CommandsTest(unittest.TestCase):
 
         commands.clock_in()
 
-        mock_write_session.assert_not_called()
+        mock_create_session.assert_not_called()
 
     @patch("climesync.util.session_exists")
     @patch("climesync.util.read_session")

@@ -163,6 +163,86 @@ class UtilTest(unittest.TestCase):
 
         mock_create_config.assert_not_called()
 
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.codecs.open")
+    def test_read_session(self, mock_open, mock_session_exists):
+        mock_session_exists.return_value = True
+
+        util.read_session()
+
+        assert mock_open.mock_calls
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.codecs.open")
+    def test_read_session_no_session(self, mock_open, mock_session_exists):
+        mock_session_exists.return_value = False
+
+        util.read_session()
+
+        assert not mock_open.mock_calls
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.codecs.open")
+    def test_create_session(self, mock_open, mock_session_exists):
+        mock_session_object = {
+            "start_date": "2015-03-14",
+            "start_time": "09:26",
+            "project": "px",
+            "issue_uri": "https://github.com/org/px/issues/42/"
+        }
+
+        mock_file = MagicMock(spec=file)
+        mock_open.return_value.__enter__.return_value = mock_file
+
+        mock_session_exists.return_value = False
+
+        util.create_session(mock_session_object)
+
+        for k, v in mock_session_object.iteritems():
+            # Assert that the session data was written to the file
+            assert any(k in args[0] and v in args[0]
+                       for _, args, __ in mock_file.mock_calls)
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.codecs.open")
+    def test_create_session_existing_session(self, mock_open,
+                                             mock_session_exists):
+        mock_session_exists.return_value = True
+
+        util.create_session({})
+
+        mock_open.assert_not_called()
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.os.remove")
+    def test_clear_session(self, mock_remove, mock_session_exists):
+        mock_session_exists.return_value = True
+
+        util.clear_session()
+
+        assert mock_remove.mock_calls
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.os.remove")
+    def test_clear_session_no_session(self, mock_remove, mock_session_exists):
+        mock_session_exists.return_value = False
+
+        util.clear_session()
+
+        assert not mock_remove.mock_calls
+
+    @patch("climesync.util.os.path.exists")
+    def test_session_exists_true(self, mock_exists):
+        mock_exists.return_value = True
+
+        assert util.session_exists()
+
+    @patch("climesync.util.os.path.exists")
+    def test_session_exists_false(self, mock_exists):
+        mock_exists.return_value = False
+
+        assert not util.session_exists()
+
     @patch("climesync.util.sys.stdout", new_callable=StringIO)
     def test_print_json_list(self, mock_stdout):
         key = "key"
