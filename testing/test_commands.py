@@ -64,6 +64,123 @@ class test_command():
 
 class CommandsTest(unittest.TestCase):
 
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.write_session")
+    @patch("climesync.util.get_field")
+    @patch("commands.datetime.now")
+    def test_clock_in(self, mock_now, mock_get_field, mock_write_session, mock_session_exists):
+        mocked_input = [
+            "px",  # Project
+            [],  # Activities
+            "https://github.com/org/px/issues/42/",  # Issue URI
+            "",  # Notes
+        ]
+
+        mock_now.return_value = datetime.datetime(2015, 3, 14, 9, 26)
+
+        mock_get_field.side_effect = mocked_input
+
+        mock_session_exists.return_value = False
+
+        expected_session_object = {
+            "start_date": "2015-03-14",
+            "start_time": "09:26",
+            "project": "px",
+            "issue_uri": "https://github.com/org/px/issues/42/"
+        }
+
+        commands.clock_in()
+
+        mock_write_session.assert_called_with(expected_session_object)
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.write_session")
+    @patch("climesync.util.get_field")
+    def test_clock_in_already_clocked_in(self, mock_get_field, mock_write_session, mock_session_exists):
+        mocked_input = [
+            "",  # Project
+            [],  # Activities
+            "",  # Issue URI
+            "",  # Notes
+        ]
+
+        mock_get_field.side_effect = mocked_input
+
+        mock_session_exists.return_value = True
+
+        commands.clock_in()
+
+        mock_write_session.assert_not_called()
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.read_session")
+    @patch("climesync.util.get_field")
+    @patch("commands.datetime.now")
+    def test_clock_out(self, mock_now, mock_get_field, mock_read_session, mock_session_exists):
+        mocked_input = [
+            "",  # Project
+            ["development", "planning"],  # Activities
+            "",  # Issue URI
+            "Fixed issue X by doing Y",  # Notes
+        ]
+
+        mocked_session = {
+            "start_date": "2015-03-14",
+            "start_time": "09:26",
+            "project": "px",
+            "issue_uri": "https://github.com/org/px/issues/42/"
+        }
+
+        mock_now.return_value = datetime.datetime(2015, 3, 14, 10, 26)
+
+        mock_get_field.side_effect = mocked_input
+
+        mock_read_session.return_value = mocked_session
+
+        mock_session_exists.return_value = True
+
+        expected_response = {
+            "created_at": "2015-03-14",
+            "updated_at": None,
+            "deleted_at": None,
+            "uuid": "838853e3-3635-4076-a26f-7efr4e60981f",
+            "revision": 1,
+            "duration": 3600,
+            "project": "px",
+            "activities": ["development", "planning"],
+            "date_worked": "2016-03-14",
+            "user": "test",
+            "notes": "Fixed issue X by doing Y",
+            "issue_uri": "https://github.com/org/px/issues/42/"
+        }
+
+        response = commands.clock_out()
+
+        assert response == expected_response
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.read_session")
+    def test_clock_out_no_clock_in(self, mock_read_session, mock_session_exists):
+        mock_session_exists = False
+
+        commands.clock_out()
+
+        mock_read_session.assert_not_called()
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.read_session")
+    @patch("climesync.util.get_fields")
+    def test_clock_out_empty_session(self, mock_get_fields, mock_read_session, mock_session_exists):
+        mocked_session = {}
+
+        mock_read_session.return_value = mocked_session
+
+        mock_session_exists.return_value = True
+
+        commands.clock_out()
+
+        mock_get_fields.assert_not_called()
+
     @test_command(data=test_data.create_time_data)
     def test_create_time(self, expected, result):
         assert result == expected
