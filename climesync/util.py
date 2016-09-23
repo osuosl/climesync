@@ -178,6 +178,55 @@ def write_config(key, value, path="~/.climesyncrc"):
     config_file = path
 
 
+def session_exists(path="~/.climesyncsession"):
+    """Checks whether or not a clock-in session exists"""
+
+    realpath = os.path.expanduser(path)
+
+    return os.path.exists(realpath)
+
+
+def read_session(path="~/.climesyncsession"):
+    """Reads data from a session file, if it exists"""
+
+    if not session_exists(path):
+        return
+
+    realpath = os.path.expanduser(path)
+
+    with codecs.open(realpath, "r", "utf-8") as f:
+        lines = f.readlines()
+
+    split_lines = [[s.strip() for s in l.split(":", 1)] for l in lines]
+    session = {l[0]: l[1] for l in split_lines}
+
+    return session
+
+
+def create_session(session, path="~/.climesyncsession"):
+    """Creates a session by saving dictionary data to a file"""
+
+    if session_exists(path):
+        return
+
+    realpath = os.path.expanduser(path)
+
+    with codecs.open(realpath, "w", "utf-8") as f:
+        for key, value in session.iteritems():
+            f.write("{}: {}\n".format(key, value))
+
+
+def clear_session(path="~/.climesyncsession"):
+    """Removes a session file, if it exists"""
+
+    if not session_exists(path):
+        return
+
+    realpath = os.path.expanduser(path)
+
+    os.remove(realpath)
+
+
 def check_token_expiration(ts):
     """Checks to see if the auth token has expired. If it has, try to log the
     user back in using the username and password in their config file"""

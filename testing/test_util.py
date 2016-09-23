@@ -163,14 +163,44 @@ class UtilTest(unittest.TestCase):
 
         mock_create_config.assert_not_called()
 
+    @patch("climesync.util.os.path.exists")
+    def test_session_exists_true(self, mock_exists):
+        mock_exists.return_value = True
+
+        assert util.session_exists()
+
+    @patch("climesync.util.os.path.exists")
+    def test_session_exists_false(self, mock_exists):
+        mock_exists.return_value = False
+
+        assert not util.session_exists()
+
     @patch("climesync.util.session_exists")
     @patch("climesync.util.codecs.open")
     def test_read_session(self, mock_open, mock_session_exists):
+        mock_session_object = {
+            "start_date": "2015-03-14",
+            "start_time": "09:26",
+            "project": "px",
+            "issue_uri": "https://github.com/org/px/issues/42/"
+        }
+
+        mock_session_file_lines = [
+            "start_date: 2015-03-14",
+            "start_time: 09:26",
+            "project: px",
+            "issue_uri: https://github.com/org/px/issues/42/"
+        ]
+
+        mock_file = MagicMock(spec=file)
+        mock_file.readlines.return_value = mock_session_file_lines
+        mock_open.return_value.__enter__.return_value = mock_file
+
         mock_session_exists.return_value = True
 
-        util.read_session()
+        result = util.read_session()
 
-        assert mock_open.mock_calls
+        assert result == mock_session_object
 
     @patch("climesync.util.session_exists")
     @patch("climesync.util.codecs.open")
@@ -230,18 +260,6 @@ class UtilTest(unittest.TestCase):
         util.clear_session()
 
         assert not mock_remove.mock_calls
-
-    @patch("climesync.util.os.path.exists")
-    def test_session_exists_true(self, mock_exists):
-        mock_exists.return_value = True
-
-        assert util.session_exists()
-
-    @patch("climesync.util.os.path.exists")
-    def test_session_exists_false(self, mock_exists):
-        mock_exists.return_value = False
-
-        assert not util.session_exists()
 
     @patch("climesync.util.sys.stdout", new_callable=StringIO)
     def test_print_json_list(self, mock_stdout):
