@@ -1,3 +1,4 @@
+from datetime import datetime
 import stat
 import ConfigParser
 from StringIO import StringIO
@@ -182,14 +183,16 @@ class UtilTest(unittest.TestCase):
             "start_date": "2015-03-14",
             "start_time": "09:26",
             "project": "px",
-            "issue_uri": "https://github.com/org/px/issues/42/"
+            "issue_uri": "https://github.com/org/px/issues/42/",
+            "user": "test"
         }
 
         mock_session_file_lines = [
             "start_date: 2015-03-14",
             "start_time: 09:26",
             "project: px",
-            "issue_uri: https://github.com/org/px/issues/42/"
+            "issue_uri: https://github.com/org/px/issues/42/",
+            "user: test"
         ]
 
         mock_file = MagicMock(spec=file)
@@ -218,7 +221,8 @@ class UtilTest(unittest.TestCase):
             "start_date": "2015-03-14",
             "start_time": "09:26",
             "project": "px",
-            "issue_uri": "https://github.com/org/px/issues/42/"
+            "issue_uri": "https://github.com/org/px/issues/42/",
+            "user": "test"
         }
 
         mock_file = MagicMock(spec=file)
@@ -261,6 +265,51 @@ class UtilTest(unittest.TestCase):
 
         assert not mock_remove.mock_calls
 
+    def test_construct_clock_out_time(self):
+        pass
+
+    def test_construct_clock_out_time_no_revisions(self):
+        pass
+
+    def test_construct_clock_out_time_no_session(self):
+        mocked_session = {}
+        mocked_now = datetime.now()
+        mocked_revisions = {}
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions)
+
+        assert result == {"error": "No session data"}
+
+    def test_construct_clock_out_time_invalid_session(self):
+        mocked_session = {
+            "invalid": "session"
+        }
+
+        mocked_now = datetime.now()
+        mocked_revisions = {}
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions)
+
+        assert result == {"error": "Invalid session data"}
+
+    def test_construct_clock_out_time_negative_delta(self):
+        mocked_session = {
+            "start_date": "2016-03-14",
+            "start_time": "03:14",
+            "project": "px",
+            "user": "test"
+        }
+
+        mocked_now = datetime(2016, 1, 1, 1, 1)
+        mocked_revisions = {}
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions)
+
+        assert result == {"error": "Invalid session date/time"}
+
     @patch("climesync.util.sys.stdout", new_callable=StringIO)
     def test_print_json_list(self, mock_stdout):
         key = "key"
@@ -282,14 +331,6 @@ class UtilTest(unittest.TestCase):
         util.print_json(test_response)
 
         assert "{}: {}".format(key, value) in mock_stdout.getvalue()
-
-    @patch("climesync.util.sys.stdout", new_callable=StringIO)
-    def test_print_json_invalid(self, mock_stdout):
-        test_response = "test"
-
-        util.print_json(test_response)
-
-        assert "I don't know how to print that!" in mock_stdout.getvalue()
 
     def test_is_time(self):
         self.assertFalse(util.is_time("AhBm"))

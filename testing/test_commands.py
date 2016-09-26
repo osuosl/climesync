@@ -68,7 +68,8 @@ class CommandsTest(unittest.TestCase):
     @patch("climesync.util.create_session")
     @patch("climesync.util.get_field")
     @patch("commands.datetime.now")
-    def test_clock_in(self, mock_now, mock_get_field, mock_create_session, mock_session_exists):
+    def test_clock_in(self, mock_now, mock_get_field, mock_create_session,
+                      mock_session_exists):
         mocked_input = [
             "px",  # Project
             [],  # Activities
@@ -86,8 +87,12 @@ class CommandsTest(unittest.TestCase):
             "start_date": "2015-03-14",
             "start_time": "09:26",
             "project": "px",
-            "issue_uri": "https://github.com/org/px/issues/42/"
+            "issue_uri": "https://github.com/org/px/issues/42/",
+            "user": "test"
         }
+
+        commands.connect()
+        commands.sign_in()
 
         commands.clock_in()
 
@@ -96,7 +101,9 @@ class CommandsTest(unittest.TestCase):
     @patch("climesync.util.session_exists")
     @patch("climesync.util.create_session")
     @patch("climesync.util.get_field")
-    def test_clock_in_already_clocked_in(self, mock_get_field, mock_create_session, mock_session_exists):
+    def test_clock_in_already_clocked_in(self, mock_get_field,
+                                         mock_create_session,
+                                         mock_session_exists):
         mocked_input = [
             "",  # Project
             [],  # Activities
@@ -116,8 +123,10 @@ class CommandsTest(unittest.TestCase):
     @patch("climesync.util.read_session")
     @patch("climesync.util.get_field")
     @patch("commands.datetime.now")
-    def test_clock_out(self, mock_now, mock_get_field, mock_read_session, mock_session_exists):
+    def test_clock_out(self, mock_now, mock_get_field, mock_read_session,
+                       mock_session_exists):
         mocked_input = [
+            True,  # Submit time confirmation
             "",  # Project
             ["development", "planning"],  # Activities
             "",  # Issue URI
@@ -128,7 +137,8 @@ class CommandsTest(unittest.TestCase):
             "start_date": "2015-03-14",
             "start_time": "09:26",
             "project": "px",
-            "issue_uri": "https://github.com/org/px/issues/42/"
+            "issue_uri": "https://github.com/org/px/issues/42/",
+            "user": "test"
         }
 
         mock_now.return_value = datetime.datetime(2015, 3, 14, 10, 26)
@@ -170,7 +180,8 @@ class CommandsTest(unittest.TestCase):
     @patch("climesync.util.session_exists")
     @patch("climesync.util.read_session")
     @patch("climesync.util.get_fields")
-    def test_clock_out_empty_session(self, mock_get_fields, mock_read_session, mock_session_exists):
+    def test_clock_out_empty_session(self, mock_get_fields, mock_read_session,
+                                     mock_session_exists):
         mocked_session = {}
 
         mock_read_session.return_value = mocked_session

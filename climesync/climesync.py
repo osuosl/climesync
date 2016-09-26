@@ -63,6 +63,8 @@ menu_options = (
     "dc - disconnect\n"
     "s - sign in\n"
     "so - sign out/reset credentials\n\n"
+    "ci - clock in\n"
+    "co - clock out\n\n"
     "ct - submit time\n"
     "ut - update time\n"
     "gt - get times\n"
@@ -93,6 +95,8 @@ command_lookup = [
     ("dc",  None,                   commands.disconnect),
     ("s",   None,                   commands.sign_in),
     ("so",  None,                   commands.sign_out),
+    ("ci",  None,                   commands.clock_in),
+    ("co",  None,                   commands.clock_out),
     ("ct",  "create-time",          commands.create_time),
     ("ut",  "update-time",          commands.update_time),
     ("gt",  "get-times",            commands.get_times),

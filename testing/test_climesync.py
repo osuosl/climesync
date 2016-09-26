@@ -19,7 +19,7 @@ class ClimesyncTest(unittest.TestCase):
 
     def test_lookup_command_interactive(self):
         test_queries = [
-            ("ct", 4)
+            ("ct", 6)
         ]
 
         for query, actual in test_queries:
@@ -29,7 +29,7 @@ class ClimesyncTest(unittest.TestCase):
 
     def test_lookup_command_scripting(self):
         test_queries = [
-            ("create-time", 4)
+            ("create-time", 6)
         ]
 
         for query, actual in test_queries:

@@ -227,6 +227,34 @@ def clear_session(path="~/.climesyncsession"):
     os.remove(realpath)
 
 
+def construct_clock_out_time(session, now, revisions):
+    """Construct a time for clocking out using session data, the current
+    datetime, and any revisions the user wished to make"""
+
+    if not session:
+        return {"error": "No session data"}
+
+    if not all(k in session for k in ("start_date", "start_time")):
+        return {"error": "Invalid session data"}
+
+    datetime_string = "{start_date} {start_time}".format(**session)
+    session_start_datetime = datetime.strptime(datetime_string,
+                                               "%Y-%m-%d %H:%M")
+    delta = now - session_start_datetime
+
+    if now < session_start_datetime:
+        return {"error": "Invalid session date/time"}
+
+    time = {k: v for k, v in session.items() if k not in ("start_date", "start_time")}
+
+    time["duration"] = int(delta.total_seconds())
+    time["date_worked"] = session_start_datetime.date().isoformat()
+
+    time.update(revisions)
+
+    return time
+
+
 def check_token_expiration(ts):
     """Checks to see if the auth token has expired. If it has, try to log the
     user back in using the username and password in their config file"""
@@ -417,7 +445,6 @@ def print_json(response):
 
         print ""
     else:
-        print "I don't know how to print that!"
         print response
 
 

@@ -238,6 +238,101 @@ def update_settings():
     return ts.update_user(user=post_data, username=username)
 
 
+def clock_in():
+    """Creates a session file that includes data for the beginning of a time
+    entry to be submitted upon clock-out"""
+
+    global ts, user, activities
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    if util.session_exists():
+        return {"error": "Already clocked in"}
+
+    post_data = util.get_fields([("project", "Slug of project to work on",
+                                  user["project_slugs"]),
+                                 ("*!activities", "Activity slugs",
+                                  activities),
+                                 ("*issue_uri", "URI of issue in tracker"),
+                                 ("*notes", "Miscellanious notes")])
+    post_data["user"] = ts.user
+
+    now = datetime.now()
+
+    post_data["start_date"] = now.strftime("%Y-%m-%d")
+    post_data["start_time"] = now.strftime("%H:%M")
+
+    util.create_session(post_data)
+
+    return "Clock-in successful"
+
+
+def clock_out():
+    """Consumes data from a session file, asks the user for confirmation,
+    then submits the time to TimeSync"""
+
+    global ts, user, activities
+
+    if not ts:
+        return {"error": "Not connected to TimeSync server"}
+
+    if not util.session_exists():
+        return {"error": "Haven't clocked in"}
+
+    session = util.read_session()
+
+    now = datetime.now()
+
+    revisions = {}
+
+    # Construct the base time from session data
+    time = util.construct_clock_out_time(session, now, revisions)
+
+    while True:
+        # If activities haven't been specified in the time
+        if "activities" not in time:
+            # Check if project has default activities
+            project = ts.get_projects({"slug": time["project"]})[0]
+
+            if util.ts_error(project):
+                return {"error": "Invalid project slug"}
+
+            if not project["default_activity"]:
+                revisions["activities"] = util.get_field("Activities",
+                                                         field_type="!",
+                                                         validator=activities)
+            else:
+                revisions["activities"] = [project["default_activity"]]
+
+        # Reconstruct time, print it out, and ask for confirmation
+        time = util.construct_clock_out_time(session, now, revisions)
+
+        if util.ts_error(time):
+            return time
+
+        util.print_json(time)
+
+        confirmation = util.get_field("Does this look correct?", field_type="?")
+
+        # If the user has given approval to submit the time
+        if confirmation:
+            break
+
+        # Ask the user for revisions
+        revisions = util.get_fields([("*:duration",   "Duration"),
+                                     ("*project",     "Project slug",
+                                      user["project_slugs"]),
+                                     ("*!activities", "Activity slugs",
+                                      activities),
+                                     ("*~date_worked", "Date worked"),
+                                     ("*issue_uri",   "Issue URI"),
+                                     ("*notes",       "Notes")],
+                                    current_object=time)
+
+    return ts.create_time(time=time)
+
+
 @climesync_command(optional_args=True)
 def create_time(post_data=None):
     """create-time
