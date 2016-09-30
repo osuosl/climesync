@@ -125,10 +125,11 @@ class CommandsTest(unittest.TestCase):
 
     @patch("climesync.util.session_exists")
     @patch("climesync.util.read_session")
+    @patch("climesync.util.clear_session")
     @patch("climesync.util.get_field")
     @patch("climesync.util.current_datetime")
-    def test_clock_out(self, mock_now, mock_get_field, mock_read_session,
-                       mock_session_exists):
+    def test_clock_out(self, mock_now, mock_get_field, mock_clear_session,
+                       mock_read_session, mock_session_exists):
         mocked_input = [
             ["development"],  # Activities
             False,  # Make changes to the time
@@ -177,8 +178,6 @@ class CommandsTest(unittest.TestCase):
 
         response = commands.clock_out()
 
-        print response
-        print expected_response
         assert response == expected_response
 
     @patch("climesync.util.current_datetime")

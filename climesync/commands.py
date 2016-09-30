@@ -334,7 +334,12 @@ def clock_out():
                                      ("*notes",       "Notes")],
                                     current_object=time)
 
-    return ts.create_time(time=time)
+    response = ts.create_time(time=time)
+
+    if not util.ts_error(response):
+        util.clear_session()
+
+    return response
 
 
 @climesync_command(optional_args=True)
