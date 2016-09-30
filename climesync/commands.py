@@ -258,7 +258,7 @@ def clock_in():
                                  ("*notes", "Miscellanious notes")])
     post_data["user"] = ts.user
 
-    now = datetime.now()
+    now = util.current_datetime()
 
     post_data["start_date"] = now.strftime("%Y-%m-%d")
     post_data["start_time"] = now.strftime("%H:%M")
@@ -282,12 +282,15 @@ def clock_out():
 
     session = util.read_session()
 
-    now = datetime.now()
+    now = util.current_datetime()
 
     revisions = {}
 
     # Construct the base time from session data
     time = util.construct_clock_out_time(session, now, revisions)
+
+    if util.ts_error(time):
+        return time
 
     while True:
         # If activities haven't been specified in the time
@@ -298,7 +301,7 @@ def clock_out():
             if util.ts_error(project):
                 return {"error": "Invalid project slug"}
 
-            if not project["default_activity"]:
+            if not project.get("default_activity"):
                 revisions["activities"] = util.get_field("Activities",
                                                          field_type="!",
                                                          validator=activities)
@@ -313,7 +316,8 @@ def clock_out():
 
         util.print_json(time)
 
-        confirmation = util.get_field("Does this look correct?", field_type="?")
+        confirmation = util.get_field("Does this look correct?",
+                                      field_type="?")
 
         # If the user has given approval to submit the time
         if confirmation:

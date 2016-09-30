@@ -178,6 +178,13 @@ def write_config(key, value, path="~/.climesyncrc"):
     config_file = path
 
 
+def current_datetime():
+    """Returns the current datetime (Wrapper for datetime.now() so that it
+    can be mocked)"""
+
+    return datetime.now()
+
+
 def session_exists(path="~/.climesyncsession"):
     """Checks whether or not a clock-in session exists"""
 
@@ -245,7 +252,8 @@ def construct_clock_out_time(session, now, revisions):
     if now < session_start_datetime:
         return {"error": "Invalid session date/time"}
 
-    time = {k: v for k, v in session.items() if k not in ("start_date", "start_time")}
+    time = {k: v for k, v in session.items()
+            if k not in ("start_date", "start_time")}
 
     time["duration"] = int(delta.total_seconds())
     time["date_worked"] = session_start_datetime.date().isoformat()
@@ -903,7 +911,7 @@ def get_fields(fields, current_object=None):
             start_cached = None
 
         # Only add response if it isn't empty
-        if response != "":
+        if response != "" and response != []:
             responses[field] = response
 
     return responses

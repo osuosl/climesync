@@ -1,3 +1,4 @@
+import datetime
 import unittest
 from mock import patch
 
@@ -67,7 +68,7 @@ class CommandsTest(unittest.TestCase):
     @patch("climesync.util.session_exists")
     @patch("climesync.util.create_session")
     @patch("climesync.util.get_field")
-    @patch("commands.datetime.now")
+    @patch("climesync.util.current_datetime")
     def test_clock_in(self, mock_now, mock_get_field, mock_create_session,
                       mock_session_exists):
         mocked_input = [
@@ -91,8 +92,8 @@ class CommandsTest(unittest.TestCase):
             "user": "test"
         }
 
-        commands.connect()
-        commands.sign_in()
+        commands.connect(arg_url="test", test=True)
+        commands.sign_in(arg_user="test", arg_pass="test")
 
         commands.clock_in()
 
@@ -115,6 +116,9 @@ class CommandsTest(unittest.TestCase):
 
         mock_session_exists.return_value = True
 
+        commands.connect(arg_url="test", test=True)
+        commands.sign_in(arg_user="test", arg_pass="test")
+
         commands.clock_in()
 
         mock_create_session.assert_not_called()
@@ -122,15 +126,19 @@ class CommandsTest(unittest.TestCase):
     @patch("climesync.util.session_exists")
     @patch("climesync.util.read_session")
     @patch("climesync.util.get_field")
-    @patch("commands.datetime.now")
+    @patch("climesync.util.current_datetime")
     def test_clock_out(self, mock_now, mock_get_field, mock_read_session,
                        mock_session_exists):
         mocked_input = [
-            True,  # Submit time confirmation
+            ["development"],  # Activities
+            False,  # Make changes to the time
+            "",  # Duration
             "",  # Project
             ["development", "planning"],  # Activities
+            "",  # Date worked
             "",  # Issue URI
             "Fixed issue X by doing Y",  # Notes
+            True,  # Confirm time
         ]
 
         mocked_session = {
@@ -150,7 +158,7 @@ class CommandsTest(unittest.TestCase):
         mock_session_exists.return_value = True
 
         expected_response = {
-            "created_at": "2015-03-14",
+            "created_at": "2015-05-23",
             "updated_at": None,
             "deleted_at": None,
             "uuid": "838853e3-3635-4076-a26f-7efr4e60981f",
@@ -158,20 +166,32 @@ class CommandsTest(unittest.TestCase):
             "duration": 3600,
             "project": "px",
             "activities": ["development", "planning"],
-            "date_worked": "2016-03-14",
+            "date_worked": "2015-03-14",
             "user": "test",
             "notes": "Fixed issue X by doing Y",
             "issue_uri": "https://github.com/org/px/issues/42/"
         }
 
+        commands.connect(arg_url="test", test=True)
+        commands.sign_in(arg_user="test", arg_pass="test")
+
         response = commands.clock_out()
 
+        print response
+        print expected_response
         assert response == expected_response
 
+    @patch("climesync.util.current_datetime")
     @patch("climesync.util.session_exists")
     @patch("climesync.util.read_session")
-    def test_clock_out_no_clock_in(self, mock_read_session, mock_session_exists):
-        mock_session_exists = False
+    def test_clock_out_no_clock_in(self, mock_read_session,
+                                   mock_session_exists, mock_now):
+        mock_session_exists.return_value = False
+
+        mock_now.return_value = datetime.datetime(2015, 3, 14, 9, 26)
+
+        commands.connect(arg_url="test", test=True)
+        commands.sign_in(arg_user="test", arg_pass="test")
 
         commands.clock_out()
 
@@ -187,6 +207,9 @@ class CommandsTest(unittest.TestCase):
         mock_read_session.return_value = mocked_session
 
         mock_session_exists.return_value = True
+
+        commands.connect(arg_url="test", test=True)
+        commands.sign_in(arg_user="test", arg_pass="test")
 
         commands.clock_out()
 

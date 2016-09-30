@@ -636,7 +636,6 @@ class UtilTest(unittest.TestCase):
             "timeval": "1h0m",
             "opttimeval": "0h30m",
             "listval": ["val1", "val2"],
-            "optlistval": []
         }
 
         mock_get_field.side_effect = mocked_input
