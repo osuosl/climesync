@@ -209,7 +209,11 @@ def main(argv=None, test=False):
         scripting_mode(command, argv)
     else:
         util.print_json(response)
-        interactive_mode()
+
+        try:
+            interactive_mode()
+        except KeyboardInterrupt:
+            print "\nCaught keyboard interrupt. Exiting..."
 
 if __name__ == "__main__":
     main()
