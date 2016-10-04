@@ -277,7 +277,7 @@ class UtilTest(unittest.TestCase):
         mocked_revisions = {}
 
         result = util.construct_clock_out_time(mocked_session, mocked_now,
-                                               mocked_revisions)
+                                               mocked_revisions, None)
 
         assert result == {"error": "No session data"}
 
@@ -290,7 +290,7 @@ class UtilTest(unittest.TestCase):
         mocked_revisions = {}
 
         result = util.construct_clock_out_time(mocked_session, mocked_now,
-                                               mocked_revisions)
+                                               mocked_revisions, None)
 
         assert result == {"error": "Invalid session data"}
 
@@ -306,7 +306,7 @@ class UtilTest(unittest.TestCase):
         mocked_revisions = {}
 
         result = util.construct_clock_out_time(mocked_session, mocked_now,
-                                               mocked_revisions)
+                                               mocked_revisions, None)
 
         assert result == {"error": "Invalid session date/time"}
 

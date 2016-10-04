@@ -238,9 +238,28 @@ def update_settings():
     return ts.update_user(user=post_data, username=username)
 
 
-def clock_in():
-    """Creates a session file that includes data for the beginning of a time
-    entry to be submitted upon clock-out"""
+@climesync_command(optional_args=True)
+def clock_in(post_data=None):
+    """clock-in
+
+Usage: clock-in [-h] <project> [<activities> ...]
+                     [--issue-uri=<issue_uri>]
+                     [--notes=<notes>]
+
+Arguments:
+    <project>     Slug of project to start working on
+    <activities>  Slugs of activities to be worked on (Optional)
+
+Options:
+    -h --help                    Show this help message and exit
+    --issue-uri=<issue_uri>      The URI of the issue on an issue tracker
+    --notes=<notes>              Additional notes
+
+Examples:
+    climesync clock-in projectx development
+    climesync clock-in projecty
+`       --issue-uri=https://github.com/foo/projecty/issue/42
+    """
 
     global ts, user, activities
 
@@ -250,12 +269,14 @@ def clock_in():
     if util.session_exists():
         return {"error": "Already clocked in"}
 
-    post_data = util.get_fields([("project", "Slug of project to work on",
-                                  user["project_slugs"]),
-                                 ("*!activities", "Activity slugs",
-                                  activities),
-                                 ("*issue_uri", "URI of issue in tracker"),
-                                 ("*notes", "Miscellanious notes")])
+    if post_data is None:
+        post_data = util.get_fields([("project", "Slug of project to work on",
+                                      user["project_slugs"]),
+                                     ("*!activities", "Activity slugs",
+                                      activities),
+                                     ("*issue_uri", "URI of issue in tracker"),
+                                     ("*notes", "Miscellanious notes")])
+
     post_data["user"] = ts.user
 
     now = util.current_datetime()
@@ -268,11 +289,45 @@ def clock_in():
     return "Clock-in successful"
 
 
-def clock_out():
-    """Consumes data from a session file, asks the user for confirmation,
-    then submits the time to TimeSync"""
+@climesync_command(optional_args=True)
+def clock_out(post_data=None):
+    """clock-out
+
+Usage: clock-out [-h] [<activities> ...]
+                      [--duration=<duration>]
+                      [--project=<project>]
+                      [--activities=<activities>]
+                      [--date-worked=<date_worked>]
+                      [--issue-uri=<issue_uri>]
+                      [--notes=<notes>]
+
+Arguments:
+    <activities>                 Activities worked on (Optional if the project
+                                 has a default activity or if activities
+                                 weren't supplied at clock-in)
+
+Options:
+    -h --help                    Show this help message and exit
+    --duration=<duration>        Override the start time in the session and
+                                 supply the time duration
+    --project=<project>          Override the project in the session and supply
+                                 the project worked on
+    --date-worked=<date_worked>  Override the start date in the session and
+                                 supply the date worked
+    --issue-uri=<issue_uri>      The URI of the issue on an issue tracker
+    --notes=<notes>              Additional notes
+
+Examples:
+    climesync clock-out
+    climesync clock-out development --duration=1h0m --date-worked=2016-03-14
+    """
 
     global ts, user, activities
+
+    interactive = True if post_data is None else False
+
+    if interactive:
+        post_data = {}
 
     if not ts:
         return {"error": "Not connected to TimeSync server"}
@@ -282,34 +337,30 @@ def clock_out():
 
     session = util.read_session()
 
+    if not session:
+        return {"error": "Empty session"}
+
     now = util.current_datetime()
 
-    revisions = {}
+    project = ts.get_projects({"slug": session["project"]})[0]
 
     # Construct the base time from session data
-    time = util.construct_clock_out_time(session, now, revisions)
+    time = util.construct_clock_out_time(session, now, post_data, project)
 
     if util.ts_error(time):
         return time
 
-    while True:
-        # If activities haven't been specified in the time
-        if "activities" not in time:
-            # Check if project has default activities
-            project = ts.get_projects({"slug": time["project"]})[0]
+    if "activities" not in time:
+        if interactive:
+            post_data["activities"] = util.get_field("Activities",
+                                                     field_type="!",
+                                                     validator=activities)
+        else:
+            return {"error": "No activities were provided"}
 
-            if util.ts_error(project):
-                return {"error": "Invalid project slug"}
-
-            if not project.get("default_activity"):
-                revisions["activities"] = util.get_field("Activities",
-                                                         field_type="!",
-                                                         validator=activities)
-            else:
-                revisions["activities"] = [project["default_activity"]]
-
+    while interactive:
         # Reconstruct time, print it out, and ask for confirmation
-        time = util.construct_clock_out_time(session, now, revisions)
+        time = util.construct_clock_out_time(session, now, post_data, project)
 
         if util.ts_error(time):
             return time
@@ -333,6 +384,10 @@ def clock_out():
                                      ("*issue_uri",   "Issue URI"),
                                      ("*notes",       "Notes")],
                                     current_object=time)
+
+        post_data.update(revisions)
+
+        project = ts.get_projects({"slug": time["project"]})[0]
 
     response = ts.create_time(time=time)
 

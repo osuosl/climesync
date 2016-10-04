@@ -234,7 +234,7 @@ def clear_session(path="~/.climesyncsession"):
     os.remove(realpath)
 
 
-def construct_clock_out_time(session, now, revisions):
+def construct_clock_out_time(session, now, revisions, project):
     """Construct a time for clocking out using session data, the current
     datetime, and any revisions the user wished to make"""
 
@@ -259,6 +259,17 @@ def construct_clock_out_time(session, now, revisions):
     time["date_worked"] = session_start_datetime.date().isoformat()
 
     time.update(revisions)
+
+    # If activities haven't been specified in the time
+    if "activities" not in time:
+        # Check if project has default activities
+        if ts_error(project):
+            return {"error": "Invalid project slug"}
+
+        if project.get("default_activity"):
+            revisions["activities"] = [project["default_activity"]]
+    elif isinstance(time["activities"], basestring):
+        time["activities"] = time["activities"].split()
 
     return time
 
