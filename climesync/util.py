@@ -264,10 +264,10 @@ def construct_clock_out_time(session, now, revisions, project):
     if "activities" not in time:
         # Check if project has default activities
         if ts_error(project):
-            return {"error": "Invalid project slug"}
+            return {"error": "Invalid project"}
 
         if project.get("default_activity"):
-            revisions["activities"] = [project["default_activity"]]
+            time["activities"] = [project["default_activity"]]
     elif isinstance(time["activities"], basestring):
         time["activities"] = time["activities"].split()
 

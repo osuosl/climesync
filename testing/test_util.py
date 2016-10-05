@@ -266,10 +266,98 @@ class UtilTest(unittest.TestCase):
         assert not mock_remove.mock_calls
 
     def test_construct_clock_out_time(self):
-        pass
+        mocked_session = {
+            "start_date": "2016-03-14",
+            "start_time": "03:14",
+            "project": "px",
+            "activities": "dev docs",
+            "user": "test"
+        }
+
+        mocked_now = datetime(2016, 3, 14, 4, 14)
+        mocked_revisions = {"project": "py"}
+
+        expected = {
+            "duration": 3600,
+            "date_worked": "2016-03-14",
+            "project": "py",
+            "activities": ["dev", "docs"],
+            "user": "test"
+        }
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions, None)
+
+        assert result == expected
 
     def test_construct_clock_out_time_no_revisions(self):
-        pass
+        mocked_session = {
+            "start_date": "2016-03-14",
+            "start_time": "03:14",
+            "project": "px",
+            "activities": "dev docs",
+            "user": "test"
+        }
+
+        mocked_now = datetime(2016, 3, 14, 4, 14)
+        mocked_revisions = {}
+
+        expected = {
+            "duration": 3600,
+            "date_worked": "2016-03-14",
+            "project": "px",
+            "activities": ["dev", "docs"],
+            "user": "test"
+        }
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions, None)
+
+        assert result == expected
+
+    def test_construct_clock_out_time_default_activity(self):
+        mocked_session = {
+            "start_date": "2016-03-14",
+            "start_time": "03:14",
+            "project": "px",
+            "user": "test"
+        }
+
+        mocked_now = datetime(2016, 3, 14, 4, 14)
+        mocked_revisions = {}
+        mocked_project = {"default_activity": "dev"}
+
+        expected = {
+            "duration": 3600,
+            "date_worked": "2016-03-14",
+            "project": "px",
+            "activities": ["dev"],
+            "user": "test"
+        }
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions,
+                                               mocked_project)
+
+        assert result == expected
+
+    def test_construct_clock_out_time_invalid_project(self):
+        mocked_session = {
+            "start_date": "2016-03-14",
+            "start_time": "03:14",
+            "project": "px",
+            "user": "test"
+        }
+
+        mocked_now = datetime(2016, 3, 14, 4, 14)
+        mocked_revisions = {}
+        mocked_project = {"error": "error"}
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions,
+                                               mocked_project)
+
+        assert result == {"error": "Invalid project"}
 
     def test_construct_clock_out_time_no_session(self):
         mocked_session = {}
