@@ -25,32 +25,37 @@ authenticate your username and password for you.
 
 Once climesync is running, you can complete the following tasks:
 
-c - connect
-dc - disconnect
-s - sign in
-so - sign out/reset credentials
+c   - connect
+dc  - disconnect
+s   - sign in
+so  - sign out/reset credentials
 
-ct - submit time
-ut - update time
-gt - get times
-st - sum times
-dt - delete time
+ci  - clock in
+co  - clock out
 
-cp - create project
-up - update project
-gp - get projects
-dp - delete project
+ct  -  submit time
+ut  -  update time
+gt  -  get times
+st  -  sum times
+dt  -  delete time
 
-ca - create activity
-ua - update activity
-ga - get activities
-da - delete activity
+cp  -  create project
+up  -  update project
+upu - update project users
+rpu - remove project users
+gp  - get projects
+dp  - delete project
 
-cu - create user
-uu - update user
-gu - get users
-du - delete user
+ca  - create activity
+ua  - update activity
+ga  - get activities
+da  - delete activity
 
-q - exit
+cu  - create user
+uu  - update user
+gu  - get users
+du  - delete user
+
+q   - exit
 
 See detailed documentation at http://climesync.readthedocs.io/en/latest/
