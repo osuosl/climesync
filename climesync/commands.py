@@ -284,6 +284,10 @@ Examples:
     post_data["start_date"] = now.strftime("%Y-%m-%d")
     post_data["start_time"] = now.strftime("%H:%M")
 
+    # Format the list of activities to be written to the session file
+    if "activities" in post_data:
+        post_data["activities"] = u" ".join(post_data["activities"])
+
     util.create_session(post_data)
 
     return "Clock-in successful"
