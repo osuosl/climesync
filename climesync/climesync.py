@@ -15,6 +15,9 @@ Options:
 
 Commands:
 
+    clock-in              Clock in to start working on a project
+    clock-out             Clock out and submit the completed time to the server
+
     create-time           Submit a new time
     update-time           Update the fields of an existing time
     get-times             List and optionally filter times on the server
