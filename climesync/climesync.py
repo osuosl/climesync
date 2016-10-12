@@ -181,14 +181,12 @@ def main(argv=None, test=False):
                 config_obj.getboolean("climesync", "autoupdate_config")
 
         config_dict = dict(config_obj.items("climesync"))
+
+        # Turn "ldap" into a bool instead of a string
+        if config_obj.has_option("climesync", "ldap"):
+            config_dict["ldap"] = config_obj.getboolean("climesync", "ldap")
     except:
         config_dict = {}
-
-    if ldap or \
-       ("ldap" in config_dict and config_dict["ldap"].lower() == "true"):
-        commands.ldap = True
-    else:
-        commands.ldap = False
 
     # Attempt to connect with arguments and/or config
     response = commands.connect(arg_url=url, config_dict=config_dict,
@@ -198,7 +196,7 @@ def main(argv=None, test=False):
         util.print_json(response)
 
     response = commands.sign_in(arg_user=user, arg_pass=password,
-                                config_dict=config_dict,
+                                arg_ldap=ldap, config_dict=config_dict,
                                 interactive=interactive)
 
     if "error" in response or "pymesync error" in response or \

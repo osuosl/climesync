@@ -19,9 +19,11 @@ Climesync currently supports the following versions of the TimeSync API:
 Install Climesync
 -----------------
 
-To install Climesync from git, run the following commands:
+To install Climesync from PyPI (Recommended), run the following command::
 
-.. code-block:: none
+    $ pip install climesync
+
+To install Climesync from git, run the following commands::
 
     $ git clone https://github.com/osuosl/climesync && cd climesync
     $ python setup.py install
@@ -41,6 +43,7 @@ Climesync also accepts several optional command line arguments
 -c <URL>, --connect <URL>             Connect to a TimeSync server on startup
 -u <username>, --user <username>      Attempt to authenticate on startup with the given username
 -p <password>, --password <password>  Attempt to authenticate on startup with the given password
+-l, --ldap                            Attempt to authenticate using LDAP
 
 Since server information and user credentials can be specified in multiple
 places (See `Climesync Configuration`_ below), these values are prioritized
@@ -133,7 +136,7 @@ as a space-separated list enclosed within square brackets. For example:
 
 .. code-block:: none
 
-    (venv) $ ./climesync.py get-times --user="[user1 user2 user3]"
+    $ climesync get-times --user="[user1 user2 user3]"
 
 This example gets all the time entries submitted either by user1, user2, or user3.
 
@@ -145,19 +148,19 @@ To get a list of scripting mode commands, run
 
 .. code-block:: none
 
-    (venv) $ ./climesync.py --help
+    $ climesync --help
 
 To get help for a specific scripting mode command, run
 
 .. code-block:: none
 
-    (venv) $ ./climesync.py <command_name> --help
+    $ climesync <command_name> --help
 
 Climesync Configuration
 -----------------------
 
 On the first run of the program in interactive mode, the configuration file
-`.climesyncrc` is created in the user's home directory. This configuration
+``.climesyncrc`` is created in the user's home directory. This configuration
 file stores server information and user credentials. If Climesync is going to
 only be run in interactive mode then manually editing this file manually won't
 be necessary because Climesync will handle updating these values while it's
@@ -174,6 +177,7 @@ in .climesyncrc:
 timesync_url      The URL of the TimeSync server to connect to on startup
 username          The username of the user to authenticate as on startup
 password          The password of the user to authenticate as on startup
+ldap              Use LDAP to authenticate
 autoupdate_config Turn off prompts to automatically update your config
                   when connecting to a new server or signing in as a new
                   user

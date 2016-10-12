@@ -104,10 +104,13 @@ class ClimesyncTest(unittest.TestCase):
     def test_sign_in_args(self, mock_ts):
         username = "test"
         password = "password"
+        ldap = True
 
-        commands.sign_in(arg_user=username, arg_pass=password)
+        mock_ts.test = True
 
-        mock_ts.authenticate.assert_called_with(username, password, "password")
+        commands.sign_in(arg_user=username, arg_pass=password, arg_ldap=ldap)
+
+        mock_ts.authenticate.assert_called_with(username, password, "ldap")
 
         assert not util.ts_error(commands.user, commands.users,
                                  commands.projects, commands.activities)
@@ -116,11 +119,13 @@ class ClimesyncTest(unittest.TestCase):
     def test_sign_in_config_dict(self, mock_ts):
         username = "test"
         password = "password"
-        config_dict = {"username": username, "password": password}
+        ldap = True
+        config_dict = {"username": username, "password": password,
+                       "ldap": ldap}
 
         commands.sign_in(config_dict=config_dict)
 
-        mock_ts.authenticate.assert_called_with(username, password, "password")
+        mock_ts.authenticate.assert_called_with(username, password, "ldap")
 
         assert not util.ts_error(commands.user, commands.users,
                                  commands.projects, commands.activities)
@@ -130,14 +135,15 @@ class ClimesyncTest(unittest.TestCase):
     def test_sign_in_interactive(self, mock_ts, mock_util):
         username = "test"
         password = "test"
-        mocked_input = [username, password]
+        ldap = True
+        mocked_input = [username, password, ldap]
 
         mock_util.ts_error = util.ts_error
         mock_util.get_field.side_effect = mocked_input
 
         commands.sign_in()
 
-        mock_ts.authenticate.assert_called_with(username, password, "password")
+        mock_ts.authenticate.assert_called_with(username, password, "ldap")
 
         assert not util.ts_error(commands.user, commands.users,
                                  commands.projects, commands.activities)
@@ -146,11 +152,14 @@ class ClimesyncTest(unittest.TestCase):
     def test_sign_in_noninteractive(self, mock_ts):
         username = "test"
         password = "test"
+        ldap = True
 
-        commands.sign_in(arg_user=username, arg_pass=password,
+        mock_ts.test = True
+
+        commands.sign_in(arg_user=username, arg_pass=password, arg_ldap=ldap,
                          interactive=False)
 
-        mock_ts.authenticate.assert_called_with(username, password, "password")
+        mock_ts.authenticate.assert_called_with(username, password, "ldap")
 
         assert not util.ts_error(commands.user, commands.users,
                                  commands.projects, commands.activities)
@@ -231,11 +240,13 @@ class ClimesyncTest(unittest.TestCase):
         baseurl = "ts_url"
         username = "test"
         password = "password"
+        ldap = False
         argv = ["-c", baseurl, "-u", username, "-p", password]
 
         config_dict = {}
 
         mock_config = MagicMock()
+        mock_config.has_option.return_value = False
         mock_config.items.return_value = config_dict
 
         mock_util.read_config.return_value = mock_config
@@ -248,6 +259,7 @@ class ClimesyncTest(unittest.TestCase):
                                                  test=True)
         mock_commands.sign_in.assert_called_with(arg_user=username,
                                                  arg_pass=password,
+                                                 arg_ldap=ldap,
                                                  config_dict=config_dict,
                                                  interactive=True)
         mock_interactive_mode.assert_called_with()

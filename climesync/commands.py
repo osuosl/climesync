@@ -13,7 +13,6 @@ projects = None
 activities = None
 
 autoupdate_config = True
-ldap = False  # Use LDAP?
 
 
 # climesync_command decorator
@@ -110,7 +109,8 @@ def disconnect():
     return list()
 
 
-def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
+def sign_in(arg_user="", arg_pass="", arg_ldap=None, config_dict=dict(),
+            interactive=True):
     """Attempts to sign in with user-supplied or command line credentials"""
 
     global ts, user, users, projects, activities, autoupdate_config, ldap
@@ -120,7 +120,7 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
 
     username = ""
     password = ""
-    auth_type = "ldap" if ldap else "password"
+    ldap = None
 
     # If username or password in config, use them at program startup.
     if arg_user:
@@ -137,14 +137,24 @@ def sign_in(arg_user="", arg_pass="", config_dict=dict(), interactive=True):
     elif interactive:
         password = util.get_field("Password", field_type="$")
 
-    if not username or not password:
+    if arg_ldap:
+        ldap = arg_ldap
+    elif "ldap" in config_dict:
+        ldap = config_dict["ldap"]
+    elif interactive:
+        ldap = util.get_field("Authenticate using LDAP", field_type="?")
+
+    if not username or not password or ldap is None:
         return {"climesync error": "Couldn't authenticate with TimeSync. Are "
-                                   "username and password set in "
+                                   "username, password, and ldap set in "
                                    "~/.climesyncrc?"}
 
     if interactive and not ts.test and autoupdate_config:
         util.add_kv_pair("username", username)
         util.add_kv_pair("password", password)
+        util.add_kv_pair("ldap", ldap)
+
+    auth_type = "ldap" if ldap else "password"
 
     # Attempt to authenticate and return the server's response
     res = ts.authenticate(username, password, auth_type)
