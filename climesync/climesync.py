@@ -2,7 +2,7 @@
 
 """Climesync - CLI TimeSync Frontend
 
-Usage: climesync.py [options] [<command> [<args>... ]]
+Usage: climesync [options] [<command> [<args>... ]]
 
 Options:
     -h             --help                 Print this dialog
@@ -41,7 +41,7 @@ commands into a shell. However, you can access certain Climesync functionality
 without going into interactive mode by calling them from the command line.
 
 For more detailed information about a specific command, type
-climesync.py <command> --help
+climesync <command> --help
 
 """
 
