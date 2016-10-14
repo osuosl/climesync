@@ -6,6 +6,8 @@ Usage: climesync [options] [<command> [<args>... ]]
 
 Options:
     -h             --help                 Print this dialog
+    -v             --version              Print version and license information
+                                          and exit
     -c <baseurl>   --connect=<baseurl>    TimeSync Server URL
     -u <username>  --username=<username>  Username of user to authenticate as
     -p <password>  --password=<password>  Password of user to authenticate as
@@ -164,6 +166,13 @@ def scripting_mode(command_name, argv):
 def main(argv=None, test=False):
     # Command line arguments
     args = docopt(__doc__, argv=argv, options_first=True)
+
+    if args['-v']:
+        print "Climesync 0.1.1"
+        with open("LICENSE", "r") as f:
+            print f.read()
+        return
+
     url = args['-c']
     user = args['-u']
     password = args['-p']
