@@ -5,6 +5,8 @@ from docopt import docopt
 
 import util
 
+version_string = "Climesync 0.1.1"
+
 ts = None  # pymesync.TimeSync object
 
 autoupdate_config = True
@@ -14,12 +16,15 @@ ldap = False  # Use LDAP?
 # climesync_command decorator
 class climesync_command():
 
-    def __init__(self, select_arg=None, optional_args=False):
+    def __init__(self, select_arg=None, optional_args=False,
+                 authenticated=True):
         self.select_arg = select_arg
         self.optional_args = optional_args
+        self.authenticated = authenticated
 
     def __call__(self, command):
         def wrapped_command(argv=None):
+            # If the command is being run in scripting mode
             if argv is not None:
                 args = docopt(command.__doc__, argv=argv)
 
@@ -43,7 +48,9 @@ class climesync_command():
 
                 return command(**command_kwargs)
             else:
-                if util.check_token_expiration(ts):
+                # Bypass token check if the command doesn't require
+                # authentication
+                if util.check_token_expiration(ts) and self.authenticated:
                     return {"error": "You need to sign in."}
 
                 return command()
@@ -1241,3 +1248,16 @@ Examples:
             return list()
 
     return ts.delete_user(username=username)
+
+
+@climesync_command(authenticated=False)
+def version(post_data=None):
+    """version
+
+Usage: version
+
+Examples:
+    climesync version
+    """
+
+    return version_string

@@ -186,7 +186,6 @@ def print_json(response):
 
         print ""
     else:
-        print "I don't know how to print that!"
         print response
 
 

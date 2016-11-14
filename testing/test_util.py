@@ -175,14 +175,6 @@ class UtilTest(unittest.TestCase):
 
         assert "{}: {}".format(key, value) in mock_stdout.getvalue()
 
-    @patch("climesync.util.sys.stdout", new_callable=StringIO)
-    def test_print_json_invalid(self, mock_stdout):
-        test_response = "test"
-
-        util.print_json(test_response)
-
-        assert "I don't know how to print that!" in mock_stdout.getvalue()
-
     def test_is_time(self):
         self.assertFalse(util.is_time("AhBm"))
         self.assertFalse(util.is_time("hm"))

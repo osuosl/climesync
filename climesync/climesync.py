@@ -84,6 +84,7 @@ menu_options = (
     "gu - get users\n"
     "du - delete user\n\n"
     "us - update user settings\n\n"
+    "v - print version information\n"
     "h - print this menu\n"
     "q - exit\n")
 
@@ -114,6 +115,7 @@ command_lookup = [
     ("uu",  "update-user",          commands.update_user),
     ("gu",  "get-users",            commands.get_users),
     ("du",  "delete-user",          commands.delete_user),
+    ("v",   "version",              commands.version),
 ]
 
 
@@ -166,12 +168,6 @@ def main(argv=None, test=False):
     # Command line arguments
     args = docopt(__doc__, argv=argv, options_first=True)
 
-    if args['-v']:
-        print "Climesync 0.1.1"
-        with open("LICENSE", "r") as f:
-            print f.read()
-        return
-
     url = args['-c']
     user = args['-u']
     password = args['-p']
@@ -210,8 +206,8 @@ def main(argv=None, test=False):
                                 config_dict=config_dict,
                                 interactive=interactive)
 
-    if "error" in response or "pymesync error" in response or \
-            "climesync error" in response:
+    if ("error" in response or "pymesync error" in response or
+            "climesync error" in response) and command != "version":
         util.print_json(response)
 
     if command:
