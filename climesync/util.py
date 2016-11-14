@@ -535,6 +535,7 @@ def print_pretty_time(response):
             time_data["activities"] = time["activities"]
             time_data["duration"] = time["duration"]
             time_data["date_worked"] = time["date_worked"]
+            time_data["created_at"] = time["created_at"]
             time_data["issue_uri"] = time.setdefault("issue_uri", "")
             time_data["notes"] = time.setdefault("notes", "")
             time_data["uuid"] = time["uuid"]
