@@ -11,6 +11,9 @@ from datetime import datetime
 from getpass import getpass
 
 
+config_file = None
+
+
 class UnicodeDictWriter:
     """
     Wrapper for csv.DictWriter that adds support for dictionaries with
@@ -88,6 +91,11 @@ def ts_error(*ts_objects):
 def create_config(path="~/.climesyncrc"):
     """Create the configuration file if it doesn't exist"""
 
+    global config_file
+
+    if config_file:
+        path = config_file
+
     realpath = os.path.expanduser(path)
 
     # Create the file if it doesn't exist then set its mode to 600 (Owner RW)
@@ -96,9 +104,16 @@ def create_config(path="~/.climesyncrc"):
 
     os.chmod(realpath, stat.S_IRUSR | stat.S_IWUSR)
 
+    config_file = path
+
 
 def read_config(path="~/.climesyncrc"):
     """Read the configuration file and return its contents"""
+
+    global config_file
+
+    if config_file:
+        path = config_file
 
     realpath = os.path.expanduser(path)
 
@@ -116,11 +131,18 @@ def read_config(path="~/.climesyncrc"):
             print "ERROR: Invalid configuration file!"
             return None
 
+    config_file = path
+
     return config
 
 
 def write_config(key, value, path="~/.climesyncrc"):
     """Write a value to the configuration file"""
+
+    global config_file
+
+    if config_file:
+        path = config_file
 
     realpath = os.path.expanduser(path)
 
@@ -152,6 +174,8 @@ def write_config(key, value, path="~/.climesyncrc"):
 
         # Write the config values
         config.write(f)
+
+    config_file = path
 
 
 def check_token_expiration(ts):
@@ -845,7 +869,7 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
     else:
         print u"> {} = {}".format(key, value)
 
-    response = get_field("Add to the config file?",
+    response = get_field("Add to the config file ({})?".format(config_file),
                          optional=True, field_type="?")
 
     if response:
