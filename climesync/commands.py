@@ -465,6 +465,17 @@ Examples:
         util.output_csv(times, "time", None)
         return []
 
+    # Logic for displaying time detail view
+    if interactive and "uuid" not in post_data:
+        detail_view = util.get_field("Display in detail view?", optional=True,
+                                     field_type="?")
+
+        if detail_view:
+            times.append("detail")
+    else:
+        times.append("detail")
+
+    # Attempt to query the server for times with filtering parameters
     return times
 
 

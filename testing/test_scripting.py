@@ -65,6 +65,8 @@ class ScriptingTest(unittest.TestCase):
 
     @test_script(data=test_data.get_times_no_uuid_data)
     def test_get_times_no_uuid(self, expected, result):
+        print result
+        print expected
         assert result == expected
 
     @test_script(data=test_data.get_times_uuid_data)

@@ -384,12 +384,9 @@ def print_pretty_time(response):
     """Abandon all hope ye who enter here"""
 
     if isinstance(response, dict):
-        time_data = {k: v for k, v in response.iteritems()
-                     if k in ["uuid", "duration", "project", "activity",
-                              "user", "date_worked"]}
+        response = [response] + ["detail"]
 
-        print_json(time_data)
-    elif isinstance(response, list):
+    if "detail" not in response:
         times = sorted(response, cmp=compare_date_worked)
         projects = list({time["project"][0] for time in times})
         activities = list({a for time in times for a in time["activities"]})
@@ -521,24 +518,49 @@ def print_pretty_time(response):
 
             print
     else:
-        print_json(response)
+        del response[response.index("detail")]
+
+        # Sort by date worked
+        times = sorted(response, cmp=compare_date_worked)
+
+        # Sort again by project slug
+        times = sorted(times, key=lambda t: t["project"])
+
+        times_data = []
+
+        for time in times:
+            time_data = OrderedDict()
+            time_data["user"] = time["user"]
+            time_data["project"] = time["project"]
+            time_data["activities"] = time["activities"]
+            time_data["duration"] = time["duration"]
+            time_data["date_worked"] = time["date_worked"]
+            time_data["created_at"] = time["created_at"]
+            time_data["issue_uri"] = time.setdefault("issue_uri", "")
+            time_data["notes"] = time.setdefault("notes", "")
+            time_data["uuid"] = time["uuid"]
+
+            times_data.append(time_data)
+
+        print_json(times_data)
 
 
 def print_pretty_project(response):
-    """"""
+    """Prints project data returned by Pymesync nicely"""
 
     if isinstance(response, dict):
         response = [response]
 
+    # Sort by project name
+    projects = sorted(response, key=lambda p: p["name"])
+
     projects_data = []
 
-    for project in response:
+    for project in projects:
         project_data = OrderedDict()
-        project_data = {k: v for k, v in project.iteritems()
-                        if k in ["name", "slugs", "users"]}
-
-        if "users" not in project_data:
-            project_data["users"] = {}
+        project_data["name"] = project["name"]
+        project_data["slugs"] = project["slugs"]
+        project_data["users"] = project.setdefault("users", {})
 
         projects_data.append(project_data)
 
@@ -546,34 +568,50 @@ def print_pretty_project(response):
 
 
 def print_pretty_activity(response):
-    """"""
+    """Prints activity data returned by Pymesync nicely"""
 
     if isinstance(response, dict):
         response = [response]
 
-    activity_data = []
+    # Sort by activity name
+    activities = sorted(response, key=lambda a: a["name"])
 
-    for activity in response:
-        activity_data.append({k: v for k, v in activity.iteritems()
-                              if k in ["name", "slug"]})
+    activities_data = []
 
-    print_json(activity_data)
+    for activity in activities:
+        activity_data = OrderedDict()
+        activity_data["name"] = activity["name"]
+        activity_data["slug"] = activity["slug"]
+
+        activities_data.append(activity_data)
+
+    print_json(activities_data)
 
 
 def print_pretty_user(response):
-    """"""
+    """Prints user data returned by Pymesync nicely"""
 
     if isinstance(response, dict):
         response = [response]
 
-    user_data = []
+    # Sort by username
+    users = sorted(response, key=lambda u: u["username"])
 
-    for user in response:
-        user_data.append({k: v for k, v in user.iteritems()
-                          if k in ["username", "display_name", "email",
-                                   "active"]})
+    # Sort again by active users
+    users = sorted(users, key=lambda u: u["active"], reverse=True)
 
-    print_json(user_data)
+    users_data = []
+
+    for user in users:
+        user_data = OrderedDict()
+        user_data["username"] = user["username"]
+        user_data["display_name"] = user["display_name"]
+        user_data["email"] = user.setdefault("email", "")
+        user_data["active"] = user["active"]
+
+        users_data.append(user_data)
+
+    print_json(users_data)
 
 
 def print_pretty(response):
