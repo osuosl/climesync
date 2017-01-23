@@ -66,7 +66,6 @@ menu_options = (
     "ct - submit time\n"
     "ut - update time\n"
     "gt - get times\n"
-    "st - sum times\n"
     "dt - delete time\n\n"
     "cp - create project\n"
     "up - update project\n"
