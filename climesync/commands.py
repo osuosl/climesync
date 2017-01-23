@@ -479,59 +479,6 @@ Examples:
     return times
 
 
-@climesync_command(optional_args=True)
-def sum_times(post_data=None):
-    """sum-times
-
-Usage: sum-times [-h] <project> ... [--start=<start date>] [--end=<end date>]
-
-Arguments:
-    <project>  The project slugs of the projects to sum times for
-
-Options:
-    -h --help             Show this help message and exit
-    --start=<start date>  The date to start summing times
-    --end=<end date>      The date to end summing times
-
-Examples:
-    climesync sum-times projectx
-
-    climesync sum-times projectx projecty --start=2016-06-01
-    """
-
-    global ts, projects
-
-    if post_data is None:
-        post_data = util.get_fields([("!project", "Project slugs", projects),
-                                     ("*~start", "Start date"),
-                                     ("*~end", "End date")])
-
-    if isinstance(post_data["project"], str):
-        post_data["project"] = [post_data["project"]]
-
-    result = ts.get_times(post_data)
-
-    try:
-        for project in post_data["project"]:
-            time_sum = 0
-
-            for user_time in result:
-                if project in user_time["project"]:
-                    time_sum += user_time["duration"]
-
-            minutes, seconds = divmod(time_sum, 60)
-            hours, minutes = divmod(minutes, 60)
-
-            print
-            print "{}".format(project)
-            print util.to_readable_time(time_sum)
-
-        return list()
-    except Exception as e:
-        print e
-        return result
-
-
 @climesync_command(select_arg="uuid")
 def delete_time(uuid=None):
     """delete-time

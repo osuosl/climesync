@@ -154,17 +154,6 @@ get_times_uuid_data = TestData(
         }, "detail"],
         admin=False)
 
-sum_times_data = TestData(
-        command=commands.sum_times,
-        mocked_input=[
-            ["gwm"],  # Project slugs
-            "",  # Include revisions
-            ""  # Include deleted
-        ],
-        cli_args="gwm",
-        expected_response=[],
-        admin=False)
-
 delete_time_no_data = TestData(
         command=commands.delete_time,
         mocked_input=[
