@@ -893,12 +893,11 @@ def fix_args(args, optional_args):
         elif arg.isupper():
             fixed_arg = arg.lower()
         # If it's a long option
-        elif arg[0:2] == '--' and arg not in ("--help", "--csv", "--members",
+        elif arg[0:2] == "--" and arg not in ("--help", "--members", "--csv",
                                               "--managers", "--spectators"):
             fixed_arg = arg[2:].replace('-', '_')
         # If it's the help option or we don't know
         else:
-            print "Invalid arg: {}".format(arg)
             continue
 
         value = args[arg]
