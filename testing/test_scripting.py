@@ -78,7 +78,7 @@ class ScriptingTest(unittest.TestCase):
                 "https://github.com/org/px/issues/42/"]
 
         commands.connect(arg_url="test", test=True)
-        commands.sign_in(arg_user="test", arg_pass="test")
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
 
         commands.clock_in(argv)
 
@@ -93,7 +93,7 @@ class ScriptingTest(unittest.TestCase):
         argv = ["px"]
 
         commands.connect(arg_url="test", test=True)
-        commands.sign_in(arg_user="test", arg_pass="test")
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
 
         commands.clock_in(argv)
 
@@ -138,7 +138,7 @@ class ScriptingTest(unittest.TestCase):
         }
 
         commands.connect(arg_url="test", test=True)
-        commands.sign_in(arg_user="test", arg_pass="test")
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
 
         response = commands.clock_out(argv)
 
@@ -156,7 +156,7 @@ class ScriptingTest(unittest.TestCase):
         argv = ""
 
         commands.connect(arg_url="test", test=True)
-        commands.sign_in(arg_user="test", arg_pass="test")
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
 
         commands.clock_out(argv)
 

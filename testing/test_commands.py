@@ -92,8 +92,8 @@ class CommandsTest(unittest.TestCase):
             "user": "test"
         }
 
-        commands.connect(arg_url="test", test=True)
-        commands.sign_in(arg_user="test", arg_pass="test")
+        print commands.connect(arg_url="test", test=True)
+        print commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
 
         commands.clock_in()
 
@@ -117,7 +117,7 @@ class CommandsTest(unittest.TestCase):
         mock_session_exists.return_value = True
 
         commands.connect(arg_url="test", test=True)
-        commands.sign_in(arg_user="test", arg_pass="test")
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
 
         commands.clock_in()
 
@@ -174,7 +174,7 @@ class CommandsTest(unittest.TestCase):
         }
 
         commands.connect(arg_url="test", test=True)
-        commands.sign_in(arg_user="test", arg_pass="test")
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
 
         response = commands.clock_out()
 
@@ -190,7 +190,7 @@ class CommandsTest(unittest.TestCase):
         mock_now.return_value = datetime.datetime(2015, 3, 14, 9, 26)
 
         commands.connect(arg_url="test", test=True)
-        commands.sign_in(arg_user="test", arg_pass="test")
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
 
         commands.clock_out()
 
@@ -208,7 +208,7 @@ class CommandsTest(unittest.TestCase):
         mock_session_exists.return_value = True
 
         commands.connect(arg_url="test", test=True)
-        commands.sign_in(arg_user="test", arg_pass="test")
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
 
         commands.clock_out()
 
