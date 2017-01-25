@@ -722,11 +722,26 @@ def print_pretty_user(response):
     users_data = []
 
     for user in users:
+        # Construct a string representing the user's sitewide permissions
+        permissions = []
+        if user["site_spectator"]:
+            permissions.append("spectator")
+
+        if user["site_manager"]:
+            permissions.append("manager")
+
+        if user["site_admin"]:
+            permissions.append("admin")
+
+        permissions_str = "<{}>".format(", ".join(permissions))
+
         user_data = OrderedDict()
         user_data["username"] = user["username"]
+        user_data["active"] = user["active"]
         user_data["display_name"] = user["display_name"]
         user_data["email"] = user.setdefault("email", "")
-        user_data["active"] = user["active"]
+        user_data["permissions"] = permissions_str
+        user_data["meta"] = user.setdefault("meta", "")
 
         users_data.append(user_data)
 
