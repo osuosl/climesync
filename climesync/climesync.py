@@ -15,6 +15,9 @@ Options:
 
 Commands:
 
+    clock-in              Clock in to start working on a project
+    clock-out             Clock out and submit the completed time to the server
+
     create-time           Submit a new time
     update-time           Update the fields of an existing time
     get-times             List and optionally filter times on the server
@@ -63,6 +66,8 @@ menu_options = (
     "dc - disconnect\n"
     "s - sign in\n"
     "so - sign out/reset credentials\n\n"
+    "ci - clock in\n"
+    "co - clock out\n\n"
     "ct - submit time\n"
     "ut - update time\n"
     "gt - get times\n"
@@ -93,6 +98,8 @@ command_lookup = [
     ("dc",  None,                   commands.disconnect),
     ("s",   None,                   commands.sign_in),
     ("so",  None,                   commands.sign_out),
+    ("ci",  "clock-in",             commands.clock_in),
+    ("co",  "clock-out",            commands.clock_out),
     ("ct",  "create-time",          commands.create_time),
     ("ut",  "update-time",          commands.update_time),
     ("gt",  "get-times",            commands.get_times),

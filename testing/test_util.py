@@ -1,3 +1,4 @@
+from datetime import datetime
 import stat
 import ConfigParser
 from StringIO import StringIO
@@ -163,6 +164,240 @@ class UtilTest(unittest.TestCase):
 
         mock_create_config.assert_not_called()
 
+    @patch("climesync.util.os.path.exists")
+    def test_session_exists_true(self, mock_exists):
+        mock_exists.return_value = True
+
+        assert util.session_exists()
+
+    @patch("climesync.util.os.path.exists")
+    def test_session_exists_false(self, mock_exists):
+        mock_exists.return_value = False
+
+        assert not util.session_exists()
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.codecs.open")
+    def test_read_session(self, mock_open, mock_session_exists):
+        mock_session_object = {
+            "start_date": "2015-03-14",
+            "start_time": "09:26",
+            "project": "px",
+            "issue_uri": "https://github.com/org/px/issues/42/",
+            "user": "test"
+        }
+
+        mock_session_file_lines = [
+            "start_date: 2015-03-14",
+            "start_time: 09:26",
+            "project: px",
+            "issue_uri: https://github.com/org/px/issues/42/",
+            "user: test"
+        ]
+
+        mock_file = MagicMock(spec=file)
+        mock_file.readlines.return_value = mock_session_file_lines
+        mock_open.return_value.__enter__.return_value = mock_file
+
+        mock_session_exists.return_value = True
+
+        result = util.read_session()
+
+        assert result == mock_session_object
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.codecs.open")
+    def test_read_session_no_session(self, mock_open, mock_session_exists):
+        mock_session_exists.return_value = False
+
+        util.read_session()
+
+        assert not mock_open.mock_calls
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.codecs.open")
+    def test_create_session(self, mock_open, mock_session_exists):
+        mock_session_object = {
+            "start_date": "2015-03-14",
+            "start_time": "09:26",
+            "project": "px",
+            "issue_uri": "https://github.com/org/px/issues/42/",
+            "user": "test"
+        }
+
+        mock_file = MagicMock(spec=file)
+        mock_open.return_value.__enter__.return_value = mock_file
+
+        mock_session_exists.return_value = False
+
+        util.create_session(mock_session_object)
+
+        for k, v in mock_session_object.iteritems():
+            # Assert that the session data was written to the file
+            assert any(k in args[0] and v in args[0]
+                       for _, args, __ in mock_file.mock_calls)
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.codecs.open")
+    def test_create_session_existing_session(self, mock_open,
+                                             mock_session_exists):
+        mock_session_exists.return_value = True
+
+        util.create_session({})
+
+        mock_open.assert_not_called()
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.os.remove")
+    def test_clear_session(self, mock_remove, mock_session_exists):
+        mock_session_exists.return_value = True
+
+        util.clear_session()
+
+        assert mock_remove.mock_calls
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.os.remove")
+    def test_clear_session_no_session(self, mock_remove, mock_session_exists):
+        mock_session_exists.return_value = False
+
+        util.clear_session()
+
+        assert not mock_remove.mock_calls
+
+    def test_construct_clock_out_time(self):
+        mocked_session = {
+            "start_date": "2016-03-14",
+            "start_time": "03:14",
+            "project": "px",
+            "activities": "dev docs",
+            "user": "test"
+        }
+
+        mocked_now = datetime(2016, 3, 14, 4, 14)
+        mocked_revisions = {"project": "py"}
+
+        expected = {
+            "duration": 3600,
+            "date_worked": "2016-03-14",
+            "project": "py",
+            "activities": ["dev", "docs"],
+            "user": "test"
+        }
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions, None)
+
+        assert result == expected
+
+    def test_construct_clock_out_time_no_revisions(self):
+        mocked_session = {
+            "start_date": "2016-03-14",
+            "start_time": "03:14",
+            "project": "px",
+            "activities": "dev docs",
+            "user": "test"
+        }
+
+        mocked_now = datetime(2016, 3, 14, 4, 14)
+        mocked_revisions = {}
+
+        expected = {
+            "duration": 3600,
+            "date_worked": "2016-03-14",
+            "project": "px",
+            "activities": ["dev", "docs"],
+            "user": "test"
+        }
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions, None)
+
+        assert result == expected
+
+    def test_construct_clock_out_time_default_activity(self):
+        mocked_session = {
+            "start_date": "2016-03-14",
+            "start_time": "03:14",
+            "project": "px",
+            "user": "test"
+        }
+
+        mocked_now = datetime(2016, 3, 14, 4, 14)
+        mocked_revisions = {}
+        mocked_project = {"default_activity": "dev"}
+
+        expected = {
+            "duration": 3600,
+            "date_worked": "2016-03-14",
+            "project": "px",
+            "activities": ["dev"],
+            "user": "test"
+        }
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions,
+                                               mocked_project)
+
+        assert result == expected
+
+    def test_construct_clock_out_time_invalid_project(self):
+        mocked_session = {
+            "start_date": "2016-03-14",
+            "start_time": "03:14",
+            "project": "px",
+            "user": "test"
+        }
+
+        mocked_now = datetime(2016, 3, 14, 4, 14)
+        mocked_revisions = {}
+        mocked_project = {"error": "error"}
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions,
+                                               mocked_project)
+
+        assert result == {"error": "Invalid project"}
+
+    def test_construct_clock_out_time_no_session(self):
+        mocked_session = {}
+        mocked_now = datetime.now()
+        mocked_revisions = {}
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions, None)
+
+        assert result == {"error": "No session data"}
+
+    def test_construct_clock_out_time_invalid_session(self):
+        mocked_session = {
+            "invalid": "session"
+        }
+
+        mocked_now = datetime.now()
+        mocked_revisions = {}
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions, None)
+
+        assert result == {"error": "Invalid session data"}
+
+    def test_construct_clock_out_time_negative_delta(self):
+        mocked_session = {
+            "start_date": "2016-03-14",
+            "start_time": "03:14",
+            "project": "px",
+            "user": "test"
+        }
+
+        mocked_now = datetime(2016, 1, 1, 1, 1)
+        mocked_revisions = {}
+
+        result = util.construct_clock_out_time(mocked_session, mocked_now,
+                                               mocked_revisions, None)
+
+        assert result == {"error": "Invalid session date/time"}
+
     @patch("climesync.util.sys.stdout", new_callable=StringIO)
     def test_print_json_list(self, mock_stdout):
         key = "key"
@@ -184,14 +419,6 @@ class UtilTest(unittest.TestCase):
         util.print_json(test_response)
 
         assert "{}: {}".format(key, value) in mock_stdout.getvalue()
-
-    @patch("climesync.util.sys.stdout", new_callable=StringIO)
-    def test_print_json_invalid(self, mock_stdout):
-        test_response = "test"
-
-        util.print_json(test_response)
-
-        assert "I don't know how to print that!" in mock_stdout.getvalue()
 
     def test_is_time(self):
         self.assertFalse(util.is_time("AhBm"))
@@ -497,7 +724,6 @@ class UtilTest(unittest.TestCase):
             "timeval": "1h0m",
             "opttimeval": "0h30m",
             "listval": ["val1", "val2"],
-            "optlistval": []
         }
 
         mock_get_field.side_effect = mocked_input

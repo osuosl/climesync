@@ -178,6 +178,102 @@ def write_config(key, value, path="~/.climesyncrc"):
     config_file = path
 
 
+def current_datetime():
+    """Returns the current datetime (Wrapper for datetime.now() so that it
+    can be mocked)"""
+
+    return datetime.now()
+
+
+def session_exists(path="~/.climesyncsession"):
+    """Checks whether or not a clock-in session exists"""
+
+    realpath = os.path.expanduser(path)
+
+    return os.path.exists(realpath)
+
+
+def read_session(path="~/.climesyncsession"):
+    """Reads data from a session file, if it exists"""
+
+    if not session_exists(path):
+        return
+
+    realpath = os.path.expanduser(path)
+
+    with codecs.open(realpath, "r", "utf-8") as f:
+        lines = f.readlines()
+
+    split_lines = [[s.strip() for s in l.split(":", 1)] for l in lines]
+    session = {l[0]: l[1] for l in split_lines}
+
+    return session
+
+
+def create_session(session, path="~/.climesyncsession"):
+    """Creates a session by saving dictionary data to a file"""
+
+    if session_exists(path):
+        return
+
+    realpath = os.path.expanduser(path)
+
+    with codecs.open(realpath, "w", "utf-8") as f:
+        for key, value in session.iteritems():
+            f.write("{}: {}\n".format(key, value))
+
+
+def clear_session(path="~/.climesyncsession"):
+    """Removes a session file, if it exists"""
+
+    if not session_exists(path):
+        return
+
+    realpath = os.path.expanduser(path)
+
+    os.remove(realpath)
+
+
+def construct_clock_out_time(session, now, revisions, project):
+    """Construct a time for clocking out using session data, the current
+    datetime, and any revisions the user wished to make"""
+
+    if not session:
+        return {"error": "No session data"}
+
+    if not all(k in session for k in ("start_date", "start_time")):
+        return {"error": "Invalid session data"}
+
+    datetime_string = "{start_date} {start_time}".format(**session)
+    session_start_datetime = datetime.strptime(datetime_string,
+                                               "%Y-%m-%d %H:%M")
+    delta = now - session_start_datetime
+
+    if now < session_start_datetime:
+        return {"error": "Invalid session date/time"}
+
+    time = {k: v for k, v in session.items()
+            if k not in ("start_date", "start_time")}
+
+    time["duration"] = int(delta.total_seconds())
+    time["date_worked"] = session_start_datetime.date().isoformat()
+
+    time.update(revisions)
+
+    # If activities haven't been specified in the time
+    if "activities" not in time:
+        # Check if project has default activities
+        if ts_error(project):
+            return {"error": "Invalid project"}
+
+        if project.get("default_activity"):
+            time["activities"] = [project["default_activity"]]
+    elif isinstance(time["activities"], basestring):
+        time["activities"] = time["activities"].split()
+
+    return time
+
+
 def check_token_expiration(ts):
     """Checks to see if the auth token has expired. If it has, try to log the
     user back in using the username and password in their config file"""
@@ -368,7 +464,6 @@ def print_json(response):
 
         print ""
     else:
-        print "I don't know how to print that!"
         print response
 
 
@@ -827,7 +922,7 @@ def get_fields(fields, current_object=None):
             start_cached = None
 
         # Only add response if it isn't empty
-        if response != "":
+        if response != "" and response != []:
             responses[field] = response
 
     return responses

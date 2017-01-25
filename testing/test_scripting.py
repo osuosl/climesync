@@ -1,5 +1,7 @@
+import datetime
 import unittest
 import shlex
+from mock import patch
 
 from climesync import commands
 
@@ -54,6 +56,111 @@ class test_script():
 
 
 class ScriptingTest(unittest.TestCase):
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.create_session")
+    @patch("climesync.util.current_datetime")
+    def test_clock_in(self, mock_now, mock_create_session,
+                      mock_session_exists):
+        mock_now.return_value = datetime.datetime(2015, 3, 14, 9, 26)
+
+        mock_session_exists.return_value = False
+
+        expected_session_object = {
+            "start_date": "2015-03-14",
+            "start_time": "09:26",
+            "project": "px",
+            "issue_uri": "https://github.com/org/px/issues/42/",
+            "user": "test"
+        }
+
+        argv = ["px", "--issue-uri",
+                "https://github.com/org/px/issues/42/"]
+
+        commands.connect(arg_url="test", test=True)
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
+
+        commands.clock_in(argv)
+
+        mock_create_session.assert_called_with(expected_session_object)
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.create_session")
+    def test_clock_in_already_clocked_in(self, mock_create_session,
+                                         mock_session_exists):
+        mock_session_exists.return_value = True
+
+        argv = ["px"]
+
+        commands.connect(arg_url="test", test=True)
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
+
+        commands.clock_in(argv)
+
+        mock_create_session.assert_not_called()
+
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.read_session")
+    @patch("climesync.util.clear_session")
+    @patch("climesync.util.current_datetime")
+    def test_clock_out(self, mock_now, mock_clear_session, mock_read_session,
+                       mock_session_exists):
+        mocked_session = {
+            "start_date": "2015-03-14",
+            "start_time": "09:26",
+            "project": "px",
+            "issue_uri": "https://github.com/org/px/issues/42/",
+            "user": "test"
+        }
+
+        mock_now.return_value = datetime.datetime(2015, 3, 14, 10, 26)
+
+        mock_read_session.return_value = mocked_session
+
+        mock_session_exists.return_value = True
+
+        argv = ["--activities", "development planning", "--notes",
+                "Fixed issue X by doing Y"]
+
+        expected_response = {
+            "created_at": "2015-05-23",
+            "updated_at": None,
+            "deleted_at": None,
+            "uuid": "838853e3-3635-4076-a26f-7efr4e60981f",
+            "revision": 1,
+            "duration": 3600,
+            "project": "px",
+            "activities": ["development", "planning"],
+            "date_worked": "2015-03-14",
+            "user": "test",
+            "notes": "Fixed issue X by doing Y",
+            "issue_uri": "https://github.com/org/px/issues/42/"
+        }
+
+        commands.connect(arg_url="test", test=True)
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
+
+        response = commands.clock_out(argv)
+
+        assert response == expected_response
+
+    @patch("climesync.util.current_datetime")
+    @patch("climesync.util.session_exists")
+    @patch("climesync.util.read_session")
+    def test_clock_out_no_clock_in(self, mock_read_session,
+                                   mock_session_exists, mock_now):
+        mock_session_exists.return_value = False
+
+        mock_now.return_value = datetime.datetime(2015, 3, 14, 9, 26)
+
+        argv = ""
+
+        commands.connect(arg_url="test", test=True)
+        commands.sign_in(arg_user="test", arg_pass="test", arg_ldap=True)
+
+        commands.clock_out(argv)
+
+        mock_read_session.assert_not_called()
 
     @test_script(data=test_data.create_time_data)
     def test_create_time(self, expected, result):
