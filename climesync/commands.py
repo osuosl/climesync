@@ -862,7 +862,7 @@ Examples:
 
     if "users" in post_data and not isinstance(post_data["users"], dict):
         users_list = post_data["users"]
-        current_users = current_project["users"]
+        current_users = current_project.setdefault("users", {})
         post_data["users"] = util.get_user_permissions(users_list,
                                                        current_users)
 
