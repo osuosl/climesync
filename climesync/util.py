@@ -114,6 +114,7 @@ def read_config(path="~/.climesyncrc"):
 
     global config_file
 
+    # If config_file has already been set, use it until the program is reopened
     if config_file:
         path = config_file
 

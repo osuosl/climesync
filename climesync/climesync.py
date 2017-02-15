@@ -124,8 +124,10 @@ command_lookup = [
 
 def lookup_command(name, col):
     """Look for a command in the command lookup table by matching a name
-       with a value in the specified column
-    """
+       with a value in the specified column"""
+
+    # col == 0: Interactive mode command name lookup
+    # col == 1: Scripting mode command name lookup
     names = [c[col] for c in command_lookup]
     if name in names:
         return command_lookup[names.index(name)][2]
@@ -135,6 +137,7 @@ def lookup_command(name, col):
 
 def menu():
     """Provide an interactive shell for the user to execute commands"""
+
     choice = util.get_field("(h for help) ")
 
     command = lookup_command(choice, 0)
@@ -179,11 +182,14 @@ def main(argv=None, test=False):
     command = args['<command>']
     argv = args['<args>']
 
+    # If a command was provided, use scripting mode
     interactive = False if command else True
 
+    # Default config file
     if not config_file:
         config_file = "~/.climesyncrc"
 
+    # Read config file
     try:
         config_obj = util.read_config(config_file)
 
@@ -221,7 +227,7 @@ def main(argv=None, test=False):
 
         try:
             interactive_mode()
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  # Exit cleanly if the user presses Ctrl+C
             print "\nCaught keyboard interrupt. Exiting..."
 
 if __name__ == "__main__":
