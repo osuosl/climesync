@@ -273,12 +273,13 @@ def construct_clock_out_time(session, now, revisions, project):
         if ts_error(project):
             return {"error": "Invalid project"}
 
+        print project
         if project.get("default_activity"):
             time["activities"] = [project["default_activity"]]
-
-    # If activities is a string, turn it into a list. This is a necessary step
-    # because read_session just reads everything into the dict as a string
-    if isinstance(time["activities"], basestring):
+    elif isinstance(time["activities"], basestring):
+        # If activities is a string, turn it into a list. This is a necessary
+        # step because read_session just reads everything into the dict as a
+        # string
         time["activities"] = time["activities"].split()
 
     return time
