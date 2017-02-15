@@ -11,6 +11,7 @@ from datetime import datetime
 from getpass import getpass
 
 
+# The path to the config file that is currently being used
 config_file = None
 
 
@@ -76,6 +77,7 @@ class UnicodeDictWriter:
 
 
 def ts_error(*ts_objects):
+    """Check objects returned by TimeSync for errors"""
     for ts_object in ts_objects:
         if not ts_object:
             continue
@@ -197,13 +199,14 @@ def read_session(path="~/.climesyncsession"):
     """Reads data from a session file, if it exists"""
 
     if not session_exists(path):
-        return
+        return {}
 
     realpath = os.path.expanduser(path)
 
     with codecs.open(realpath, "r", "utf-8") as f:
         lines = f.readlines()
 
+    # Split each line into a field name and value, then turn that into a dict
     split_lines = [[s.strip() for s in l.split(":", 1)] for l in lines]
     session = {l[0]: l[1] for l in split_lines}
 
@@ -241,9 +244,11 @@ def construct_clock_out_time(session, now, revisions, project):
     if not session:
         return {"error": "No session data"}
 
+    # start_date and start_time are required session values
     if not all(k in session for k in ("start_date", "start_time")):
         return {"error": "Invalid session data"}
 
+    # Calculate time duration
     datetime_string = "{start_date} {start_time}".format(**session)
     session_start_datetime = datetime.strptime(datetime_string,
                                                "%Y-%m-%d %H:%M")
@@ -258,6 +263,7 @@ def construct_clock_out_time(session, now, revisions, project):
     time["duration"] = int(delta.total_seconds())
     time["date_worked"] = session_start_datetime.date().isoformat()
 
+    # Apply changes to time
     time.update(revisions)
 
     # If activities haven't been specified in the time
@@ -268,7 +274,10 @@ def construct_clock_out_time(session, now, revisions, project):
 
         if project.get("default_activity"):
             time["activities"] = [project["default_activity"]]
-    elif isinstance(time["activities"], basestring):
+
+    # If activities is a string, turn it into a list. This is a necessary step
+    # because read_session just reads everything into the dict as a string
+    if isinstance(time["activities"], basestring):
         time["activities"] = time["activities"].split()
 
     return time
@@ -468,7 +477,11 @@ def print_json(response):
 
 
 def compare_date_worked(time_a, time_b):
-    """"""
+    """Compare the date_worked fields in two times.
+
+    Returns True if the first time has an earlier date than the second time and
+    False otherwise.
+    """
 
     date_format = "%Y-%m-%d"
 
@@ -479,7 +492,8 @@ def compare_date_worked(time_a, time_b):
 
 
 def determine_data_type(data):
-    """"""
+    """Determines whether a TimeSync object is a time, a user, a project, or an
+    activity"""
 
     if not data:
         return ""
@@ -500,11 +514,14 @@ def determine_data_type(data):
 
 
 def print_pretty_time(response):
-    """Abandon all hope ye who enter here"""
+    """Prints time data returned from TimeSync nicely either in an overview
+    format or individually in detail"""
 
+    # If the time object is a single time, print in detail view
     if isinstance(response, dict):
         response = [response] + ["detail"]
 
+    # Time overview
     if "detail" not in response:
         times = sorted(response, cmp=compare_date_worked)
         projects = list({time["project"][0] for time in times})
@@ -517,7 +534,7 @@ def print_pretty_time(response):
 
         min_leading_whitespace = 9
 
-        # I sure hope no one submits a time over 9999h59m
+        # This will break when the total for a single activity is over 9999h59m
         min_activity_whitespace = 10
 
         for project in projects:
@@ -532,9 +549,11 @@ def print_pretty_time(response):
                              if any(u == t["user"]
                                     for t in project_times)]
 
+            # Max whitespace between users and first activity time total
             leading_whitespace = max([min_leading_whitespace] +
                                      [len(u) + 1 for u in project_users])
 
+            # Max whitespace between activity time totals
             activity_time_whitespace = [max(min_activity_whitespace,
                                             len(a) + 2)
                                         for a in project_activities]
@@ -564,6 +583,7 @@ def print_pretty_time(response):
 
             print u"{}{}".format(" "*leading_whitespace, activity_row)
 
+            # Print one row of info for each user
             for user in project_users:
                 user_times = [t for t in project_times
                               if user == t["user"]]
@@ -576,6 +596,7 @@ def print_pretty_time(response):
                                                           for a in
                                                           project_activities)
 
+                # Sum user activity totals
                 for activity in user_activities:
                     activity_times = [t for t in user_times
                                       if activity in t["activities"]]
@@ -592,10 +613,13 @@ def print_pretty_time(response):
                 activity_times = [to_readable_time(s)
                                   for s in activity_time_sums]
 
+                # Sum total user time on a project
                 user_time_sum = sum(t["duration"] for t in user_times)
 
+                # Actual whitespace between user and first activity time total
                 user_time_whitespace = " "*(leading_whitespace - len(user))
 
+                # Actual whitespace between activity time totals
                 time_whitespaces = [" "*(activity_time_whitespace[i] - len(t))
                                     for i, t in enumerate(activity_times)]
 
@@ -610,15 +634,21 @@ def print_pretty_time(response):
 
                 sorted_times[project][user] = user_time_sum
 
+            # Sum total time worked on each activity by all users
             total_activity_time_sums = [s for s in sorted_activity_time_sums
                                         .itervalues()]
 
+            # Convert activity time sums to readable time format
             total_activity_times = [to_readable_time(s)
                                     for s in total_activity_time_sums]
 
+            # Sum all times worked on the project
             project_time_sum = sum(t["duration"] for t in project_times)
 
+            # Whitespace between "Totals:" and start of activity project totals
             project_total_whitespace = " "*(leading_whitespace - 7)
+
+            # Whitespace between each activity project total
             time_total_whitespaces = [" "*(activity_time_whitespace[i]
                                            - len(t))
                                       for i, t in enumerate(
@@ -642,11 +672,13 @@ def print_pretty_time(response):
         # Sort by date worked
         times = sorted(response, cmp=compare_date_worked)
 
-        # Sort again by project slug
+        # Sort again by project slug (relative date ordering is preserved
+        # because sorted() is stable)
         times = sorted(times, key=lambda t: t["project"])
 
         times_data = []
 
+        # Ensure time fields are shown in the correct order
         for time in times:
             time_data = OrderedDict()
             time_data["user"] = time["user"]
@@ -675,6 +707,7 @@ def print_pretty_project(response):
 
     projects_data = []
 
+    # Ensure project fields are shown in the correct order
     for project in projects:
         project_data = OrderedDict()
         project_data["name"] = project["name"]
@@ -697,6 +730,7 @@ def print_pretty_activity(response):
 
     activities_data = []
 
+    # Ensure activity fields are shown in the correct order
     for activity in activities:
         activity_data = OrderedDict()
         activity_data["name"] = activity["name"]
@@ -721,6 +755,7 @@ def print_pretty_user(response):
 
     users_data = []
 
+    # Ensure user fields are shown in the correct order
     for user in users:
         user_data = OrderedDict()
         user_data["username"] = user["username"]
@@ -809,41 +844,50 @@ def get_field(prompt, optional=False, field_type="", validator=None,
                                            prompt, current_prompt)
     response = ""
 
+    # Loop until a valid input is received
     while True:
+        # If password field, use special prompt to hide input
         if field_type == "$":
             response = getpass(formatted_prompt).decode(sys.stdin.encoding)
         else:
             response = raw_input(formatted_prompt).decode(sys.stdin.encoding)
 
+        # Validate input based on field type
         if not response and optional:
             return ""
         elif response:
             if field_type == "?":
+                # Validate yes/no input format
                 if response.upper() in ["Y", "YES", "N", "NO"]:
                     return True if response.upper() in ["Y", "YES"] else False
             elif field_type == ":":
+                # Validate time input format
                 if is_time(response):
                     return response
             elif field_type == "~":
+                # Validate date format and ordering relative to validator field
                 if is_date(response) and \
                    (not validator or check_start_end(validator, response)):
                     return response
             elif field_type == "!":
                 response = [r.strip() for r in response.split(",")]
+                # Validate list input by checking every element
                 for r in response:
                     if validator and r not in validator:
                         print "Invalid response {}".format(r)
                         break
-                else:
+                else:  # Executes if for loop didn't break early
                     return response
             elif field_type == "$":
                 return response
             elif field_type == "":
+                # Validate regular input
                 if validator and response not in validator:
                     print "Invalid response {}".format(response)
                 else:
                     return response
 
+        # If the function hasn't returned then input validation failed
         print "Please submit a valid input"
         if validator:
             if is_date(validator):
@@ -868,10 +912,11 @@ def get_fields(fields, current_object=None):
 
     In addition to those, field_name can contain a * for an optional field
     """
-    global start_cached
-
     responses = dict()
+    start = None
 
+    # Pad the end of each field object so that "validator" is an optional field
+    # (Python 3 could instead use Extended Interable Unpacking here)
     padded_fields = [(f + (None,))[:3] for f in fields]
 
     # Check to see if any of the validators are empty lists
@@ -901,10 +946,12 @@ def get_fields(fields, current_object=None):
             field_type = "$"  # Password entry
             field = field.replace("$", "")
 
+        # Optional field
         if "*" in field:
             optional = True
             field = field.replace("*", "")
 
+        # If updating an existing object, grab the value of the current field
         if current_object and field in current_object:
             current = current_object.get(field)
 
@@ -912,14 +959,14 @@ def get_fields(fields, current_object=None):
                 current = "None"
 
         if field == "end":
-            validator = start_cached
+            validator = start
 
         response = get_field(prompt, optional, field_type, validator, current)
 
         if field == "start":
-            start_cached = response
+            start = response
         elif field == "end":
-            start_cached = None
+            start = None
 
         # Only add response if it isn't empty
         if response != "" and response != []:
@@ -973,7 +1020,8 @@ def add_kv_pair(key, value, path="~/.climesyncrc"):
 
 
 def get_user_permissions(users, current_users={}):
-    """Asks for permissions for multiple users and returns them in a dict"""
+    """Asks for project permissions for multiple users and returns them in a
+    dict"""
 
     permissions = {}
 
@@ -982,6 +1030,8 @@ def get_user_permissions(users, current_users={}):
         current_permissions = {}
         optional = False
 
+        # If the user already has permissions on the project, make prompts
+        # optional
         if user in current_users:
             current_permissions = {k: "Y" if v else "N"
                                    for k, v in current_users[user].iteritems()}
@@ -1016,7 +1066,12 @@ def get_user_permissions(users, current_users={}):
 
 
 def fix_user_permissions(permissions):
-    """Converts numeric user permissions to a dictionary of permissions"""
+    """Converts numeric user permissions to a dictionary of permissions.
+
+    For example:
+        4 = 0b100 = Member
+        2 = 0b010 = Spectator
+        7 = 0b111 = Member, Spectator, Manager"""
 
     fixed_permissions = dict()
 
