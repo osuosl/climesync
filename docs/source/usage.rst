@@ -70,12 +70,15 @@ Through an interactive shell, users have the following options:
 
 Once connected and authenticated, the following options are available:
 
+    **us**
+        Update user settings (Password, display name, and email)
+
     **ct**
         Submit a new time
-        
+
     **ut**
         Update a previously submitted time with new/revised information
-      
+
     **st**
         Sum the total time worked on a specific project
 
@@ -101,7 +104,13 @@ Admin-only options:
 
     **up**
         Update a project with new/revised information
-        
+
+    **upu**
+        Add/update users for a project
+
+    **rpu**
+        Remove users from a project
+
     **dp**
         Delete a project
 
@@ -179,8 +188,6 @@ username          The username of the user to authenticate as on startup
 password          The password of the user to authenticate as on startup
 ldap              Use LDAP to authenticate
 autoupdate_config Turn off prompts to automatically update your config
-                  when connecting to a new server or signing in as a new
-                  user
 ================= =======================================================
 
 .. _here: https://docs.python.org/2/library/configparser.html

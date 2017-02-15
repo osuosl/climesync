@@ -23,13 +23,15 @@ To create a new virtualenv and install all of Climesync's dependencies, do
     ...
     (venv) $ pip install -r requirements.txt
 
+.. _virtualenvwrapper: https://pypi.python.org/pypi/virtualenvwrapper
+
 Testing Climesync
 -----------------
 
 To lint climesync for non-PEP8 compliance, run
 
 .. code-block:: none
-    
+
     (venv) $ flake8 climesync.py commands.py util.py testing
 
 To run unit tests, use this command:
@@ -41,7 +43,7 @@ To run unit tests, use this command:
 To enable `Pymesync test mode`_ when writing unit tests, call
 
 .. code-block:: python
-    
+
     connect(test=True)
 
 instead of
@@ -49,7 +51,7 @@ instead of
 .. code-block:: python
 
     connect()
-    
+
 .. _Pymesync test mode: http://pymesync.readthedocs.io/en/latest/testing.html
 
 Docopt
@@ -96,6 +98,20 @@ and :code:`sign_in()`, they don't have the decorator. In the command_lookup tabl
 this is shown by putting :code:`None` for the scripting mode name
 
 .. _this article: http://www.artima.com/weblogs/viewpost.jsp?thread=240808
+
+The @test_command Decorator
+---------------------------
+
+In some test cases for core Climesync commands the @test_command decorator
+is used to factor out repeated code because the format those tests follow are
+so similar.
+
+The decorator performs these actions:
+    #. Authenticate and set up mocks for user input
+    #. Run the command to be tested
+    #. Compare the actual output with an expected output
+
+The test data for these tests is located in :code:`testing/test_data.py`.
 
 Function Documentation
 ----------------------
