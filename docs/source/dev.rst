@@ -5,6 +5,7 @@ Developer Documentation for Climesync
 
 .. contents::
 
+
 Setting up the Development Environment
 --------------------------------------
 
@@ -24,6 +25,7 @@ To create a new virtualenv and install all of Climesync's dependencies, do
     (venv) $ pip install -r requirements.txt
 
 .. _virtualenvwrapper: https://pypi.python.org/pypi/virtualenvwrapper
+
 
 Testing Climesync
 -----------------
@@ -54,6 +56,115 @@ instead of
 
 .. _Pymesync test mode: http://pymesync.readthedocs.io/en/latest/testing.html
 
+
+Program Flow Overview
+---------------------
+
+
+Interactive Mode
+~~~~~~~~~~~~~~~~
+
+.. code-block:: none
+
+    +-------------+
+    | Entry Point |
+    +-------------+
+           |
+           |
+           V
+       +------+          +--------+
+       | Main | <------> | Docopt |
+       |      |          +--------+
+       |      |
+       |      |          +-------------+
+       |      | <------> | Read Config |
+       |      |          +-------------+
+       |      |
+       |      |          +---------------------+          +-------------+
+       |      | <------> | Connect and Sign In | <------> | Build Cache |
+       +------+          +---------------------+          +-------------+
+           |
+           |     | Command
+           V     V
+    +------------------+          +---------------------------+
+    | Interactive Menu | <------> | Receive and Parse Command |
+    +------------------+          +---------------------------+
+           |     |
+           |     V "Quit" Command
+           V
+    +-------------------+          +---------------------------+
+    | climesync_command | <------> | User Authentication Check |
+    +-------------------+          +---------------------------+
+           |
+           |
+           V
+      +---------+          +----------------+          +---------------------+
+      | Command | <------> | Get user input | <------> | Validate user input |
+      |         |          +----------------+          +---------------------+
+      |         |
+      |         |          +---------------+
+      |         | <------> | Make API Call |
+      |         |          +---------------+
+      |         |
+      |         |          +------------------------------------------------+
+      |         | <------> | Handle API Response (Print/Output to CSV/etc.) |
+      +---------+          +------------------------------------------------+
+           |
+           V Interactive Menu
+
+
+Scripting Mode
+~~~~~~~~~~~~~~
+
+.. code-block:: none
+
+    +-------------+
+    | Entry Point |
+    +-------------+
+           |
+           |
+           V
+       +------+          +--------+
+       | Main | <------> | Docopt |
+       |      |          +--------+
+       |      |
+       |      |          +-------------+
+       |      | <------> | Read Config |
+       |      |          +-------------+
+       |      |
+       |      |          +---------------------+          +-------------+
+       |      | <------> | Connect and Sign In | <------> | Build Cache |
+       +------+          +---------------------+          +-------------+
+           |
+           |
+           V
+    +----------------+          +-------------------+
+    | Scripting Mode | <------> | Lookup subcommand |
+    +----------------+          +-------------------+
+           |
+           |
+           V
+    +-------------------+          +--------+          +-------------------------+
+    | climesync_command | <------> | Docopt | <------> | Fix argument formatting |
+    |                   |          +--------+          +-------------------------+
+    |                   |
+    |                   |          +-----------------------------------+
+    |                   | <------> | Construct command-specific kwargs |
+    +-------------------+          +-----------------------------------+
+           |
+           |
+           V
+      +---------+          +---------------+
+      | Command | <------> | Make API Call |
+      |         |          +---------------+
+      |         |
+      |         |          +------------------------------------------------+
+      |         | <------> | Handle API Response (Print/Output to CSV/etc.) |
+      +---------+          +------------------------------------------------+
+           |
+           V Exit
+
+
 Docopt
 ------
 
@@ -64,6 +175,7 @@ time it's called, it uses the main docstring to parse any global options, and
 if it sees that a command has been provided then the arguments after the
 command name are given to the command, which uses its own docstring to
 parse arguments and options.
+
 
 The @climesync_command Decorator
 --------------------------------
@@ -99,6 +211,7 @@ this is shown by putting :code:`None` for the scripting mode name
 
 .. _this article: http://www.artima.com/weblogs/viewpost.jsp?thread=240808
 
+
 The @test_command Decorator
 ---------------------------
 
@@ -112,6 +225,7 @@ The decorator performs these actions:
     #. Compare the actual output with an expected output
 
 The test data for these tests is located in :code:`testing/test_data.py`.
+
 
 Function Documentation
 ----------------------
