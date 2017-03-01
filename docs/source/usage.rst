@@ -16,6 +16,7 @@ Climesync currently supports the following versions of the TimeSync API:
 .. _OSU Open Source Lab's: http://www.osuosl.org/
 .. _TimeSync API: http://timesync.readthedocs.org/en/latest/
 
+
 Install Climesync
 -----------------
 
@@ -27,6 +28,7 @@ To install Climesync from git, run the following commands::
 
     $ git clone https://github.com/osuosl/climesync && cd climesync
     $ python setup.py install
+
 
 Running Climesync
 -----------------
@@ -50,6 +52,7 @@ places (See `Climesync Configuration`_ below), these values are prioritized
 in the following order:
 
 **User input inside program > Command line arguments > Configuration file values**
+
 
 Interactive Mode
 -----------------
@@ -132,6 +135,7 @@ Admin-only options:
     **du**
         Delete a user
 
+
 Scripting Mode
 --------------
 
@@ -164,6 +168,7 @@ To get help for a specific scripting mode command, run
 .. code-block:: none
 
     $ climesync <command_name> --help
+
 
 Climesync Configuration
 -----------------------

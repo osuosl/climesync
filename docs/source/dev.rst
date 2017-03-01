@@ -34,7 +34,7 @@ To lint climesync for non-PEP8 compliance, run
 
 .. code-block:: none
 
-    (venv) $ flake8 climesync.py commands.py util.py testing
+    (venv) $ flake8 climesync testing
 
 To run unit tests, use this command:
 
@@ -225,6 +225,36 @@ The decorator performs these actions:
     #. Compare the actual output with an expected output
 
 The test data for these tests is located in :code:`testing/test_data.py`.
+
+
+Caching
+-------
+
+Upon login, some API calls are made and certain values are cached. The most
+common use for these cached elements is for input validation. Currently the
+only mechanism to update the cache is by running the "sign_in" command again.
+In the future, cache updates could be triggered in a similar manner as how they
+are triggered in `timesync-frontend-flask`_
+
+.. _timesync-frontend-flask: https://github.com/osuosl/timesync-frontend-flask
+
+
+Clock In/Out
+------------
+
+Climesync allows users to "clock in" on a time entry and then come back later
+to clock out. It accomplishes this by saving a session (Usually located at
+"~/.climesyncsession", but support for other session file locations might exist
+in the future) and then reading that session and submitting it as a time when
+``clock_out`` is run.
+
+The session file is just a newline-delimited list of fields and values in the
+format ``<field>: <value>``. Items in list values are separated by spaces.
+
+``clock_out`` reads the session file, asks the user to make changes (If it's
+being run in interactive mode), and then creates the time entry. If the project
+doesn't have a default activity and activities weren't specified in
+``clock_in``, then activities must be provided.
 
 
 Function Documentation
