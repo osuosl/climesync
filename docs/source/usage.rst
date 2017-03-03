@@ -16,6 +16,7 @@ Climesync currently supports the following versions of the TimeSync API:
 .. _OSU Open Source Lab's: http://www.osuosl.org/
 .. _TimeSync API: http://timesync.readthedocs.org/en/latest/
 
+
 Install Climesync
 -----------------
 
@@ -27,6 +28,7 @@ To install Climesync from git, run the following commands::
 
     $ git clone https://github.com/osuosl/climesync && cd climesync
     $ python setup.py install
+
 
 Running Climesync
 -----------------
@@ -51,6 +53,7 @@ in the following order:
 
 **User input inside program > Command line arguments > Configuration file values**
 
+
 Interactive Mode
 -----------------
 
@@ -70,12 +73,15 @@ Through an interactive shell, users have the following options:
 
 Once connected and authenticated, the following options are available:
 
+    **us**
+        Update user settings (Password, display name, and email)
+
     **ct**
         Submit a new time
-        
+
     **ut**
         Update a previously submitted time with new/revised information
-      
+
     **st**
         Sum the total time worked on a specific project
 
@@ -101,7 +107,13 @@ Admin-only options:
 
     **up**
         Update a project with new/revised information
-        
+
+    **upu**
+        Add/update users for a project
+
+    **rpu**
+        Remove users from a project
+
     **dp**
         Delete a project
 
@@ -122,6 +134,7 @@ Admin-only options:
 
     **du**
         Delete a user
+
 
 Scripting Mode
 --------------
@@ -156,6 +169,7 @@ To get help for a specific scripting mode command, run
 
     $ climesync <command_name> --help
 
+
 Climesync Configuration
 -----------------------
 
@@ -179,8 +193,6 @@ username          The username of the user to authenticate as on startup
 password          The password of the user to authenticate as on startup
 ldap              Use LDAP to authenticate
 autoupdate_config Turn off prompts to automatically update your config
-                  when connecting to a new server or signing in as a new
-                  user
 ================= =======================================================
 
 .. _here: https://docs.python.org/2/library/configparser.html

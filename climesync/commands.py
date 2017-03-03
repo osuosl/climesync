@@ -154,6 +154,7 @@ def sign_in(arg_user="", arg_pass="", arg_ldap=None, config_dict=dict(),
                                    "username, password, and ldap set in "
                                    "~/.climesyncrc?"}
 
+    # If in interactive mode, ask user if they want to update their config
     if interactive and not ts.test and autoupdate_config:
         util.add_kv_pair("username", username)
         util.add_kv_pair("password", password)
